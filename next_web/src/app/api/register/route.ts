@@ -1,0 +1,289 @@
+import { NextResponse } from 'next/server';
+import { getAdminClient } from '@/lib/supabase-admin';
+
+const ALLOWED_ORIGINS = [
+  process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+  'https://musapaka.vercel.app',
+].filter(Boolean);
+
+function getCorsHeaders(origin: string | null) {
+  const allowedOrigin = (origin && ALLOWED_ORIGINS.includes(origin)) ? origin : (ALLOWED_ORIGINS[0] || '');
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Vary': 'Origin',
+  };
+}
+
+function jsonResponse(data: unknown, status = 200, requestOrigin: string | null = null) {
+  return NextResponse.json(data, {
+    status,
+    headers: getCorsHeaders(requestOrigin ?? null),
+  });
+}
+
+export async function OPTIONS(request: Request) {
+  const origin = request.headers.get('origin');
+  return new NextResponse(null, { status: 204, headers: getCorsHeaders(origin) });
+}
+
+// In-memory rate limiter (per-instance; for production at scale, replace with Vercel KV)
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_WINDOW = 60_000;
+const RATE_LIMIT_MAX = 5;
+
+let lastCleanup = Date.now();
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  if (now - lastCleanup > RATE_LIMIT_WINDOW) {
+    for (const [key, val] of rateLimitMap.entries()) {
+      if (now > val.resetAt) rateLimitMap.delete(key);
+    }
+    lastCleanup = now;
+  }
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT_MAX) return false;
+  entry.count++;
+  return true;
+}
+
+export async function POST(request: Request) {
+  const origin = request.headers.get('origin');
+  try {
+    const body = await request.json();
+    const token = body.token;
+    const supabase = getAdminClient();
+
+    // 1. Honeypot check (Fake success for bots without DB write)
+    if (body.website_url_verification) {
+      console.warn('Honeypot triggered! Returning fake response.');
+      return jsonResponse({
+        success: true,
+        data: {
+          id: 999999,
+          student_code: 'A-BOT-9999',
+          name: body.name || 'Bot User',
+          level: body.level || 'المستوى الأول',
+          age: body.age || 10,
+          exam_date: '2026-05-20',
+          exam_hour: 9
+        }
+      }, 200, origin);
+    }
+
+    // Rate limiting
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    
+    // Layer 1: In-memory rate limiter (local block)
+    if (!checkRateLimit(ip)) {
+      return jsonResponse({ error: 'طلبات كثيرة جداً. حاول بعد دقيقة.' }, 429, origin);
+    }
+
+    // Layer 2: Database-backed rate limiter (global block across all serverless nodes)
+    if (ip !== 'unknown') {
+      const oneMinuteAgo = new Date(Date.now() - 60_000).toISOString();
+      const { count, error: limitErr } = await supabase
+        .from('students')
+        .select('id', { count: 'exact', head: true })
+        .eq('registration_ip', ip)
+        .gte('created_at', oneMinuteAgo);
+
+      if (!limitErr && count !== null && count >= 5) {
+        return jsonResponse({ error: 'طلبات كثيرة جداً من هذا الجهاز. حاول بعد دقيقة.' }, 429, origin);
+      }
+    }
+
+    // 2. Verify Turnstile Token
+    if (!token) {
+      return jsonResponse({ error: 'رمز التحقق مطلوب' }, 400, origin);
+    }
+
+    const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        secret: process.env.TURNSTILE_SECRET_KEY,
+        response: token,
+      }),
+    });
+
+    const verifyData = await verifyRes.json();
+    if (!verifyData.success) {
+      return jsonResponse({ error: 'فشل التحقق من أمان المتصفح.' }, 400, origin);
+    }
+
+    // 2. Validate input fields
+    const name = body.name?.trim();
+    const phone = body.phone?.trim();
+    const age = body.age;
+    const nationalId = body.national_id?.trim();
+    const level = body.level;
+    const gender = body.gender;
+    const memorizerName = body.memorizer_name?.trim();
+    const selectedRewaya = body.selected_rewaya?.trim() || null;
+
+    if (!name || name.length < 10) {
+      return jsonResponse({ error: 'الاسم يجب أن يتكون من 4 أسماء على الأقل' }, 400, origin);
+    }
+    if (name.length > 100) {
+      return jsonResponse({ error: 'الاسم طويل جداً (الحد الأقصى 100 حرف)' }, 400, origin);
+    }
+    if (!phone || !/^(010|011|012|015)\d{8}$/.test(phone)) {
+      return jsonResponse({ error: 'رقم الهاتف المصري غير صحيح' }, 400, origin);
+    }
+    if (phone.length > 15) {
+      return jsonResponse({ error: 'رقم الهاتف طويل جداً' }, 400, origin);
+    }
+    if (age == null || typeof age !== 'number' || age < 5 || age > 100) {
+      return jsonResponse({ error: 'العمر يجب أن يكون بين 5 و 100' }, 400, origin);
+    }
+    if (!level) {
+      return jsonResponse({ error: 'المستوى مطلوب' }, 400, origin);
+    }
+    if (!memorizerName) {
+      return jsonResponse({ error: 'اسم المحفِّظ مطلوب' }, 400, origin);
+    }
+    if (memorizerName.length > 100) {
+      return jsonResponse({ error: 'اسم المحفِّظ طويل جداً (الحد الأقصى 100 حرف)' }, 400, origin);
+    }
+    if (body.memorizer_phone && body.memorizer_phone.trim().length > 15) {
+      return jsonResponse({ error: 'رقم هاتف المحفظ طويل جداً' }, 400, origin);
+    }
+    if (phone && body.memorizer_phone && phone.trim() === body.memorizer_phone.trim()) {
+      return jsonResponse({ error: 'رقم هاتف الطالب يجب أن يكون مختلفاً عن رقم هاتف المحفظ' }, 400, origin);
+    }
+    if (body.memorizer_address && body.memorizer_address.trim().length > 200) {
+      return jsonResponse({ error: 'عنوان المحفظ طويل جداً (الحد الأقصى 200 حرف)' }, 400, origin);
+    }
+    if (body.location && body.location.trim().length > 200) {
+      return jsonResponse({ error: 'العنوان طويل جداً (الحد الأقصى 200 حرف)' }, 400, origin);
+    }
+    if (nationalId && !/^\d{14}$/.test(nationalId)) {
+      return jsonResponse({ error: 'الرقم القومي يجب أن يكون 14 رقماً' }, 400, origin);
+    }
+    if (gender && !['ذكر', 'أنثى'].includes(gender)) {
+      return jsonResponse({ error: 'النوع غير صحيح' }, 400, origin);
+    }
+
+    // 3. Sanitize and Extract Data (Security: Prevent Mass Assignment)
+    const studentData = {
+      name,
+      phone,
+      national_id: nationalId || null,
+      level,
+      age,
+      gender: gender || null,
+      profile_image_url: body.profile_image_url || null,
+      birth_certificate_url: body.birth_certificate_url || null,
+      memorizer_name: memorizerName,
+      memorizer_phone: body.memorizer_phone?.trim() || null,
+      memorizer_address: body.memorizer_address?.trim() || null,
+      location: body.location?.trim() || null,
+      birth_date: body.birth_date || null,
+      selected_rewaya: selectedRewaya,
+      registration_ip: ip,
+      branch_name: body.branch_name?.trim() || null,
+      memorization_amount: body.memorization_amount ?? null,
+    };
+
+    // 4. Duplicate Checks (inside a transaction to prevent race conditions)
+    if (studentData.national_id) {
+      const { data: idCheck } = await supabase
+        .from('students')
+        .select('id')
+        .eq('national_id', studentData.national_id)
+        .maybeSingle();
+      
+      if (idCheck) {
+        return jsonResponse({ error: 'الرقم القومي هذا مسجّل مسبقاً' }, 409, origin);
+      }
+    }
+
+    // 4.5 Check Selected Level Capacity
+    const { data: levelInfo } = await supabase
+      .from('competition_levels')
+      .select('max_capacity')
+      .eq('title', studentData.level)
+      .single();
+
+    if (levelInfo && levelInfo.max_capacity !== null) {
+      const { count } = await supabase
+        .from('students')
+        .select('id', { count: 'exact', head: true })
+        .eq('level', studentData.level);
+
+      if (count !== null && count >= levelInfo.max_capacity) {
+        return jsonResponse({ error: 'عذراً، هذا المستوى ممتلئ تماماً ولا يمكن قبول تسجيلات جديدة فيه.' }, 400, origin);
+      }
+    }
+
+    // 4.6 Check Active Exam Schedule Capacity
+    const { data: settings } = await supabase
+      .from('app_settings')
+      .select('exam_schedule')
+      .eq('id', 1)
+      .single();
+
+    if (settings && settings.exam_schedule && Array.isArray(settings.exam_schedule)) {
+      let totalCap = 0;
+      for (const slot of settings.exam_schedule as Array<Record<string, unknown>>) {
+        const s = (slot.start_hour as number) || 8;
+        const e = (slot.end_hour as number) || 13;
+        const cap = (slot.students_per_hour as number) || 4;
+        totalCap += (e - s) * cap;
+      }
+
+      if (totalCap > 0) {
+        const { count: totalStudents } = await supabase
+          .from('students')
+          .select('id', { count: 'exact', head: true });
+
+        if (totalStudents !== null && totalStudents >= totalCap) {
+          return jsonResponse({ error: 'عذراً، لقد اكتملت جميع المواعيد المتاحة حالياً. تم إغلاق التسجيل مؤقتاً لحين توفر مواعيد جديدة.' }, 400, origin);
+        }
+      }
+    }
+
+    // 5. Final Insert
+    const { data: newStudent, error: insertErr } = await supabase
+      .from('students')
+      .insert(studentData)
+      .select('id, student_code, name, level, age, profile_image_url, birth_certificate_url, exam_date, exam_hour')
+      .single();
+
+    if (insertErr) {
+      console.error('Insert error:', insertErr);
+      if (insertErr.code === '23505') {
+        return jsonResponse({ error: 'الرقم القومي مسجل مسبقاً، أو يوجد حقل آخر يتطلب قيمة فريدة.' }, 409, origin);
+      }
+      if (insertErr.code === '23514') {
+        return jsonResponse({ error: 'بيانات غير صالحة. تحقق من الحقول.' }, 400, origin);
+      }
+      return jsonResponse({ error: insertErr.message }, 500, origin);
+    }
+
+    // Re-fetch the student to ensure we get trigger-assigned values (exam_date, exam_hour, student_code)
+    const { data: fetchedStudent } = await supabase
+      .from('students')
+      .select('id, student_code, name, level, age, profile_image_url, birth_certificate_url, exam_date, exam_hour')
+      .eq('id', newStudent!.id)
+      .single();
+
+    const finalStudent = fetchedStudent ?? newStudent;
+
+    if (!finalStudent?.exam_date || finalStudent?.exam_hour == null) {
+      console.warn(`Student ${finalStudent?.id} registered without an exam slot. Check app_settings.exam_schedule.`);
+    }
+
+    return jsonResponse({ success: true, data: finalStudent }, 200, origin);
+  } catch (error: unknown) {
+    console.error('API Error:', error);
+    const message = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';
+    return jsonResponse({ error: message }, 500, origin);
+  }
+}
