@@ -80,6 +80,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // Sidebar & Panel Layout
   bool _sidebarCollapsed = false;
   double _sidePanelWidth = 520.0;
+  String _settingsSection = 'dates';
 
   // Editing State
   Uint8List? _editProfileBytes;
@@ -1687,7 +1688,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       switch (_currentView) {
         case DashboardView.dashboard: return dashboardContent;
         case DashboardView.levels: return levelsView;
-        case DashboardView.settings: return const SettingsScreen(primaryColor: _primary);
+        case DashboardView.settings: return SettingsScreen(primaryColor: _primary, initialSection: _settingsSection);
         case DashboardView.statistics: return const StatisticsScreen();
       }
     }
@@ -1703,6 +1704,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               primaryColor: _primary,
               collapsed: _sidebarCollapsed,
               onToggleCollapse: () => setState(() => _sidebarCollapsed = !_sidebarCollapsed),
+              settingsSection: _settingsSection,
+              onSettingsSectionChanged: (section) => setState(() {
+                _settingsSection = section;
+                _currentView = DashboardView.settings;
+              }),
             ),
             Expanded(
               child: getActiveView(),

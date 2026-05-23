@@ -7,13 +7,12 @@ import '../../data/models/exam_schedule_slot.dart';
 import '../../services/supabase_service.dart';
 import 'models/day_block.dart';
 import 'widgets/section_card.dart';
-import 'widgets/dashboard_section.dart';
 import 'widgets/form_fields.dart';
-import 'widgets/settings_sidebar.dart';
 
 class SettingsScreen extends StatefulWidget {
   final Color? primaryColor;
-  const SettingsScreen({super.key, this.primaryColor});
+  final String initialSection;
+  const SettingsScreen({super.key, this.primaryColor, this.initialSection = 'dates'});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -40,41 +39,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _totalPrizesCtrl = TextEditingController();
   int _committeesCount = 3;
 
-  String _activeSection = 'dashboard';
-
-  final List<SettingsNavItem> _navItems = const [
-    SettingsNavItem(
-      id: 'dashboard',
-      label: 'لوحة التحكم',
-      icon: Icons.dashboard_rounded,
-      description: 'نظرة عامة على حالة بوابة التسجيل وإحصائيات اللجان المفتوحة',
-    ),
-    SettingsNavItem(
-      id: 'info',
-      label: 'معلومات المسابقة',
-      icon: Icons.info_rounded,
-      description: 'إدخال وتحديث عنوان المسابقة الكبرى، الوصف التعريفي، والجوائز',
-    ),
-    SettingsNavItem(
-      id: 'dates',
-      label: 'المواعيد واللجان',
-      icon: Icons.calendar_today_rounded,
-      description: 'التحكم بنطاقات تواريخ التسجيل والاختبار، وإدارة عدد لجان التحكيم',
-    ),
-    SettingsNavItem(
-      id: 'schedule',
-      label: 'جدول الفترات',
-      icon: Icons.view_timeline_rounded,
-      description: 'جدولة وتخطيط فترات لجان الاختبار اليومية وتحديد السعة القصوى',
-    ),
-  ];
+  late String _activeSection;
 
   Color get _primary => widget.primaryColor ?? AppTheme.primaryColor;
 
   @override
   void initState() {
     super.initState();
+    _activeSection = widget.initialSection;
     _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant SettingsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialSection != widget.initialSection) {
+      setState(() => _activeSection = widget.initialSection);
+    }
   }
 
   @override
@@ -206,73 +187,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final screenType = ResponsiveUtils.fromWidth(MediaQuery.of(context).size.width);
     final isMobile = screenType == ScreenType.mobile;
-    final isTablet = screenType == ScreenType.tablet;
-    final isWide = screenType == ScreenType.desktop || isTablet;
 
     return Column(
       children: [
         _buildTopBar(isMobile),
-        if (!isWide) _buildSectionTabs(),
         Expanded(
           child: Container(
-            color: const Color(0xFFF5F5F7), // Matches Dashboard, Levels, Statistics
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Render the side menu only on wide screens
-                if (isWide)
-                  Directionality(
-                    textDirection: TextDirection.rtl,
-                    child: SettingsSidebar(
-                      activeSection: _activeSection,
-                      items: _navItems,
-                      onItemSelected: (section) => setState(() {
-                        _activeSection = section;
-                        _successMsg = null;
-                        _error = null;
-                      }),
-                      isTablet: isTablet,
-                      primaryColor: _primary,
-                    ),
-                  ),
-                Expanded(
-                  child: Container(
-                    margin: isWide ? const EdgeInsets.all(24) : EdgeInsets.zero,
-                    decoration: isWide ? BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.025),
-                          blurRadius: 24,
-                          offset: const Offset(0, 8),
-                        ),
+            color: const Color(0xFFF5F5F7),
+            child: _loading
+              ? Center(child: CircularProgressIndicator(color: _primary))
+              : Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.all(isMobile ? 16 : 28),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (_error != null) _buildAlert(_error!, true),
+                        if (_successMsg != null) _buildAlert(_successMsg!, false),
+                        _buildActiveContent(isMobile),
                       ],
-                      border: Border.all(color: Colors.grey.shade100, width: 1.5),
-                    ) : const BoxDecoration(color: Colors.transparent),
-                    child: ClipRRect(
-                      borderRadius: isWide ? BorderRadius.circular(24) : BorderRadius.zero,
-                      child: _loading
-                        ? Center(child: CircularProgressIndicator(color: _primary))
-                        : Directionality(
-                            textDirection: TextDirection.rtl,
-                            child: SingleChildScrollView(
-                              padding: EdgeInsets.all(isMobile ? 16 : 32),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  if (_error != null) _buildAlert(_error!, true),
-                                  if (_successMsg != null) _buildAlert(_successMsg!, false),
-                                  _buildActiveContent(isMobile),
-                                ],
-                              ),
-                            ),
-                          ),
                     ),
                   ),
                 ),
-              ],
-            ),
           ),
         ),
       ],
@@ -280,6 +217,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildTopBar(bool isMobile) {
+    final sectionLabel = _activeSection == 'dates'
+        ? 'المواعيد واللجان'
+        : 'جدول الفترات';
+    final sectionIcon = _activeSection == 'dates'
+        ? Icons.calendar_today_rounded
+        : Icons.view_timeline_rounded;
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 24, vertical: 14),
       decoration: BoxDecoration(
@@ -288,26 +232,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       child: Row(
         children: [
+          // Section icon badge
+          Container(
+            padding: const EdgeInsets.all(9),
+            decoration: BoxDecoration(
+              color: _primary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Icon(sectionIcon, size: 18, color: _primary),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'إعدادات النظام',
+                  sectionLabel,
                   style: TextStyle(
                     fontFamily: 'Cairo',
-                    fontSize: isMobile ? 18 : 20,
+                    fontSize: isMobile ? 16 : 18,
                     fontWeight: FontWeight.w800,
                     color: const Color(0xFF03121C),
                   ),
                 ),
                 if (!isMobile)
                   Text(
-                    'التحكم الكامل في إعدادات المسابقة والجدولة',
+                    _activeSection == 'dates'
+                        ? 'إدارة تواريخ التسجيل والاختبار وضبط لجان التحكيم'
+                        : 'جدولة فترات لجان الاختبار اليومية وتحديد سعة كل فترة',
                     style: TextStyle(
                       fontFamily: 'Cairo',
-                      fontSize: 13,
+                      fontSize: 12,
                       color: Colors.grey.shade500,
                     ),
                   ),
@@ -321,8 +277,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: _saving ? null : _load,
               borderRadius: BorderRadius.circular(10),
               child: Container(
-                width: 40,
-                height: 40,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
                   color: Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(10),
@@ -330,7 +286,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 child: Icon(
                   Icons.refresh_rounded,
-                  size: 20,
+                  size: 19,
                   color: _saving ? Colors.grey.shade300 : const Color(0xFF03121C),
                 ),
               ),
@@ -338,177 +294,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(width: 10),
           // Save button
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            child: ElevatedButton.icon(
-              onPressed: _saving ? null : _save,
-              icon: _saving
-                  ? const SizedBox(
-                      width: 15,
-                      height: 15,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                    )
-                  : const Icon(Icons.save_rounded, size: 17, color: Colors.white),
-              label: Text(
-                _saving ? 'جاري الحفظ...' : 'حفظ التغييرات',
-                style: const TextStyle(
-                  fontFamily: 'Cairo',
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                ),
+          ElevatedButton.icon(
+            onPressed: _saving ? null : _save,
+            icon: _saving
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  )
+                : const Icon(Icons.save_rounded, size: 16, color: Colors.white),
+            label: Text(
+              _saving ? 'جاري الحفظ...' : 'حفظ',
+              style: const TextStyle(
+                fontFamily: 'Cairo',
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _saving ? Colors.grey.shade400 : Colors.green.shade600,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _saving ? Colors.grey.shade400 : Colors.green.shade600,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSectionTabs() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Row(
-          children: _navItems.map((item) {
-            final isSelected = item.id == _activeSection;
-            return Padding(
-              padding: const EdgeInsets.only(left: 6),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => setState(() {
-                    _activeSection = item.id;
-                    _successMsg = null;
-                    _error = null;
-                  }),
-                  borderRadius: BorderRadius.circular(10),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? const Color(0xFF03121C).withValues(alpha: 0.07)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isSelected
-                            ? const Color(0xFF03121C).withValues(alpha: 0.15)
-                            : Colors.transparent,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          item.icon,
-                          size: 15,
-                          color: isSelected
-                              ? const Color(0xFF03121C)
-                              : Colors.grey.shade400,
-                        ),
-                        const SizedBox(width: 7),
-                        Text(
-                          item.label,
-                          style: TextStyle(
-                            fontFamily: 'Cairo',
-                            fontSize: 12.5,
-                            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                            color: isSelected
-                                ? const Color(0xFF03121C)
-                                : Colors.grey.shade500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
       ),
     );
   }
 
   Widget _buildActiveContent(bool isMobile) {
     switch (_activeSection) {
-      case 'dashboard':
-        return DashboardSection(
-          isRegistrationOpen: _isRegistrationOpen,
-          daysCount: _days.length,
-          periodsCount: _flatten().length,
-          capacity: _flatten().fold(0, (sum, slot) => sum + slot.studentsPerHour),
-          primaryColor: _primary,
-          isMobile: isMobile,
-        );
-      case 'info':
-        return _buildContestInfoSection();
       case 'dates':
         return _buildRegistrationDatesSection();
       case 'schedule':
         return _buildSchedule(isMobile);
       default:
-        return const SizedBox();
+        return _buildRegistrationDatesSection();
     }
-  }
-
-  Widget _buildContestInfoSection() {
-    return SectionCard(
-      title: 'معلومات المسابقة العامة',
-      description: 'التحكم بالعنوان الرئيسي والوصفي للمسابقة وقيمة الجوائز التشجيعية',
-      icon: Icons.info_rounded,
-      primaryColor: _primary,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          TextFormField(
-            controller: _titleCtrl,
-            decoration: SettingsFormFields.enhancedInputDecoration(
-              label: 'عنوان المسابقة الرئيسي',
-              icon: Icons.title_rounded,
-              primaryColor: _primary,
-              hint: 'أدخل العنوان الرئيسي المعروض للجمهور',
-            ),
-            style: const TextStyle(fontFamily: 'Cairo', fontSize: 13.5, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 18),
-          TextFormField(
-            controller: _descriptionCtrl,
-            maxLines: 4,
-            decoration: SettingsFormFields.enhancedInputDecoration(
-              label: 'وصف وشروط المسابقة الكبرى',
-              icon: Icons.description_rounded,
-              primaryColor: _primary,
-              hint: 'أدخل تفاصيل شروط المسابقة، المواعيد العامة، ومكان الانعقاد...',
-            ),
-            style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 18),
-          TextFormField(
-            controller: _totalPrizesCtrl,
-            decoration: SettingsFormFields.enhancedInputDecoration(
-              label: 'إجمالي الجوائز التقديرية والمالية',
-              icon: Icons.emoji_events_rounded,
-              primaryColor: _primary,
-              hint: 'مثال: جوائز مالية كبرى تصل قيمتها إلى 100,000 جنيه',
-            ),
-            style: const TextStyle(fontFamily: 'Cairo', fontSize: 13.5, fontWeight: FontWeight.bold),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildRegistrationDatesSection() {
@@ -543,17 +367,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onChanged: (v) => setState(() => _isResultQueryOpen = v),
             primaryColor: Colors.amber.shade800,
           ),
-          const SizedBox(height: 20),
-          const Text(
-            'فترة التسجيل الإلكتروني للطلاب',
-            style: TextStyle(
-              fontFamily: 'Cairo',
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF03121C),
-            ),
-          ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 24),
+          _buildSectionDivider('فترة التسجيل الإلكتروني للطلاب', Icons.how_to_reg_rounded),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -581,17 +397,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          const Text(
-            'فترة إجراء الاختبارات والتصفيات الفعلية',
-            style: TextStyle(
-              fontFamily: 'Cairo',
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF03121C),
-            ),
-          ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 24),
+          _buildSectionDivider('فترة إجراء الاختبارات والتصفيات الفعلية', Icons.quiz_rounded),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -619,7 +427,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           SettingsFormFields.enhancedStepperField(
             value: _committeesCount,
             onChanged: (v) => setState(() => _committeesCount = v),
@@ -634,10 +442,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-
-
-
-
+  Widget _buildSectionDivider(String label, IconData icon) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: _primary.withValues(alpha: 0.07),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 14, color: _primary),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Cairo',
+            fontSize: 13.5,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF03121C).withValues(alpha: 0.8),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Container(
+            height: 1,
+            color: Colors.grey.shade200,
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _buildSchedule(bool isMobile) {
     final screenType = ResponsiveUtils.fromWidth(MediaQuery.of(context).size.width);
@@ -806,7 +641,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       )
                     )
-                  : const TableCell(child: SizedBox()), // Empty cell for subsequent periods
+                  : const TableCell(child: SizedBox()),
 
                 // Start Hour
                 _td(

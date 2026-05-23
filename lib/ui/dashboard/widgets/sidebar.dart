@@ -9,6 +9,8 @@ class DashboardSidebar extends StatefulWidget {
   final Color primaryColor;
   final bool collapsed;
   final VoidCallback onToggleCollapse;
+  final String settingsSection;
+  final Function(String) onSettingsSectionChanged;
 
   const DashboardSidebar({
     super.key,
@@ -18,6 +20,8 @@ class DashboardSidebar extends StatefulWidget {
     required this.primaryColor,
     required this.collapsed,
     required this.onToggleCollapse,
+    required this.settingsSection,
+    required this.onSettingsSectionChanged,
   });
 
   @override
@@ -71,6 +75,7 @@ class _DashboardSidebarState extends State<DashboardSidebar>
       animation: _animCtrl,
       builder: (context, _) {
         final showLabels = _animCtrl.value > 0.65;
+        final isSettings = widget.currentView == DashboardView.settings;
 
         return ClipRect(
           child: SizedBox(
@@ -88,7 +93,6 @@ class _DashboardSidebarState extends State<DashboardSidebar>
                       opacity: _labelFade,
                       child: Column(
                         children: [
-                          // Logo image
                           Container(
                             width: 72,
                             height: 72,
@@ -142,7 +146,6 @@ class _DashboardSidebarState extends State<DashboardSidebar>
                       ),
                     )
                   else ...[
-                    // Collapsed: just the logo icon small
                     Container(
                       width: 44,
                       height: 44,
@@ -198,36 +201,63 @@ class _DashboardSidebarState extends State<DashboardSidebar>
                   const SizedBox(height: 16),
 
                   // ── Navigation items ─────────────────────────────────────
-                  _sideItem(
-                    Icons.dashboard_rounded,
-                    'لوحة التحكم',
-                    widget.currentView == DashboardView.dashboard,
-                    showLabels: showLabels,
-                    onTap: () => widget.onViewChanged(DashboardView.dashboard),
-                  ),
-                  _sideItem(
-                    Icons.layers_rounded,
-                    'المستويات وشروطها',
-                    widget.currentView == DashboardView.levels,
-                    showLabels: showLabels,
-                    onTap: () => widget.onViewChanged(DashboardView.levels),
-                  ),
-                  _sideItem(
-                    Icons.analytics_rounded,
-                    'الإحصائيات والنتائج',
-                    widget.currentView == DashboardView.statistics,
-                    showLabels: showLabels,
-                    onTap: () => widget.onViewChanged(DashboardView.statistics),
-                  ),
-                  _sideItem(
-                    Icons.settings_rounded,
-                    'إعدادات النظام',
-                    widget.currentView == DashboardView.settings,
-                    showLabels: showLabels,
-                    onTap: () => widget.onViewChanged(DashboardView.settings),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          _sideItem(
+                            Icons.dashboard_rounded,
+                            'لوحة التحكم',
+                            widget.currentView == DashboardView.dashboard,
+                            showLabels: showLabels,
+                            onTap: () => widget.onViewChanged(DashboardView.dashboard),
+                          ),
+                          _sideItem(
+                            Icons.layers_rounded,
+                            'المستويات وشروطها',
+                            widget.currentView == DashboardView.levels,
+                            showLabels: showLabels,
+                            onTap: () => widget.onViewChanged(DashboardView.levels),
+                          ),
+                          _sideItem(
+                            Icons.analytics_rounded,
+                            'الإحصائيات والنتائج',
+                            widget.currentView == DashboardView.statistics,
+                            showLabels: showLabels,
+                            onTap: () => widget.onViewChanged(DashboardView.statistics),
+                          ),
+
+                          // ── Settings parent item ──────────────────────────
+                          _sideItem(
+                            Icons.settings_rounded,
+                            'إعدادات النظام',
+                            isSettings,
+                            showLabels: showLabels,
+                            onTap: () {
+                              widget.onViewChanged(DashboardView.settings);
+                            },
+                          ),
+
+                          // ── Settings sub-items (only when in settings & expanded) ──
+                          if (isSettings && showLabels) ...[
+                            _subItem(
+                              icon: Icons.calendar_today_rounded,
+                              label: 'المواعيد واللجان',
+                              isActive: widget.settingsSection == 'dates',
+                              onTap: () => widget.onSettingsSectionChanged('dates'),
+                            ),
+                            _subItem(
+                              icon: Icons.view_timeline_rounded,
+                              label: 'جدول الفترات',
+                              isActive: widget.settingsSection == 'schedule',
+                              onTap: () => widget.onSettingsSectionChanged('schedule'),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
 
-                  const Spacer(),
                   Divider(color: Colors.white.withValues(alpha: 0.08), height: 1),
                   const SizedBox(height: 4),
                   _sideItem(
@@ -245,6 +275,83 @@ class _DashboardSidebarState extends State<DashboardSidebar>
           ),
         );
       },
+    );
+  }
+
+  Widget _subItem({
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 20, left: 8, bottom: 2),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(9),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          decoration: BoxDecoration(
+            color: isActive
+                ? Colors.white.withValues(alpha: 0.13)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(9),
+            border: Border.all(
+              color: isActive
+                  ? Colors.white.withValues(alpha: 0.18)
+                  : Colors.transparent,
+            ),
+          ),
+          child: Row(
+            children: [
+              // vertical line connector
+              Container(
+                width: 2,
+                height: 18,
+                margin: const EdgeInsets.only(left: 6),
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? Colors.white.withValues(alpha: 0.6)
+                      : Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Icon(
+                icon,
+                size: 15,
+                color: isActive
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: 0.45),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 12.5,
+                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                    color: isActive
+                        ? Colors.white
+                        : Colors.white.withValues(alpha: 0.55),
+                  ),
+                ),
+              ),
+              if (isActive)
+                Container(
+                  width: 5,
+                  height: 5,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
