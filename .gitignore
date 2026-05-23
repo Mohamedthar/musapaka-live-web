@@ -56,4 +56,3 @@ supabase/test_ip.sql
 .env*.local.*
 
 .env
-.env.example
