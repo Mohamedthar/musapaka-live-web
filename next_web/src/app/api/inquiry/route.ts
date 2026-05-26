@@ -8,7 +8,7 @@ export async function POST(request: Request) {
   const origin = request.headers.get('origin');
   try {
     const body = await request.json();
-    const { nationalId, phone } = body;
+    const { nationalId } = body;
 
     const ip = getClientIp(request);
     if (!checkRateLimit(ip, 10)) {
@@ -18,9 +18,6 @@ export async function POST(request: Request) {
     if (!nationalId || nationalId.length !== 14) {
       return jsonResponse({ error: 'الرقم القومي يجب أن يتكون من 14 رقماً' }, 400, origin);
     }
-    if (!phone || !/^(010|011|012|015)\d{8}$/.test(phone)) {
-      return jsonResponse({ error: 'رقم الهاتف المصري غير صحيح' }, 400, origin);
-    }
 
     const supabase = getAdminClient();
 
@@ -29,7 +26,6 @@ export async function POST(request: Request) {
         .from('students')
         .select('id, student_code, name, phone, national_id, age, gender, level, selected_rewaya, branch_name, memorization_amount, memorizer_name, memorizer_phone, memorizer_address, location, birth_date, score, rewaya_score, tajweed_score, voice_score, meaning_score, profile_image_url, birth_certificate_url, exam_date, exam_hour, notes, created_at')
         .eq('national_id', nationalId)
-        .eq('phone', phone)
         .maybeSingle(),
       supabase
         .from('competition_levels')
@@ -46,7 +42,7 @@ export async function POST(request: Request) {
     }
 
     if (!student) {
-      return jsonResponse({ error: 'لم يُعثر على متسابق بهذه البيانات. تأكد من الرقم القومي ورقم الهاتف المسجّل.' }, 404, origin);
+      return jsonResponse({ error: 'لم يُعثر على متسابق بهذا الرقم القومي. تأكد من البيانات المُدخلة أو تواصل مع الإدارة.' }, 404, origin);
     }
 
     if (levelsError) {

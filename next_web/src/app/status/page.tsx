@@ -71,15 +71,17 @@ function StatusContent() {
 
 export default function StatusPage() {
   return (
-    <div className="min-h-screen bg-surface" dir="rtl">
+    <div className="min-h-screen bg-surface flex flex-col" dir="rtl">
       <Header />
-      <Suspense fallback={
-        <div className="min-h-[400px] flex items-center justify-center">
-          <div className="w-10 h-10 border-3 border-secondary/25 border-t-primary rounded-full animate-spin" />
-        </div>
-      }>
-        <StatusContent />
-      </Suspense>
+      <div className="flex-1">
+        <Suspense fallback={
+          <div className="min-h-[400px] flex items-center justify-center">
+            <div className="w-10 h-10 border-3 border-secondary/25 border-t-primary rounded-full animate-spin" />
+          </div>
+        }>
+          <StatusContent />
+        </Suspense>
+      </div>
       <Footer />
     </div>
   );

@@ -41,19 +41,11 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { nationalId, phone } = body;
+    const { nationalId } = body;
 
     if (!nationalId || String(nationalId).length !== 14) {
       return jsonResponse(
         { error: 'الرقم القومي يجب أن يتكون من 14 رقماً' },
-        400,
-        origin
-      );
-    }
-
-    if (!phone || String(phone).trim().length < 10) {
-      return jsonResponse(
-        { error: 'رقم الهاتف مطلوب' },
         400,
         origin
       );
@@ -92,7 +84,6 @@ export async function POST(request: Request) {
         'id, name, gender, level, student_code, ceremony_code, score, rewaya_score, tajweed_score, voice_score, meaning_score, profile_image_url, national_id'
       )
       .eq('national_id', String(nationalId))
-      .eq('phone', String(phone).trim())
       .maybeSingle();
 
     if (studentError) {
@@ -108,7 +99,7 @@ export async function POST(request: Request) {
       return jsonResponse(
         {
           error:
-            'لم يُعثر على متسابق بهذا الرقم القومي ورقم الهاتف. تأكد من البيانات المُدخلة أو تواصل مع الإدارة.',
+            'لم يُعثر على متسابق بهذا الرقم القومي. تأكد من البيانات المُدخلة أو تواصل مع الإدارة.',
         },
         404,
         origin

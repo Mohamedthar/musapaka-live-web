@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -51,6 +52,15 @@ class QuranContestApp extends StatelessWidget {
       ],
       initialRoute: AppRoutes.splash,
       onGenerateRoute: AppRoutes.generateRoute,
+      builder: (context, child) {
+        return Shortcuts(
+          shortcuts: <LogicalKeySet, Intent>{
+            LogicalKeySet(LogicalKeyboardKey.pageUp): const DoNothingAndStopPropagationIntent(),
+            LogicalKeySet(LogicalKeyboardKey.pageDown): const DoNothingAndStopPropagationIntent(),
+          },
+          child: child!,
+        );
+      },
     );
   }
 }

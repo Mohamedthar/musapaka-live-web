@@ -12,7 +12,6 @@ interface CeremonyData {
 
 export default function CeremonyInquiry() {
   const [nationalId, setNationalId] = useState('');
-  const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState('');
@@ -23,7 +22,6 @@ export default function CeremonyInquiry() {
   const ticketRef = useRef<HTMLDivElement>(null);
 
   const idValid = nationalId.length === 14;
-  const phoneValid = /^(010|011|012|015)\d{8}$/.test(phone);
 
   useEffect(() => {
     fetch('/api/ceremony').then(r => r.json()).then(d => setIsOpen(d.is_ceremony_query_open)).catch(() => setIsOpen(false)).finally(() => setCheckingStatus(false));
@@ -32,10 +30,9 @@ export default function CeremonyInquiry() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!idValid) { setError('الرقم القومي يجب أن يتكون من 14 رقماً'); return; }
-    if (!phoneValid) { setError('يرجى إدخال رقم الهاتف المسجل به'); return; }
     setError(''); setLoading(true); setSearched(true); setData(null);
     try {
-      const r = await fetch('/api/ceremony', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nationalId, phone: phone.trim() }) });
+      const r = await fetch('/api/ceremony', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nationalId }) });
       const d = await r.json();
       if (!r.ok) { setError(d.error || 'حدث خطأ'); return; }
       setData(d.student);
@@ -43,7 +40,7 @@ export default function CeremonyInquiry() {
     finally { setLoading(false); }
   };
 
-  const handleReset = () => { setData(null); setSearched(false); setError(''); setNationalId(''); setPhone(''); };
+  const handleReset = () => { setData(null); setSearched(false); setError(''); setNationalId(''); };
 
   const downloadImage = async () => {
     setIsDownloading(true);
@@ -173,7 +170,7 @@ export default function CeremonyInquiry() {
         </div>
         <h1 className="text-xl sm:text-3xl font-black text-primary mb-2">استعلام حضور الحفل الختامي</h1>
         <p className="text-sm text-on-surface-variant max-w-md mx-auto leading-relaxed">
-          أدخل الرقم القومي ورقم الهاتف لمعرفة موقفك من حضور حفل التكريم واستخراج بطاقة الدعوة الخاصة بك
+          أدخل الرقم القومي لمعرفة موقفك من حضور حفل التكريم واستخراج بطاقة الدعوة الخاصة بك
         </p>
       </div>
 
@@ -194,24 +191,9 @@ export default function CeremonyInquiry() {
             {searched && !idValid && <p className="text-red-500 text-xs font-bold mt-1.5 pr-1">الرقم القومي يجب أن يتكون من 14 رقماً</p>}
           </div>
 
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">رقم الهاتف المسجل <span className="text-red-400">*</span></label>
-            <div className="relative">
-              <input type="text" inputMode="numeric" maxLength={11}
-                value={phone} onChange={e => { setPhone(e.target.value.replace(/\D/g, '')); setSearched(false); setError(''); }}
-                placeholder="مثال: 01012345678"
-                className={`w-full bg-gray-50 border-2 rounded-2xl py-3.5 pr-12 pl-4 text-sm font-semibold transition-all outline-none
-                  ${searched && phone && !phoneValid ? 'border-red-200 bg-red-50/30' : 'border-gray-100 focus:border-secondary focus:bg-white focus:ring-4 focus:ring-secondary/5'}
-                  text-gray-900 placeholder:text-gray-400`}
-              />
-              <Hash size={18} className={`absolute right-4 top-1/2 -translate-y-1/2 ${searched && phone && !phoneValid ? 'text-red-400' : 'text-gray-400'}`} />
-            </div>
-            {searched && phone && !phoneValid && <p className="text-red-500 text-xs font-bold mt-1.5 pr-1">رقم الهاتف مطلوب</p>}
-          </div>
-
           {error && <div className="bg-red-50 border border-red-100 rounded-2xl px-5 py-3.5"><p className="text-red-600 text-xs font-bold text-center">{error}</p></div>}
 
-          <button type="submit" disabled={loading || !idValid || !phoneValid}
+          <button type="submit" disabled={loading || !idValid}
             className="w-full flex items-center justify-center gap-2 sm:gap-2.5 py-3.5 sm:py-4 rounded-2xl font-bold text-white transition-all duration-300
               bg-gradient-to-r from-secondary to-secondary-fixed-dim hover:from-secondary-fixed-dim hover:to-secondary
               shadow-lg shadow-secondary/20 hover:shadow-xl hover:shadow-secondary/30 hover:-translate-y-0.5

@@ -1,13 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { CreditCard, Phone, Search, ShieldCheck, ArrowRight } from 'lucide-react';
+import { CreditCard, Search, ShieldCheck, ArrowRight } from 'lucide-react';
 import Step5Success from '@/app/register/components/Step5Success';
 import type { CompetitionLevel } from '@/lib/database.types';
 
 export default function FormInquiry() {
   const [nationalId, setNationalId] = useState('');
-  const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState('');
@@ -15,13 +14,11 @@ export default function FormInquiry() {
   const [levels, setLevels] = useState<CompetitionLevel[]>([]);
 
   const idValid = nationalId.length === 14;
-  const phoneValid = /^(010|011|012|015)\d{8}$/.test(phone);
-  const canSubmit = idValid && phoneValid && !loading;
+  const canSubmit = idValid && !loading;
 
   const handleInquiry = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!idValid) { setError('الرقم القومي يجب أن يتكون من 14 رقماً'); return; }
-    if (!phoneValid) { setError('رقم الهاتف المصري غير صحيح'); return; }
 
     setError('');
     setLoading(true);
@@ -32,7 +29,7 @@ export default function FormInquiry() {
       const response = await fetch('/api/inquiry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nationalId, phone }),
+        body: JSON.stringify({ nationalId }),
       });
       const data = await response.json();
       if (!response.ok) { setError(data.error || 'حدث خطأ أثناء الاستعلام'); return; }
@@ -47,7 +44,7 @@ export default function FormInquiry() {
 
   const handleNewSearch = () => {
     setStudentData(null); setSearched(false); setError('');
-    setNationalId(''); setPhone('');
+    setNationalId('');
   };
 
   if (studentData) {
@@ -100,7 +97,7 @@ export default function FormInquiry() {
         </div>
         <h1 className="text-xl sm:text-3xl font-black text-primary mb-2">استعلام الاستمارة وموعد الاختبار</h1>
         <p className="text-sm text-on-surface-variant max-w-md mx-auto leading-relaxed">
-          أدخل الرقم القومي ورقم الهاتف المستخدمين أثناء التسجيل لعرض استمارة الاشتراك وموعد الاختبار الخاص بك
+          أدخل الرقم القومي لعرض استمارة القبول
         </p>
       </div>
 
@@ -123,24 +120,6 @@ export default function FormInquiry() {
               <CreditCard size={18} className={`absolute right-4 top-1/2 -translate-y-1/2 transition-colors ${searched && !idValid ? 'text-red-400' : 'text-gray-400'}`} />
             </div>
             {searched && !idValid && <p className="text-red-500 text-xs font-bold mt-1.5 pr-1">الرقم القومي يجب أن يتكون من 14 رقماً</p>}
-          </div>
-
-          {/* Phone */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">رقم هاتف الطالب / ولي الأمر <span className="text-red-400">*</span></label>
-            <div className="relative">
-              <input
-                type="tel" maxLength={11}
-                value={phone}
-                onChange={e => { setPhone(e.target.value.replace(/\D/g, '')); setSearched(false); setError(''); }}
-                placeholder="مثال: 01012345678"
-                className={`w-full bg-gray-50 border-2 rounded-2xl py-3.5 pr-12 pl-4 text-sm font-semibold transition-all duration-200 outline-none
-                  ${searched && phone && !phoneValid ? 'border-red-200 bg-red-50/30' : 'border-gray-100 focus:border-secondary focus:bg-white focus:ring-4 focus:ring-secondary/5'}
-                  text-gray-900 placeholder:text-gray-400`}
-              />
-              <Phone size={18} className={`absolute right-4 top-1/2 -translate-y-1/2 transition-colors ${searched && phone && !phoneValid ? 'text-red-400' : 'text-gray-400'}`} />
-            </div>
-            {searched && phone && !phoneValid && <p className="text-red-500 text-xs font-bold mt-1.5 pr-1">رقم الهاتف المصري غير صحيح</p>}
           </div>
 
           {/* Error */}
@@ -172,7 +151,7 @@ export default function FormInquiry() {
 
       {/* Footer hint */}
       <p className="text-center text-xs text-gray-400 mt-6">
-        في حالة نسيان رقم الهاتف أو البيانات المدخلة، يرجى التواصل مع إدارة المسابقة
+        في حالة وجود أي استفسار، يرجى التواصل مع إدارة المسابقة
       </p>
     </div>
   );
