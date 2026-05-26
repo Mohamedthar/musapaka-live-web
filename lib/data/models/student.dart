@@ -219,8 +219,7 @@ class Student {
 
   double? get totalScore {
     if (score == null && rewayaScore == null && tajweedScore == null && voiceScore == null && meaningScore == null) return null;
-    if (score == null) return null;
-    double total = score!;
+    double total = score ?? 0;
     if (rewayaScore != null) total += rewayaScore!;
     if (tajweedScore != null) total += tajweedScore!;
     if (voiceScore != null) total += voiceScore!;

@@ -20,6 +20,10 @@ export interface CompetitionLevel {
   total_points?: number | null;
   branches?: string[] | null;
   require_custom_amount?: boolean | null;
+  first_prize?: string | null;
+  second_prize?: string | null;
+  third_prize?: string | null;
+  prizes?: string | null;
 }
 
 export interface StudentStatus {
@@ -57,4 +61,5 @@ export interface AppSettings {
   registration_start_date: string | null;
   registration_end_date: string | null;
   exam_schedule: ExamScheduleSlot[] | null;
+  faqs: { q: string; a: string }[] | null;
 }

@@ -28,6 +28,9 @@ class AppRoutes {
       case registration:
         return MaterialPageRoute(builder: (_) => const RegistrationScreen());
       case studentDetails:
+        if (settings.arguments is! Student) {
+          return MaterialPageRoute(builder: (_) => const SplashScreen());
+        }
         final student = settings.arguments as Student;
         return MaterialPageRoute(
           builder: (_) => StudentDetailsScreen(student: student),

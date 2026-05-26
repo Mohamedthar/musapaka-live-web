@@ -12,12 +12,19 @@ void main() async {
   try {
     await dotenv.load(fileName: '.env');
   } catch (e) {
-    debugPrint('Could not load .env configuration: $e');
+    throw Exception('فشل تحميل ملف البيئة .env: $e');
   }
-  
+
+  final supabaseUrl = AppConstants.supabaseUrl;
+  final supabaseAnonKey = AppConstants.supabaseAnonKey;
+
+  if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
+    throw Exception('مفاتيح Supabase غير موجودة في ملف البيئة. تأكد من إعداد SUPABASE_URL و SUPABASE_ANON_KEY');
+  }
+
   await Supabase.initialize(
-    url: AppConstants.supabaseUrl,
-    anonKey: AppConstants.supabaseAnonKey,
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
   );
 
   runApp(const QuranContestApp());
@@ -44,7 +51,6 @@ class QuranContestApp extends StatelessWidget {
       ],
       initialRoute: AppRoutes.splash,
       onGenerateRoute: AppRoutes.generateRoute,
-      home: const SplashScreen(),
     );
   }
 }

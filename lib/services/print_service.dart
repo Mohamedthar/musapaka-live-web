@@ -16,6 +16,12 @@ class PrintService {
   static final Map<String, pw.ImageProvider> _imageCache = {};
   static const int _maxCacheSize = 50;
   static final List<String> _cacheOrder = [];
+  static SupabaseService? _cachedService;
+
+  static SupabaseService get _service {
+    _cachedService ??= SupabaseService();
+    return _cachedService!;
+  }
 
   static void _addToCache(String url, pw.ImageProvider image) {
     if (_imageCache.containsKey(url)) {
@@ -149,8 +155,7 @@ class PrintService {
 
   Future<List<CompetitionLevel>> _fetchLevels(List<CompetitionLevel> defaultLevels) async {
     try {
-      final service = SupabaseService();
-      return await service.getLevels();
+      return await _service.getLevels();
     } catch (_) {
       return defaultLevels;
     }

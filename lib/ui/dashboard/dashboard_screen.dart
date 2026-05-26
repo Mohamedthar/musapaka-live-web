@@ -387,12 +387,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (ResponsiveUtils.isMobile(context)) _showDetailBottomSheet(s);
   }
 
-  /// نافذة تأكيد الحذف الموحدة — تُستخدم في جميع أماكن الحذف
-  Future<bool> _showDeleteConfirmDialog({
+  Future<bool> _showConfirmDialog({
     required String title,
     required String message,
-    String confirmLabel = 'حذف نهائياً',
+    required IconData icon,
+    required Color iconBgColor,
+    required Color iconColor,
+    String confirmLabel = 'تأكيد',
     int? count,
+    Color? confirmColor,
   }) async {
     final result = await showDialog<bool>(
       context: context,
@@ -412,28 +415,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Icon
               Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.delete_outline_rounded, color: Colors.red.shade600, size: 32),
+                width: 64, height: 64,
+                decoration: BoxDecoration(color: iconBgColor, shape: BoxShape.circle),
+                child: Icon(icon, color: iconColor, size: 32),
               ),
               const SizedBox(height: 20),
-              // Title
-              Text(
-                title,
-                textAlign: TextAlign.center,
+              Text(title, textAlign: TextAlign.center,
                 style: const TextStyle(fontFamily: 'Cairo', fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1A1A2E)),
               ),
               const SizedBox(height: 10),
-              // Message
-              Text(
-                message,
-                textAlign: TextAlign.center,
+              Text(message, textAlign: TextAlign.center,
                 style: TextStyle(fontFamily: 'Cairo', fontSize: 14, color: Colors.grey.shade600, height: 1.6),
               ),
               if (count != null && count > 1) ...[
@@ -453,7 +445,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ],
               const SizedBox(height: 28),
-              // Buttons
               Row(children: [
                 Expanded(
                   child: OutlinedButton(
@@ -472,92 +463,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     onPressed: () => Navigator.pop(ctx, true),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      backgroundColor: Colors.red.shade600,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                    child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      const Icon(Icons.delete_forever_rounded, size: 18),
-                      const SizedBox(width: 6),
-                      Text(confirmLabel, style: const TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.bold)),
-                    ]),
-                  ),
-                ),
-              ]),
-            ],
-          ),
-        ),
-      ),
-    );
-    return result == true;
-  }
-
-  /// نافذة تأكيد الخروج بدون حفظ — أيقونة تنبيه ملونة بالبرتقالي
-  Future<bool> _showDiscardConfirmDialog({
-    required String title,
-    required String message,
-    String confirmLabel = 'نعم، خروج',
-  }) async {
-    final result = await showDialog<bool>(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.5),
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          width: 400,
-          padding: const EdgeInsets.all(28),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 40, offset: const Offset(0, 12)),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.warning_amber_rounded, color: Colors.orange.shade600, size: 32),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontFamily: 'Cairo', fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1A1A2E)),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontFamily: 'Cairo', fontSize: 14, color: Colors.grey.shade600, height: 1.6),
-              ),
-              const SizedBox(height: 28),
-              Row(children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(ctx, false),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: BorderSide(color: Colors.grey.shade300),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                    child: const Text('إلغاء', style: TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF555555))),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(ctx, true),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      backgroundColor: Colors.orange.shade600,
+                      backgroundColor: confirmColor ?? iconColor,
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -572,6 +478,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
     return result == true;
+  }
+
+  Future<bool> _showDeleteConfirmDialog({
+    required String title,
+    required String message,
+    String confirmLabel = 'حذف نهائياً',
+    int? count,
+  }) async {
+    return _showConfirmDialog(
+      title: title,
+      message: message,
+      icon: Icons.delete_outline_rounded,
+      iconBgColor: Colors.red.shade50,
+      iconColor: Colors.red.shade600,
+      confirmLabel: confirmLabel,
+      count: count,
+      confirmColor: Colors.red.shade600,
+    );
+  }
+
+  Future<bool> _showDiscardConfirmDialog({
+    required String title,
+    required String message,
+    String confirmLabel = 'نعم، خروج',
+  }) async {
+    return _showConfirmDialog(
+      title: title,
+      message: message,
+      icon: Icons.warning_amber_rounded,
+      iconBgColor: Colors.orange.shade50,
+      iconColor: Colors.orange.shade600,
+      confirmLabel: confirmLabel,
+    );
   }
 
   Future<void> _deleteStudent(int id) async {
@@ -803,132 +742,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
 
 
-  Future<void> _showExportExcelDialog() async {
+  Future<void> _showExportDialog({required bool isExcel}) async {
     String? exportLevel = _levelFilterTitle;
     final minScoreCtrl = TextEditingController(text: _minScoreFilter?.toString() ?? '');
     final maxScoreCtrl = TextEditingController(text: _maxScoreFilter?.toString() ?? '');
-
-    await showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setExportState) {
-
-          return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            title: const Row(children: [
-              Icon(Icons.table_chart_rounded, color: Colors.green, size: 28),
-              SizedBox(width: 12),
-              Text('خيارات تصدير Excel', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
-            ]),
-            content: SizedBox(
-              width: 440,
-              child: SingleChildScrollView(
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Text('قم بتحديد المستوى ونطاق الدرجات لتصدير التقرير:',
-                      style: TextStyle(fontFamily: 'Cairo', fontSize: 14, color: Colors.grey.shade600)),
-                  const SizedBox(height: 16),
-
-                  // Level Dropdown
-                  const ExportFilterLabel(label: 'المستوى'),
-                  Container(
-                    height: 48,
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.grey.shade200),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String?>(
-                        value: exportLevel,
-                        isExpanded: true,
-                        dropdownColor: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey),
-                        style: const TextStyle(fontFamily: 'Cairo', fontSize: 14, color: _primary, fontWeight: FontWeight.w600),
-                        items: [
-                          DropdownMenuItem(
-                            value: null,
-                            child: Row(children: [
-                              Icon(Icons.layers_rounded, size: 18, color: Colors.grey.shade400),
-                              const SizedBox(width: 10),
-                              Text('جميع المستويات', style: TextStyle(fontFamily: 'Cairo', color: Colors.grey.shade600)),
-                            ])),
-                          ..._levels.map((l) => DropdownMenuItem(
-                            value: l.title,
-                            child: Row(children: [
-                              const Icon(Icons.layers_outlined, size: 18, color: Colors.blue),
-                              const SizedBox(width: 10),
-                              Text(l.title),
-                            ]))),
-                        ],
-                        onChanged: (v) => setExportState(() => exportLevel = v),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // (Score Breakdown Card removed based on user request)
-                  // Score Range
-                  const ExportFilterLabel(label: 'نطاق الدرجات'),
-                  Row(children: [
-                    Expanded(child: ExportNumberField(controller: minScoreCtrl, hintText: 'من')),
-                    const SizedBox(width: 12),
-                    Expanded(child: ExportNumberField(controller: maxScoreCtrl, hintText: 'إلى')),
-                  ]),
-                ]),
-              ),
-            ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء', style: TextStyle(fontFamily: 'Cairo'))),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  _exportExcel(
-                    level: exportLevel,
-                    minScore: double.tryParse(minScoreCtrl.text),
-                    maxScore: double.tryParse(maxScoreCtrl.text),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.shade700,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                ),
-                child: const Text('تصدير الآن', style: TextStyle(fontFamily: 'Cairo', color: Colors.white, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-
-  Future<void> _showExportPDFDialog() async {
-    String? exportLevel = _levelFilterTitle;
-    final minScoreCtrl = TextEditingController(text: _minScoreFilter?.toString() ?? '');
-    final maxScoreCtrl = TextEditingController(text: _maxScoreFilter?.toString() ?? '');
+    final icon = isExcel ? Icons.table_chart_rounded : Icons.picture_as_pdf_rounded;
+    final iconColor = isExcel ? Colors.green : Colors.red;
+    final title = isExcel ? 'خيارات تصدير Excel' : 'خيارات تصدير PDF';
+    final description = isExcel 
+        ? 'قم بتحديد المستوى ونطاق الدرجات لتصدير التقرير:'
+        : 'حدد البيانات التي ترغب في إدراجها في ملف التقرير:';
+    final btnColor = isExcel ? Colors.green.shade700 : Colors.red.shade700;
 
     await showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setExportState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          title: const Row(children: [
-            Icon(Icons.picture_as_pdf_rounded, color: Colors.red, size: 28),
-            SizedBox(width: 12),
-            Text('خيارات تصدير PDF', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
+          title: Row(children: [
+            Icon(icon, color: iconColor, size: 28),
+            const SizedBox(width: 12),
+            Text(title, style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
           ]),
           content: SizedBox(
             width: 440,
             child: SingleChildScrollView(
             child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Text('حدد البيانات التي ترغب في إدراجها في ملف التقرير:', 
-                style: TextStyle(fontFamily: 'Cairo', fontSize: 14, color: Colors.grey.shade600)),
+              Text(description, style: TextStyle(fontFamily: 'Cairo', fontSize: 14, color: Colors.grey.shade600)),
               const SizedBox(height: 20),
               
-              // Level Filter
               const ExportFilterLabel(label: 'المستوى'),
               Container(
                 height: 48,
@@ -966,11 +808,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-
-              const SizedBox(height: 16),
-
-              // Score Range
+              const SizedBox(height: 12),
               const ExportFilterLabel(label: 'نطاق الدرجات'),
               Row(children: [
                 Expanded(child: ExportNumberField(controller: minScoreCtrl, hintText: 'من')),
@@ -985,14 +823,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(ctx);
-                _exportPDF(
-                  level: exportLevel,
-                  minScore: double.tryParse(minScoreCtrl.text),
-                  maxScore: double.tryParse(maxScoreCtrl.text),
-                );
+                if (isExcel) {
+                  _exportExcel(level: exportLevel, minScore: double.tryParse(minScoreCtrl.text), maxScore: double.tryParse(maxScoreCtrl.text));
+                } else {
+                  _exportPDF(level: exportLevel, minScore: double.tryParse(minScoreCtrl.text), maxScore: double.tryParse(maxScoreCtrl.text));
+                }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade700,
+                backgroundColor: btnColor,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
@@ -1003,7 +841,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
-
 
 
   Future<void> _exportPDF({String? level, double? minScore, double? maxScore}) async {
@@ -1083,7 +920,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _fetchOriginalImageBytes(Student s) async {
     if (s.profileImageUrl != null && s.profileImageUrl!.isNotEmpty) {
       try {
-        final res = await http.get(Uri.parse(s.profileImageUrl!));
+        final res = await http.get(Uri.parse(s.profileImageUrl!)).timeout(const Duration(seconds: 15));
         if (res.statusCode == 200 && mounted) {
           setState(() {
             _originalProfileBytes = res.bodyBytes;
@@ -1096,7 +933,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
     if (s.birthCertificateUrl != null && s.birthCertificateUrl!.isNotEmpty) {
       try {
-        final res = await http.get(Uri.parse(s.birthCertificateUrl!));
+        final res = await http.get(Uri.parse(s.birthCertificateUrl!)).timeout(const Duration(seconds: 15));
         if (res.statusCode == 200 && mounted) {
           setState(() {
             _originalBirthCertBytes = res.bodyBytes;
@@ -1453,8 +1290,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       DashboardTopBar(
         isWide: isWide,
         onRefresh: _load,
-        onExportExcel: _showExportExcelDialog,
-        onExportPDF: _showExportPDFDialog,
+        onExportExcel: () => _showExportDialog(isExcel: true),
+        onExportPDF: () => _showExportDialog(isExcel: false),
         showAddPanel: _showAddPanel,
         onToggleAddPanel: _onToggleAddStudentPanel,
         primaryColor: _primary,

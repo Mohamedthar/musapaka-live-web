@@ -1,48 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
+import { getCorsHeaders, jsonResponse, optionsResponse, checkRateLimit, getClientIp } from '@/lib/api-utils';
 
-const ALLOWED_ORIGINS = [
-  process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-  'https://musapaka.vercel.app',
-].filter(Boolean);
-
-function getCorsHeaders(origin: string | null) {
-  const allowedOrigin = (origin && ALLOWED_ORIGINS.includes(origin)) ? origin : (ALLOWED_ORIGINS[0] || '');
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Vary': 'Origin',
-  };
-}
-
-function jsonResponse(data: unknown, status = 200, requestOrigin: string | null = null) {
-  return NextResponse.json(data, {
-    status,
-    headers: getCorsHeaders(requestOrigin ?? null),
-  });
-}
-
-export async function OPTIONS(request: Request) {
-  const origin = request.headers.get('origin');
-  return new NextResponse(null, { status: 204, headers: getCorsHeaders(origin) });
-}
-
-const inquiryRateLimit = new Map<string, { count: number; resetAt: number }>();
-const INQUIRY_RATE_WINDOW = 60_000;
-const INQUIRY_RATE_MAX = 10;
-
-function checkInquiryRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = inquiryRateLimit.get(ip);
-  if (!entry || now > entry.resetAt) {
-    inquiryRateLimit.set(ip, { count: 1, resetAt: now + INQUIRY_RATE_WINDOW });
-    return true;
-  }
-  if (entry.count >= INQUIRY_RATE_MAX) return false;
-  entry.count++;
-  return true;
-}
+export { optionsResponse as OPTIONS };
 
 export async function POST(request: Request) {
   const origin = request.headers.get('origin');
@@ -50,8 +10,8 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { nationalId, phone } = body;
 
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-    if (!checkInquiryRateLimit(ip)) {
+    const ip = getClientIp(request);
+    if (!checkRateLimit(ip, 10)) {
       return jsonResponse({ error: 'طلبات كثيرة جداً. حاول بعد دقيقة.' }, 429, origin);
     }
 
@@ -73,7 +33,7 @@ export async function POST(request: Request) {
         .maybeSingle(),
       supabase
         .from('competition_levels')
-        .select('id, title, content, is_active')
+        .select('id, title, content, is_active, total_points, has_rewaya, rewaya_max_score, has_tajweed, tajweed_max_score, has_voice, voice_max_score, has_meaning, meaning_max_score')
         .eq('is_active', true)
     ]);
 

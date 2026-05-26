@@ -33,7 +33,7 @@ class SettingsFormFields {
         child: Icon(icon, size: 18, color: primaryColor.withValues(alpha: 0.7)),
       ),
       filled: true,
-      fillColor: const Color(0xFFFAFBFC),
+      fillColor: const Color(0xFFF8F9FA),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(color: Colors.grey.shade200),
@@ -89,7 +89,7 @@ class SettingsFormFields {
                     fontFamily: 'Cairo',
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF0F172A),
+                    color: Color(0xFF03121C),
                   ),
                 ),
                 if (description != null) ...[
@@ -265,7 +265,7 @@ class SettingsFormFields {
                         fontFamily: 'Cairo',
                         color: selectedDate == null
                             ? Colors.grey.shade300
-                            : const Color(0xFF0F172A),
+                            : const Color(0xFF03121C),
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                       ),
@@ -333,7 +333,7 @@ class SettingsFormFields {
                     fontFamily: 'Cairo',
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,
-                    color: value ? const Color(0xFF0F172A) : const Color(0xFF334155),
+                    color: value ? const Color(0xFF03121C) : const Color(0xFF334155),
                   ),
                 ),
                 const SizedBox(height: 2),

@@ -1,3 +1,5 @@
+import 'national_id_utils.dart';
+
 class Validator {
   static String? validateRequired(String? value) {
     if (value == null || value.trim().isEmpty) {
@@ -64,26 +66,11 @@ class Validator {
   }
 
   static int? calculateAgeFromNationalId(String id) {
-    if (id.length != 14) return null;
-    try {
-      int centuryDigit = int.parse(id.substring(0, 1));
-      int yearPart = int.parse(id.substring(1, 3));
-      int month = int.parse(id.substring(3, 5));
-      int day = int.parse(id.substring(5, 7));
+    return NationalIdUtils.calculateAge(id);
+  }
 
-      int year = (centuryDigit == 2 ? 1900 : 2000) + yearPart;
-      DateTime birthDate = DateTime(year, month, day);
-      DateTime today = DateTime.now();
-
-      int age = today.year - birthDate.year;
-      if (today.month < birthDate.month ||
-          (today.month == birthDate.month && today.day < birthDate.day)) {
-        age--;
-      }
-      return age;
-    } catch (_) {
-      return null;
-    }
+  static String? getGenderFromNationalId(String id) {
+    return NationalIdUtils.getGenderFromId(id);
   }
 
   static String? validateLevel(String? value) {

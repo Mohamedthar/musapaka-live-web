@@ -8,10 +8,10 @@ ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS is_ceremony_query_open BOOLEAN
 -- 2. إضافة عمود ceremony_code إلى جدول students
 ALTER TABLE students ADD COLUMN IF NOT EXISTS ceremony_code TEXT;
 
--- 3. دالة الاستعلام عن حضور الحفل للواجهة الأمامية
-CREATE OR REPLACE FUNCTION query_ceremony_attendance(p_national_id TEXT)
+-- 3. دالة الاستعلام عن حضور الحفل للواجهة الأمامية (تحتاج رقم قومي + رقم هاتف)
+CREATE OR REPLACE FUNCTION query_ceremony_attendance(p_national_id TEXT, p_phone TEXT)
 RETURNS TABLE (
-    student_id UUID,
+    student_id INTEGER,
     student_name TEXT,
     student_level TEXT,
     student_image TEXT,
@@ -37,9 +37,13 @@ BEGIN
         s.profile_image_url AS student_image,
         s.ceremony_code AS ceremony_code
     FROM students s
-    WHERE s.national_id = p_national_id AND s.ceremony_code IS NOT NULL;
+    WHERE s.national_id = p_national_id 
+      AND s.phone = p_phone
+      AND s.ceremony_code IS NOT NULL;
 END;
 $$;
+
+GRANT EXECUTE ON FUNCTION query_ceremony_attendance(TEXT, TEXT) TO anon, authenticated;
 
 -- 4. دالة توليد الأكواد وتحديث جدول الطلاب
 CREATE OR REPLACE FUNCTION generate_all_ceremony_codes()
@@ -48,18 +52,21 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
-    -- أولاً تصفير الكود لجميع الطلاب (لضمان التحديث النظيف)
+    -- منع التنفيذ المتزامن باستخدام advisory lock
+    IF pg_try_advisory_xact_lock(987654324) = FALSE THEN
+        RAISE EXCEPTION 'عملية توليد الأكواد جارية بالفعل، يرجى المحاولة لاحقاً.';
+    END IF;
+
     UPDATE students SET ceremony_code = NULL;
 
-    -- حساب وتحديث الأكواد للطلاب المستحقين (95% فأكثر)
     WITH honored_students AS (
         SELECT 
             s.id,
             s.gender,
             s.age,
-            (ASCII(c.level_code) - 64) AS level_num,
+            COALESCE(ASCII(c.level_code) - 64, 24) AS level_num,
             DENSE_RANK() OVER (PARTITION BY s.level ORDER BY s.score DESC) as level_rank,
-            ROW_NUMBER() OVER (ORDER BY ASCII(c.level_code) ASC, s.score DESC, s.name ASC) as global_seq
+            ROW_NUMBER() OVER (ORDER BY COALESCE(ASCII(c.level_code), 88) ASC, s.score DESC, s.name ASC) as global_seq
         FROM students s
         JOIN competition_levels c ON c.title = s.level
         WHERE s.score IS NOT NULL AND c.total_points > 0 

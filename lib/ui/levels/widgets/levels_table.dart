@@ -103,11 +103,11 @@ class LevelsTable extends StatelessWidget {
 
         String age = 'جميع الأعمار';
         if (l.minAge != null && l.maxAge != null) {
-          age = '${l.minAge} - ${l.maxAge} سنة';
+          age = 'فوق ${l.minAge} عام و ${l.maxAge} عام فأقل';
         } else if (l.minAge != null) {
-          age = '${l.minAge}+ سنة';
+          age = 'فوق ${l.minAge} عام';
         } else if (l.maxAge != null) {
-          age = 'أقل من ${l.maxAge}';
+          age = '${l.maxAge} عام فأقل';
         }
 
         return Card(
@@ -308,11 +308,11 @@ class LevelsTable extends StatelessWidget {
 
     String age = 'جميع الأعمار';
     if (l.minAge != null && l.maxAge != null) {
-      age = '${l.minAge} - ${l.maxAge} سنة';
+      age = 'فوق ${l.minAge} عام و ${l.maxAge} عام فأقل';
     } else if (l.minAge != null) {
-      age = '${l.minAge}+ سنة';
+      age = 'فوق ${l.minAge} عام';
     } else if (l.maxAge != null) {
-      age = 'أقل من ${l.maxAge}';
+      age = '${l.maxAge} عام فأقل';
     }
 
     return TableRow(

@@ -21,12 +21,11 @@ class SectionCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade100, width: 1.5),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.025),
-            blurRadius: 16,
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 20,
             offset: const Offset(0, 4),
           ),
         ],
@@ -39,31 +38,14 @@ class SectionCard extends StatelessWidget {
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
+                topLeft: Radius.circular(24),
+                topRight: Radius.circular(24),
               ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Thin colored top accent bar
-                Container(
-                  height: 3,
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
-                    ),
-                    gradient: LinearGradient(
-                      colors: [
-                        primaryColor,
-                        primaryColor.withValues(alpha: 0.4),
-                      ],
-                      begin: Alignment.centerRight,
-                      end: Alignment.centerLeft,
-                    ),
-                  ),
-                ),
+                // Header
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
                   child: Row(
@@ -95,7 +77,7 @@ class SectionCard extends StatelessWidget {
                                 fontFamily: 'Cairo',
                                 fontSize: 15.5,
                                 fontWeight: FontWeight.w800,
-                                color: Color(0xFF0F172A),
+                                color: Color(0xFF03121C),
                                 letterSpacing: -0.2,
                               ),
                             ),

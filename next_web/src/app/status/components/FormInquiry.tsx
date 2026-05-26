@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { CreditCard, Search, Phone, FileText } from 'lucide-react';
+import { CreditCard, Phone, Search, ShieldCheck, ArrowRight } from 'lucide-react';
 import Step5Success from '@/app/register/components/Step5Success';
-import Field from '@/app/register/components/Field';
 import type { CompetitionLevel } from '@/lib/database.types';
 
 export default function FormInquiry() {
@@ -15,16 +14,14 @@ export default function FormInquiry() {
   const [studentData, setStudentData] = useState<any>(null);
   const [levels, setLevels] = useState<CompetitionLevel[]>([]);
 
+  const idValid = nationalId.length === 14;
+  const phoneValid = /^(010|011|012|015)\d{8}$/.test(phone);
+  const canSubmit = idValid && phoneValid && !loading;
+
   const handleInquiry = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (nationalId.length !== 14) {
-      setError('الرقم القومي يجب أن يتكون من 14 رقماً');
-      return;
-    }
-    if (!phone || !/^(010|011|012|015)\d{8}$/.test(phone)) {
-      setError('رقم الهاتف المصري غير صحيح');
-      return;
-    }
+    if (!idValid) { setError('الرقم القومي يجب أن يتكون من 14 رقماً'); return; }
+    if (!phoneValid) { setError('رقم الهاتف المصري غير صحيح'); return; }
 
     setError('');
     setLoading(true);
@@ -34,23 +31,14 @@ export default function FormInquiry() {
     try {
       const response = await fetch('/api/inquiry', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nationalId, phone }),
       });
-
       const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || 'حدث خطأ أثناء الاستعلام');
-        return;
-      }
-
+      if (!response.ok) { setError(data.error || 'حدث خطأ أثناء الاستعلام'); return; }
       setStudentData(data.student);
       setLevels(data.levels);
-    } catch (err) {
-      console.error('Fetch error:', err);
+    } catch {
       setError('فشل الاتصال بالخادم. يرجى المحاولة مرة أخرى.');
     } finally {
       setLoading(false);
@@ -58,14 +46,10 @@ export default function FormInquiry() {
   };
 
   const handleNewSearch = () => {
-    setStudentData(null);
-    setSearched(false);
-    setError('');
-    setNationalId('');
-    setPhone('');
+    setStudentData(null); setSearched(false); setError('');
+    setNationalId(''); setPhone('');
   };
 
-  // Render registration success screen if student is found
   if (studentData) {
     const formData = {
       name: studentData.name,
@@ -80,50 +64,27 @@ export default function FormInquiry() {
       level: studentData.level,
       selectedRewaya: studentData.selected_rewaya || '',
     };
-
-    const getLevelContent = () => {
-      const found = levels.find(l => l.title === studentData.level);
-      return found ? found.content : '';
-    };
-
-    const examSlot = studentData.exam_date && studentData.exam_hour !== null ? (() => {
+    const getLevelContent = () => levels.find(l => l.title === studentData.level)?.content ?? '';
+    const examSlot = (() => {
+      if (!studentData.exam_date || studentData.exam_hour === null) return '';
       try {
         const date = new Date(studentData.exam_date);
-        const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'السبت', 'الجمعة'];
-        const dayName = days[date.getDay()];
-        const dateOnly = studentData.exam_date.split('T')[0];
-
-        let h = studentData.exam_hour;
-        let timeStr = `${h}:00`;
-        if (h === 0) timeStr = '12 منتصف الليل';
-        else if (h < 12) timeStr = `${h} صباحاً`;
-        else if (h === 12) timeStr = '12 ظهراً';
-        else timeStr = `${h - 12} مساءً`;
-
-        return `${dayName} - ${dateOnly} (الساعة ${timeStr})`;
-      } catch {
-        return '';
-      }
-    })() : '';
-
-    const profilePreview = studentData.profile_image_url || null;
-    const studentCode = studentData.student_code || '';
-    const isWaitlistMode = !studentData.exam_date || studentData.exam_hour === null;
-    const branchName = studentData.branch_name || '';
-    const memorizationAmount = studentData.memorization_amount ?? null;
+        const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+        const h = studentData.exam_hour;
+        let timeStr = h === 0 ? '12 منتصف الليل' : h < 12 ? `${h} صباحاً` : h === 12 ? '12 ظهراً' : `${h - 12} مساءً`;
+        return `${days[date.getDay()]} - ${studentData.exam_date.split('T')[0]} (الساعة ${timeStr})`;
+      } catch { return ''; }
+    })();
 
     return (
-      <div className="animate-fade-in">
+      <div className="animate-fade-in -mx-4 -mt-8 sm:-mt-14">
         <Step5Success
-          formData={formData}
-          levels={levels}
-          getLevelContent={getLevelContent}
-          examSlot={examSlot}
-          profilePreview={profilePreview}
-          studentCode={studentCode}
-          isWaitlistMode={isWaitlistMode}
-          branchName={branchName}
-          memorizationAmount={memorizationAmount}
+          formData={formData} levels={levels} getLevelContent={getLevelContent}
+          examSlot={examSlot} profilePreview={studentData.profile_image_url || null}
+          studentCode={studentData.student_code || ''}
+          isWaitlistMode={!studentData.exam_date || studentData.exam_hour === null}
+          branchName={studentData.branch_name || ''}
+          memorizationAmount={studentData.memorization_amount ?? null}
           onNewSearch={handleNewSearch}
         />
       </div>
@@ -131,58 +92,88 @@ export default function FormInquiry() {
   }
 
   return (
-    <div className="w-full animate-fade-in">
+    <div className="w-full">
+      {/* Header */}
       <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-12 h-12 bg-[var(--bg-section)] text-[var(--text-primary)] rounded-2xl mb-4 border border-[var(--border)] shadow-sm">
-          <FileText size={24} />
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-secondary/10 mb-4">
+          <ShieldCheck size={28} className="text-secondary" />
         </div>
-        <h2 className="text-xl font-black text-[var(--text-primary)] mb-2">استعلام الاستمارة وموعد الاختبار</h2>
-        <p className="text-slate-500 text-xs sm:text-sm font-semibold max-w-sm mx-auto leading-relaxed">
-          أدخل الرقم القومي ورقم الهاتف المستخدمين أثناء التسجيل لعرض استمارة الاشتراك وموعد الاختبار الخاص بك.
+        <h1 className="text-xl sm:text-3xl font-black text-primary mb-2">استعلام الاستمارة وموعد الاختبار</h1>
+        <p className="text-sm text-on-surface-variant max-w-md mx-auto leading-relaxed">
+          أدخل الرقم القومي ورقم الهاتف المستخدمين أثناء التسجيل لعرض استمارة الاشتراك وموعد الاختبار الخاص بك
         </p>
       </div>
 
-      <form onSubmit={handleInquiry} className="space-y-5 max-w-md mx-auto">
-        
-        <Field
-          label="الرقم القومي للمتسابق"
-          icon={<CreditCard size={17} />}
-          value={nationalId}
-          onChange={v => { setNationalId(v); setError(''); setSearched(false); }}
-          placeholder="أدخل الـ 14 رقماً للمتسابق"
-          type="number"
-          required
-          error={searched && nationalId.length !== 14 ? 'الرقم القومي يجب أن يتكون من 14 رقماً' : undefined}
-        />
+      {/* Form Card */}
+      <form onSubmit={handleInquiry} className="max-w-md mx-auto">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-8 space-y-5 sm:space-y-6">
+          {/* National ID */}
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">الرقم القومي للمتسابق <span className="text-red-400">*</span></label>
+            <div className="relative">
+              <input
+                type="text" inputMode="numeric" maxLength={14}
+                value={nationalId}
+                onChange={e => { setNationalId(e.target.value.replace(/\D/g, '')); setSearched(false); setError(''); }}
+                placeholder="أدخل الـ 14 رقماً"
+                className={`w-full bg-gray-50 border-2 rounded-2xl py-3.5 pr-12 pl-4 text-sm font-semibold transition-all duration-200 outline-none
+                  ${searched && !idValid ? 'border-red-200 bg-red-50/30' : 'border-gray-100 focus:border-secondary focus:bg-white focus:ring-4 focus:ring-secondary/5'}
+                  text-gray-900 placeholder:text-gray-400`}
+              />
+              <CreditCard size={18} className={`absolute right-4 top-1/2 -translate-y-1/2 transition-colors ${searched && !idValid ? 'text-red-400' : 'text-gray-400'}`} />
+            </div>
+            {searched && !idValid && <p className="text-red-500 text-xs font-bold mt-1.5 pr-1">الرقم القومي يجب أن يتكون من 14 رقماً</p>}
+          </div>
 
-        <Field
-          label="رقم هاتف الطالب / ولي الأمر"
-          icon={<Phone size={17} />}
-          value={phone}
-          onChange={v => { setPhone(v); setError(''); setSearched(false); }}
-          placeholder="مثال: 01012345678"
-          type="tel"
-          required
-          error={searched && phone && !/^(010|011|012|015)\d{8}$/.test(phone) ? 'رقم الهاتف المصري غير صحيح' : undefined}
-        />
+          {/* Phone */}
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">رقم هاتف الطالب / ولي الأمر <span className="text-red-400">*</span></label>
+            <div className="relative">
+              <input
+                type="tel" maxLength={11}
+                value={phone}
+                onChange={e => { setPhone(e.target.value.replace(/\D/g, '')); setSearched(false); setError(''); }}
+                placeholder="مثال: 01012345678"
+                className={`w-full bg-gray-50 border-2 rounded-2xl py-3.5 pr-12 pl-4 text-sm font-semibold transition-all duration-200 outline-none
+                  ${searched && phone && !phoneValid ? 'border-red-200 bg-red-50/30' : 'border-gray-100 focus:border-secondary focus:bg-white focus:ring-4 focus:ring-secondary/5'}
+                  text-gray-900 placeholder:text-gray-400`}
+              />
+              <Phone size={18} className={`absolute right-4 top-1/2 -translate-y-1/2 transition-colors ${searched && phone && !phoneValid ? 'text-red-400' : 'text-gray-400'}`} />
+            </div>
+            {searched && phone && !phoneValid && <p className="text-red-500 text-xs font-bold mt-1.5 pr-1">رقم الهاتف المصري غير صحيح</p>}
+          </div>
 
-        {error && <p className="text-red-500 text-xs font-bold text-center mt-2">{error}</p>}
-
-        <button
-          type="submit"
-          disabled={loading || nationalId.length !== 14 || !phone}
-          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed mt-2"
-        >
-          {loading ? (
-            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-          ) : (
-            <>
-              <span>عرض الاستمارة</span>
-              <Search size={16} />
-            </>
+          {/* Error */}
+          {error && (
+            <div className="bg-red-50 border border-red-100 rounded-2xl px-5 py-3.5">
+              <p className="text-red-600 text-xs font-bold text-center">{error}</p>
+            </div>
           )}
-        </button>
+
+          {/* Submit */}
+          <button
+            type="submit" disabled={!canSubmit}
+            className="w-full flex items-center justify-center gap-2 sm:gap-2.5 py-3.5 sm:py-4 rounded-2xl font-bold text-white transition-all duration-300
+              bg-gradient-to-r from-secondary to-secondary-fixed-dim hover:from-secondary-fixed-dim hover:to-secondary
+              shadow-lg shadow-secondary/20 hover:shadow-xl hover:shadow-secondary/30 hover:-translate-y-0.5
+              disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-lg"
+          >
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <>
+                <span>عرض الاستمارة</span>
+                <ArrowRight size={18} />
+              </>
+            )}
+          </button>
+        </div>
       </form>
+
+      {/* Footer hint */}
+      <p className="text-center text-xs text-gray-400 mt-6">
+        في حالة نسيان رقم الهاتف أو البيانات المدخلة، يرجى التواصل مع إدارة المسابقة
+      </p>
     </div>
   );
 }

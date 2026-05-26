@@ -23,6 +23,7 @@ class CompetitionLevel {
   final String? firstPrize;
   final String? secondPrize;
   final String? thirdPrize;
+  final String? prizes;
 
   CompetitionLevel({
     this.id,
@@ -49,13 +50,16 @@ class CompetitionLevel {
     this.firstPrize,
     this.secondPrize,
     this.thirdPrize,
+    this.prizes,
   });
 
   factory CompetitionLevel.fromJson(Map<String, dynamic> json) {
+    final title = json['title'] as String?;
+    final content = json['content'] as String?;
     return CompetitionLevel(
+      title: title ?? '',
+      content: content ?? '',
       id: json['id'],
-      title: json['title'],
-      content: json['content'],
       notes: json['notes'],
       minAge: json['min_age'],
       maxAge: json['max_age'],
@@ -77,6 +81,7 @@ class CompetitionLevel {
       firstPrize: json['first_prize'],
       secondPrize: json['second_prize'],
       thirdPrize: json['third_prize'],
+      prizes: json['prizes'],
     );
   }
 
@@ -106,20 +111,23 @@ class CompetitionLevel {
       if (firstPrize != null) 'first_prize': firstPrize,
       if (secondPrize != null) 'second_prize': secondPrize,
       if (thirdPrize != null) 'third_prize': thirdPrize,
+      if (prizes != null) 'prizes': prizes,
     };
   }
+
+  static const _Unset _unset = _Unset();
 
   CompetitionLevel copyWith({
     int? id,
     String? title,
     String? content,
-    String? notes,
-    int? minAge,
-    int? maxAge,
-    int? maxCapacity,
+    Object? notes = _unset,
+    Object? minAge = _unset,
+    Object? maxAge = _unset,
+    Object? maxCapacity = _unset,
     bool? isActive,
-    String? levelCode,
-    int? totalPoints,
+    Object? levelCode = _unset,
+    Object? totalPoints = _unset,
     bool? hasRewaya,
     int? rewayaMaxScore,
     List<String>? availableRewayas,
@@ -131,21 +139,22 @@ class CompetitionLevel {
     int? meaningMaxScore,
     List<String>? branches,
     bool? requireCustomAmount,
-    String? firstPrize,
-    String? secondPrize,
-    String? thirdPrize,
+    Object? firstPrize = _unset,
+    Object? secondPrize = _unset,
+    Object? thirdPrize = _unset,
+    Object? prizes = _unset,
   }) {
     return CompetitionLevel(
       id: id ?? this.id,
       title: title ?? this.title,
       content: content ?? this.content,
-      notes: notes ?? this.notes,
-      minAge: minAge ?? this.minAge,
-      maxAge: maxAge ?? this.maxAge,
-      maxCapacity: maxCapacity ?? this.maxCapacity,
+      notes: identical(notes, _unset) ? this.notes : notes as String?,
+      minAge: identical(minAge, _unset) ? this.minAge : minAge as int?,
+      maxAge: identical(maxAge, _unset) ? this.maxAge : maxAge as int?,
+      maxCapacity: identical(maxCapacity, _unset) ? this.maxCapacity : maxCapacity as int?,
       isActive: isActive ?? this.isActive,
-      levelCode: levelCode ?? this.levelCode,
-      totalPoints: totalPoints ?? this.totalPoints,
+      levelCode: identical(levelCode, _unset) ? this.levelCode : levelCode as String?,
+      totalPoints: identical(totalPoints, _unset) ? this.totalPoints : totalPoints as int?,
       hasRewaya: hasRewaya ?? this.hasRewaya,
       rewayaMaxScore: rewayaMaxScore ?? this.rewayaMaxScore,
       availableRewayas: availableRewayas ?? this.availableRewayas,
@@ -157,18 +166,19 @@ class CompetitionLevel {
       meaningMaxScore: meaningMaxScore ?? this.meaningMaxScore,
       branches: branches ?? this.branches,
       requireCustomAmount: requireCustomAmount ?? this.requireCustomAmount,
-      firstPrize: firstPrize ?? this.firstPrize,
-      secondPrize: secondPrize ?? this.secondPrize,
-      thirdPrize: thirdPrize ?? this.thirdPrize,
+      firstPrize: identical(firstPrize, _unset) ? this.firstPrize : firstPrize as String?,
+      secondPrize: identical(secondPrize, _unset) ? this.secondPrize : secondPrize as String?,
+      thirdPrize: identical(thirdPrize, _unset) ? this.thirdPrize : thirdPrize as String?,
+      prizes: identical(prizes, _unset) ? this.prizes : prizes as String?,
     );
   }
 
   int get totalMaxPoints {
     int total = totalPoints ?? 100;
-    if (hasRewaya) total += rewayaMaxScore;
-    if (hasTajweed) total += tajweedMaxScore;
-    if (hasVoice) total += voiceMaxScore;
-    if (hasMeaning) total += meaningMaxScore;
+    if (hasRewaya && rewayaMaxScore > 0) total += rewayaMaxScore;
+    if (hasTajweed && tajweedMaxScore > 0) total += tajweedMaxScore;
+    if (hasVoice && voiceMaxScore > 0) total += voiceMaxScore;
+    if (hasMeaning && meaningMaxScore > 0) total += meaningMaxScore;
     return total;
   }
 
@@ -180,4 +190,8 @@ class CompetitionLevel {
       return null;
     }
   }
+}
+
+class _Unset {
+  const _Unset();
 }

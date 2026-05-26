@@ -6,11 +6,13 @@ import '../core/constants/app_constants.dart';
 class SupabaseService {
   final SupabaseClient _client = Supabase.instance.client;
 
+  static const String _studentColumns = 'id, student_code, ceremony_code, name, phone, national_id, age, gender, level, selected_rewaya, branch_name, memorization_amount, memorizer_name, memorizer_phone, memorizer_address, location, birth_date, score, rewaya_score, tajweed_score, voice_score, meaning_score, profile_image_url, birth_certificate_url, exam_date, exam_hour, notes, created_at, updated_at';
+
   Future<List<Student>> getAllStudents({int? limit, int? offset}) async {
     try {
       var query = _client
           .from(AppConstants.tableName)
-          .select('id, student_code, ceremony_code, name, phone, national_id, age, gender, level, selected_rewaya, branch_name, memorization_amount, memorizer_name, memorizer_phone, memorizer_address, location, birth_date, score, rewaya_score, tajweed_score, voice_score, meaning_score, profile_image_url, birth_certificate_url, exam_date, exam_hour, notes, created_at, updated_at')
+          .select(_studentColumns)
           .order('created_at', ascending: false);
       if (limit != null) query = query.limit(limit);
       if (offset != null) query = query.range(offset, offset + (limit ?? 1000) - 1);
@@ -25,7 +27,7 @@ class SupabaseService {
     try {
       final data = await _client
           .from(AppConstants.tableName)
-          .select('id, student_code, ceremony_code, name, phone, national_id, age, gender, level, selected_rewaya, branch_name, memorization_amount, memorizer_name, memorizer_phone, memorizer_address, location, birth_date, score, rewaya_score, tajweed_score, voice_score, meaning_score, profile_image_url, birth_certificate_url, exam_date, exam_hour, notes, created_at, updated_at')
+          .select(_studentColumns)
           .eq('id', id)
           .single();
       return Student.fromJson(data);
@@ -71,20 +73,6 @@ class SupabaseService {
   }
 
   Future<Student> createStudent(Student student) async {
-    // Check National ID (first pass)
-    if (student.nationalId != null && student.nationalId!.isNotEmpty) {
-      final exists = await checkNationalIdExists(student.nationalId!);
-      if (exists) {
-        throw Exception('هذا الرقم القومي مسجّل مسبقاً - لا يمكن تسجيل نفس الشخص مرتين');
-      }
-    }
-
-    // Check Name (first pass)
-    final nameExists = await checkNameExists(student.name);
-    if (nameExists) {
-      throw Exception('هذا الاسم مسجّل مسبقاً - يرجى التأكد من عدم تكرار التسجيل');
-    }
-    
     try {
       final data = await _client
           .from(AppConstants.tableName)
@@ -155,11 +143,13 @@ class SupabaseService {
 
   Future<int> getStudentsCountByLevel(String levelTitle) async {
     try {
-      final data = await _client
+      final response = await _client
           .from(AppConstants.tableName)
-          .select('id')
-          .eq('level', levelTitle);
-      return (data as List).length;
+          .select('*')
+          .eq('level', levelTitle)
+          .limit(0)
+          .count(CountOption.exact);
+      return response.count;
     } catch (e) {
       throw Exception('فشل في التحقق من عدد الطلاب: $e');
     }

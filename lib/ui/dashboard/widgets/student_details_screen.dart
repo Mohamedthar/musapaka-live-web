@@ -41,7 +41,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
       return;
     }
 
-    final score = int.tryParse(scoreText);
+    final score = double.tryParse(scoreText);
     if (score == null) {
       AppTheme.showSnack(context, 'الدرجة يجب ان تكون رقما', color: AppTheme.errorColor);
       return;

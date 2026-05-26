@@ -8,7 +8,26 @@ class CloudinaryService {
     return 'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
   }
 
+  String _extractErrorFromBody(String body) {
+    try {
+      final data = json.decode(body);
+      if (data is Map && data.containsKey('error')) {
+        final error = data['error'];
+        if (error is Map && error.containsKey('message')) {
+          return error['message'].toString();
+        }
+      }
+    } catch (_) {}
+    return 'خطأ غير معروف';
+  }
+
   Future<String> uploadImage(Uint8List fileBytes, String fileName) async {
+    if (fileBytes.isEmpty) {
+      throw Exception('لا يمكن رفع صورة فارغة');
+    }
+    if (fileName.trim().isEmpty) {
+      throw Exception('اسم الملف غير صالح');
+    }
     final url = Uri.parse(_buildUploadUrl(AppConstants.cloudinaryCloudName));
 
     final request = http.MultipartRequest('POST', url)
@@ -26,7 +45,8 @@ class CloudinaryService {
       final data = json.decode(responseBody);
       return data['secure_url'] as String;
     } else {
-      throw Exception('فشل في رفع الصورة: ${response.statusCode} - $responseBody');
+      final errorMsg = _extractErrorFromBody(responseBody);
+      throw Exception('فشل في رفع الصورة: ${response.statusCode} - $errorMsg');
     }
   }
 

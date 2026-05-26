@@ -1,56 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
+import { getCorsHeaders, jsonResponse, optionsResponse, checkRateLimit, getClientIp } from '@/lib/api-utils';
 
-const ALLOWED_ORIGINS = [
-  process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-  'https://musapaka.vercel.app',
-].filter(Boolean);
-
-function getCorsHeaders(origin: string | null) {
-  const allowedOrigin = (origin && ALLOWED_ORIGINS.includes(origin)) ? origin : (ALLOWED_ORIGINS[0] || '');
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Vary': 'Origin',
-  };
-}
-
-function jsonResponse(data: unknown, status = 200, requestOrigin: string | null = null) {
-  return NextResponse.json(data, {
-    status,
-    headers: getCorsHeaders(requestOrigin ?? null),
-  });
-}
-
-export async function OPTIONS(request: Request) {
-  const origin = request.headers.get('origin');
-  return new NextResponse(null, { status: 204, headers: getCorsHeaders(origin) });
-}
-
-// In-memory rate limiter (per-instance; for production at scale, replace with Vercel KV)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_WINDOW = 60_000;
-const RATE_LIMIT_MAX = 5;
-
-let lastCleanup = Date.now();
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  if (now - lastCleanup > RATE_LIMIT_WINDOW) {
-    for (const [key, val] of rateLimitMap.entries()) {
-      if (now > val.resetAt) rateLimitMap.delete(key);
-    }
-    lastCleanup = now;
-  }
-  const entry = rateLimitMap.get(ip);
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
-    return true;
-  }
-  if (entry.count >= RATE_LIMIT_MAX) return false;
-  entry.count++;
-  return true;
-}
+export { optionsResponse as OPTIONS };
 
 export async function POST(request: Request) {
   const origin = request.headers.get('origin');
@@ -59,28 +11,16 @@ export async function POST(request: Request) {
     const token = body.token;
     const supabase = getAdminClient();
 
-    // 1. Honeypot check (Fake success for bots without DB write)
     if (body.website_url_verification) {
-      console.warn('Honeypot triggered! Returning fake response.');
+      console.warn('Honeypot triggered');
       return jsonResponse({
         success: true,
-        data: {
-          id: 999999,
-          student_code: 'A-BOT-9999',
-          name: body.name || 'Bot User',
-          level: body.level || 'المستوى الأول',
-          age: body.age || 10,
-          exam_date: '2026-05-20',
-          exam_hour: 9
-        }
+        message: 'تم التسجيل بنجاح'
       }, 200, origin);
     }
 
-    // Rate limiting
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-    
-    // Layer 1: In-memory rate limiter (local block)
-    if (!checkRateLimit(ip)) {
+    const ip = getClientIp(request);
+    if (!checkRateLimit(ip, 5)) {
       return jsonResponse({ error: 'طلبات كثيرة جداً. حاول بعد دقيقة.' }, 429, origin);
     }
 
@@ -204,21 +144,55 @@ export async function POST(request: Request) {
       }
     }
 
-    // 4.5 Check Selected Level Capacity
-    const { data: levelInfo } = await supabase
+    // 4.5 Check Selected Level Age Restrictions
+    const { data: levelData } = await supabase
       .from('competition_levels')
-      .select('max_capacity')
+      .select('min_age, max_age, max_capacity, branches, has_rewaya, available_rewayas')
       .eq('title', studentData.level)
+      .eq('is_active', true)
       .single();
 
-    if (levelInfo && levelInfo.max_capacity !== null) {
+    if (!levelData) {
+      return jsonResponse({ error: 'المستوى المحدد غير موجود أو غير نشط' }, 400, origin);
+    }
+
+    if (studentData.age != null) {
+      if (levelData.min_age != null && studentData.age <= levelData.min_age) {
+        return jsonResponse({ error: `عمرك أقل من الحد الأدنى المطلوب لهذا المستوى (${levelData.min_age} سنة)` }, 400, origin);
+      }
+      if (levelData.max_age != null && studentData.age > levelData.max_age) {
+        return jsonResponse({ error: `عمرك أكبر من الحد الأقصى المطلوب لهذا المستوى (${levelData.max_age} سنة)` }, 400, origin);
+      }
+    }
+
+    // 4.6 Check Selected Level Capacity
+    if (levelData.max_capacity !== null) {
       const { count } = await supabase
         .from('students')
         .select('id', { count: 'exact', head: true })
         .eq('level', studentData.level);
 
-      if (count !== null && count >= levelInfo.max_capacity) {
+      if (count !== null && count >= levelData.max_capacity) {
         return jsonResponse({ error: 'عذراً، هذا المستوى ممتلئ تماماً ولا يمكن قبول تسجيلات جديدة فيه.' }, 400, origin);
+      }
+    }
+
+    // 4.7 Validate rewaya
+    if (studentData.selected_rewaya) {
+      if (!levelData.has_rewaya) {
+        return jsonResponse({ error: 'هذا المستوى لا يدعم اختيار الروايات' }, 400, origin);
+      }
+      const available = (levelData.available_rewayas as string[]) || [];
+      if (available.length && !available.includes(studentData.selected_rewaya)) {
+        return jsonResponse({ error: 'الرواية المختارة غير متاحة لهذا المستوى' }, 400, origin);
+      }
+    }
+
+    // 4.8 Validate branch
+    if (studentData.branch_name) {
+      const branches = (levelData.branches as string[]) || [];
+      if (branches.length && !branches.includes(studentData.branch_name.trim())) {
+        return jsonResponse({ error: 'الفرع المختار غير متاح لهذا المستوى' }, 400, origin);
       }
     }
 

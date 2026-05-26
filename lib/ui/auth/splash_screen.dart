@@ -15,13 +15,17 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _checkAdminStatus();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkAdminStatus());
   }
 
   Future<void> _checkAdminStatus() async {
-    // Adding a slight delay for splash screen animation
-    await Future.delayed(const Duration(seconds: 2));
+    // Start the check immediately, with a minimum 1s for splash animation
+    final checkFuture = _performCheck();
+    await Future.any([checkFuture, Future.delayed(const Duration(seconds: 1))]);
+    await checkFuture;
+  }
 
+  Future<void> _performCheck() async {
     try {
       final supabase = Supabase.instance.client;
       
@@ -59,11 +63,15 @@ class _SplashScreenState extends State<SplashScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      // On error, default to login (or you could show an error state)
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
       );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('تعذر الاتصال بالخادم: $e')),
+        );
+      }
     }
   }
 

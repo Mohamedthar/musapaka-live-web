@@ -43,6 +43,8 @@ ALTER TABLE students ADD COLUMN IF NOT EXISTS meaning_score DOUBLE PRECISION;
 ALTER TABLE students ADD COLUMN IF NOT EXISTS registration_ip TEXT;
 ALTER TABLE students ADD COLUMN IF NOT EXISTS branch_name TEXT;
 ALTER TABLE students ADD COLUMN IF NOT EXISTS memorization_amount INTEGER DEFAULT 0;
+ALTER TABLE students ADD COLUMN IF NOT EXISTS is_waitlisted BOOLEAN DEFAULT false;
+ALTER TABLE students ADD COLUMN IF NOT EXISTS ceremony_code TEXT;
 -- 2. Add/Update constraints safely
 DO $$ 
 BEGIN 
@@ -70,6 +72,18 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'students_score_check') THEN
         ALTER TABLE students ADD CONSTRAINT students_score_check CHECK (score IS NULL OR (score >= 0 AND score <= 1000));
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'students_memorization_non_negative') THEN
+        ALTER TABLE students ADD CONSTRAINT students_memorization_non_negative CHECK (memorization_amount >= 0);
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_students_level') THEN
+        ALTER TABLE students ADD CONSTRAINT fk_students_level
+            FOREIGN KEY (level) REFERENCES competition_levels(title)
+            ON DELETE CASCADE;
+    END IF;
 END $$;
 
 -- 3. Enable RLS
@@ -83,7 +97,7 @@ BEGIN
     SELECT 1 FROM public.admins WHERE id = auth.uid()
   );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public;
 
 -- 5. Policies (Drop and Recreate to ensure they match latest logic)
 -- Public insert removed for security; registration goes through the API (service_role_key).
@@ -229,6 +243,7 @@ ALTER TABLE competition_levels ADD COLUMN IF NOT EXISTS meaning_max_score INTEGE
 ALTER TABLE competition_levels ADD COLUMN IF NOT EXISTS first_prize TEXT;
 ALTER TABLE competition_levels ADD COLUMN IF NOT EXISTS second_prize TEXT;
 ALTER TABLE competition_levels ADD COLUMN IF NOT EXISTS third_prize TEXT;
+ALTER TABLE competition_levels ADD COLUMN IF NOT EXISTS prizes TEXT;
 
 DO $$
 BEGIN
@@ -272,6 +287,9 @@ CREATE TABLE IF NOT EXISTS app_settings (
     -- Result Query Control
     is_result_query_open BOOLEAN NOT NULL DEFAULT false,
     
+    -- Ceremony Query Control
+    is_ceremony_query_open BOOLEAN NOT NULL DEFAULT false,
+    
     -- Exam Scheduling
     exam_period_start DATE,
     exam_period_end DATE,
@@ -283,6 +301,14 @@ CREATE TABLE IF NOT EXISTS app_settings (
       {"title": "إغلاق التسجيل ومراجعة الطلبات", "date": "15 رمضان 1446", "desc": "إغلاق البوابة ومراجعة البيانات والمستندات لتحديد لجان الاختبار المبدئية."},
       {"title": "الاختبارات التمهيدية والنهائية", "date": "20 رمضان 1446", "desc": "انعقاد لجان الاستماع والاختبار للمتسابقين المقبولين بمقر المسابقة."},
       {"title": "إعلان النتائج والحفل الختامي", "date": "27 رمضان 1446", "desc": "تكريم الفائزين في حفل قرآني مهيب وتوزيع الجوائز والشهادات."}
+    ]'::jsonb,
+
+    -- FAQs
+    faqs JSONB NOT NULL DEFAULT '[
+      {"q": "كيف أعرف أن تسجيلي تم بنجاح؟", "a": "بعد إتمام التسجيل ستظهر لك استمارة إلكترونية برقم تسجيل خاص، كما يمكنك الاستعلام في أي وقت من بوابة الاستعلامات."},
+      {"q": "هل يمكنني تغيير المستوى بعد التسجيل؟", "a": "لا يمكن تغيير المستوى بعد تأكيد التسجيل. ننصح باختيار المستوى المناسب بعناية قبل الإرسال."},
+      {"q": "كيف أعرف موعد اختباري؟", "a": "بعد اكتمال التسجيل، يتم تحديد الموعد تلقائياً ويظهر في بوابة الاستعلام عن الاستمارة برقمك القومي ورقم هاتفك."},
+      {"q": "ما هي معايير التقييم في المسابقة؟", "a": "يتم التقييم على: الحفظ وجودة التلاوة، أحكام التجويد، حسن الصوت والأداء، ومعاني الكلمات حسب المستوى."}
     ]'::jsonb,
     
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -370,8 +396,9 @@ DECLARE
     v_exam_period_start DATE;
     v_exam_period_end DATE;
 BEGIN
-    -- Lock students table to prevent deadlocks and race conditions under high concurrency
-    LOCK TABLE students IN SHARE ROW EXCLUSIVE MODE;
+    -- Use advisory lock keyed on a constant to serialize exam slot assignment
+    -- This is more granular than a full table lock
+    PERFORM pg_advisory_xact_lock(987654321);
     
     SELECT exam_schedule, exam_period_start, exam_period_end 
     INTO schedule_json, v_exam_period_start, v_exam_period_end 
@@ -382,10 +409,10 @@ BEGIN
         RETURN NEW;
     END IF;
 
-    -- البحث من المواعيد الأحدث للأقدم (LIFO)
+    -- FIFO: fill earliest slots first
     FOR slot IN 
         SELECT value FROM jsonb_array_elements(schedule_json)
-        ORDER BY (value->>'date')::DATE DESC, (value->>'end_hour')::INT DESC
+        ORDER BY (value->>'date')::DATE ASC, (value->>'start_hour')::INT ASC
     LOOP
         v_date := (slot->>'date')::DATE;
 
@@ -429,8 +456,8 @@ DECLARE
     v_seq         INTEGER;
     v_prefix      TEXT;
 BEGIN
-    -- Lock students table to prevent deadlocks and race conditions under high concurrency
-    LOCK TABLE students IN SHARE ROW EXCLUSIVE MODE;
+    -- Use advisory lock for concurrent code generation safety
+    PERFORM pg_advisory_xact_lock(987654322);
 
     SELECT level_code INTO v_level_code FROM competition_levels WHERE title = NEW.level LIMIT 1;
     IF v_level_code IS NULL THEN v_level_code := 'X'; END IF;
@@ -438,15 +465,11 @@ BEGIN
     v_gender_num := CASE WHEN NEW.gender = 'ذكر' THEN '1' WHEN NEW.gender = 'أنثى' THEN '0' ELSE '9' END;
     v_prefix := v_level_code || v_gender_num;
 
-    -- Find the smallest missing sequence number (gap filling)
-    SELECT s.seq INTO v_seq
+    -- Find the smallest missing sequence number using LEFT JOIN (O(1) amortized)
+    SELECT COALESCE(MIN(s.seq), 1) INTO v_seq
     FROM generate_series(1, 9999) AS s(seq)
-    WHERE NOT EXISTS (
-        SELECT 1 FROM students 
-        WHERE student_code = v_prefix || LPAD(s.seq::TEXT, 3, '0')
-    )
-    ORDER BY s.seq ASC
-    LIMIT 1;
+    LEFT JOIN students ON students.student_code = v_prefix || LPAD(s.seq::TEXT, 3, '0')
+    WHERE students.student_code IS NULL;
 
     NEW.student_code := v_prefix || LPAD(v_seq::TEXT, 3, '0');
     RETURN NEW;
@@ -541,8 +564,7 @@ DECLARE
     v_seq         INTEGER;
     v_prefix      TEXT;
 BEGIN
-    -- Lock to prevent race conditions
-    LOCK TABLE students IN SHARE ROW EXCLUSIVE MODE;
+    PERFORM pg_advisory_xact_lock(987654323);
 
     SELECT level_code INTO v_level_code FROM competition_levels WHERE title = NEW.level LIMIT 1;
     IF v_level_code IS NULL THEN v_level_code := 'X'; END IF;
@@ -551,15 +573,10 @@ BEGIN
     v_prefix := v_level_code || v_gender_num;
 
     -- Find the smallest missing sequence number (gap filling), excluding current student
-    SELECT s.seq INTO v_seq
+    SELECT COALESCE(MIN(s.seq), 1) INTO v_seq
     FROM generate_series(1, 9999) AS s(seq)
-    WHERE NOT EXISTS (
-        SELECT 1 FROM students 
-        WHERE student_code = v_prefix || LPAD(s.seq::TEXT, 3, '0')
-          AND id != OLD.id
-    )
-    ORDER BY s.seq ASC
-    LIMIT 1;
+    LEFT JOIN students ON students.student_code = v_prefix || LPAD(s.seq::TEXT, 3, '0') AND students.id != OLD.id
+    WHERE students.student_code IS NULL;
 
     NEW.student_code := v_prefix || LPAD(v_seq::TEXT, 3, '0');
     RETURN NEW;
@@ -588,3 +605,51 @@ END;
 $$ LANGUAGE plpgsql;
 
 GRANT EXECUTE ON FUNCTION retrieve_student_code(TEXT, TEXT) TO anon, authenticated;
+
+-- =============================================
+-- 13. Performance Indexes
+-- =============================================
+CREATE INDEX IF NOT EXISTS idx_students_score_desc ON students(score DESC NULLS LAST);
+CREATE INDEX IF NOT EXISTS idx_students_level_gender ON students(level, gender);
+CREATE INDEX IF NOT EXISTS idx_students_ceremony_code ON students(ceremony_code) WHERE ceremony_code IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_students_exam_date_hour ON students(exam_date, exam_hour);
+CREATE INDEX IF NOT EXISTS idx_students_national_id ON students(national_id);
+CREATE INDEX IF NOT EXISTS idx_students_student_code ON students(student_code);
+CREATE INDEX IF NOT EXISTS idx_levels_active ON competition_levels(is_active) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_levels_title ON competition_levels(title);
+
+-- =============================================
+-- 14. Competition Levels Integrity Constraints
+-- =============================================
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'levels_age_range_valid') THEN
+        ALTER TABLE competition_levels ADD CONSTRAINT levels_age_range_valid
+            CHECK (max_age IS NULL OR min_age IS NULL OR max_age >= min_age);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'levels_max_capacity_non_negative') THEN
+        ALTER TABLE competition_levels ADD CONSTRAINT levels_max_capacity_non_negative
+            CHECK (max_capacity IS NULL OR max_capacity >= 0);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'levels_level_code_format') THEN
+        ALTER TABLE competition_levels ADD CONSTRAINT levels_level_code_format
+            CHECK (level_code IS NULL OR level_code ~ '^[A-Z]$');
+    END IF;
+END $$;
+
+-- =============================================
+-- 15. App Settings Updated At Auto-Trigger
+-- =============================================
+CREATE OR REPLACE FUNCTION update_app_settings_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at := NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_app_settings_updated_at ON app_settings;
+CREATE TRIGGER trg_app_settings_updated_at
+    BEFORE UPDATE ON app_settings
+    FOR EACH ROW
+    EXECUTE FUNCTION update_app_settings_updated_at();

@@ -690,15 +690,18 @@ class StudentTable extends StatelessWidget {
   }
 
   Widget _scoreWidget(Student student) {
-    final score = student.score;
+    final totalScore = student.totalScore;
+    final maxPoints = CompetitionLevel.findByTitle(levels, student.level)?.totalMaxPoints ?? 100;
+    final percentage = totalScore != null && maxPoints > 0 ? (totalScore / maxPoints) * 100 : null;
+
     Color color;
-    if (score == null) {
+    if (percentage == null) {
       color = Colors.grey;
-    } else if (score < 50) {
+    } else if (percentage < 50) {
       color = Colors.red;
-    } else if (score < 75) {
+    } else if (percentage < 75) {
       color = Colors.orange;
-    } else if (score < 90) {
+    } else if (percentage < 90) {
       color = Colors.blue;
     } else {
       color = Colors.green;

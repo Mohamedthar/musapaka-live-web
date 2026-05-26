@@ -1,56 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
+import { getCorsHeaders, jsonResponse, optionsResponse, checkRateLimit, getClientIp } from '@/lib/api-utils';
 
-const ALLOWED_ORIGINS = [
-  process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-  'https://musapaka.vercel.app',
-].filter(Boolean);
-
-function getCorsHeaders(origin: string | null) {
-  const allowedOrigin =
-    origin && ALLOWED_ORIGINS.includes(origin)
-      ? origin
-      : ALLOWED_ORIGINS[0] || '';
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    Vary: 'Origin',
-  };
-}
-
-function jsonResponse(
-  data: unknown,
-  status = 200,
-  requestOrigin: string | null = null
-) {
-  return NextResponse.json(data, {
-    status,
-    headers: getCorsHeaders(requestOrigin ?? null),
-  });
-}
-
-export async function OPTIONS(request: Request) {
-  const origin = request.headers.get('origin');
-  return new NextResponse(null, { status: 204, headers: getCorsHeaders(origin) });
-}
-
-// Rate limiting
-const resultRateLimit = new Map<string, { count: number; resetAt: number }>();
-const RATE_WINDOW = 60_000;
-const RATE_MAX = 10;
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = resultRateLimit.get(ip);
-  if (!entry || now > entry.resetAt) {
-    resultRateLimit.set(ip, { count: 1, resetAt: now + RATE_WINDOW });
-    return true;
-  }
-  if (entry.count >= RATE_MAX) return false;
-  entry.count++;
-  return true;
-}
+export { optionsResponse as OPTIONS };
 
 export async function GET(request: Request) {
   const origin = request.headers.get('origin');
@@ -73,7 +25,8 @@ export async function GET(request: Request) {
         is_result_query_open: !!settings?.is_result_query_open,
       },
       200,
-      origin
+      origin,
+      60
     );
   } catch (error: unknown) {
     console.error('Result GET Error:', error);
@@ -86,10 +39,8 @@ export async function POST(request: Request) {
   const origin = request.headers.get('origin');
 
   try {
-    const ip =
-      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-      'unknown';
-    if (!checkRateLimit(ip)) {
+    const ip = getClientIp(request);
+    if (!checkRateLimit(ip, 10)) {
       return jsonResponse(
         { error: 'طلبات كثيرة جداً. حاول بعد دقيقة.' },
         429,
@@ -134,7 +85,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Look up student
+    // 2. Look up student + level info in parallel
     const { data: student, error: studentError } = await supabase
       .from('students')
       .select(
@@ -163,7 +114,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Get level info to calculate percentage and max points
+    // 3. Get level info (fetched only when student exists)
     const { data: levelData } = await supabase
       .from('competition_levels')
       .select('content, total_points, has_rewaya, rewaya_max_score, has_tajweed, tajweed_max_score, has_voice, voice_max_score, has_meaning, meaning_max_score')

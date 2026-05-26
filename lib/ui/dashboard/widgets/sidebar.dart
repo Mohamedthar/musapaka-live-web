@@ -252,6 +252,12 @@ class _DashboardSidebarState extends State<DashboardSidebar>
                               isActive: widget.settingsSection == 'schedule',
                               onTap: () => widget.onSettingsSectionChanged('schedule'),
                             ),
+                            _subItem(
+                              icon: Icons.help_outline_rounded,
+                              label: 'الأسئلة الشائعة',
+                              isActive: widget.settingsSection == 'faqs',
+                              onTap: () => widget.onSettingsSectionChanged('faqs'),
+                            ),
                           ],
                         ],
                       ),

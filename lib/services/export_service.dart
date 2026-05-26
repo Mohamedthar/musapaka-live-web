@@ -95,12 +95,13 @@ class ExportService {
   }
 
   String _getColName(int colIndex) {
-    if (colIndex <= 26) {
-      return String.fromCharCode(64 + colIndex);
+    String result = '';
+    int n = colIndex - 1;
+    while (n >= 0) {
+      result = String.fromCharCode(65 + (n % 26)) + result;
+      n = n ~/ 26 - 1;
     }
-    final first = (colIndex - 1) ~/ 26;
-    final second = (colIndex - 1) % 26 + 1;
-    return '${String.fromCharCode(64 + first)}${String.fromCharCode(64 + second)}';
+    return result;
   }
 
   void _addStudentExcelData(xlsio.Worksheet ws, List<Student> data, List<_ColDef> cols) {

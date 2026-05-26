@@ -276,7 +276,7 @@ class _RegistrationFormContentState extends State<RegistrationFormContent> {
       if (_selectedLevelObj != null) {
         final age = int.tryParse(_ageCtrl.text);
         if (age != null) {
-          if (_selectedLevelObj!.minAge != null && age < _selectedLevelObj!.minAge!) {
+          if (_selectedLevelObj!.minAge != null && age <= _selectedLevelObj!.minAge!) {
             AppTheme.showSnack(context, 'عمرك أقل من الحد الأدنى المطلوب لهذا المستوى', color: Colors.red);
             setState(() => _isLoading = false);
             return;
@@ -660,7 +660,7 @@ class _RegistrationFormContentState extends State<RegistrationFormContent> {
     return _levels.where((l) {
       final min = l.minAge;
       final max = l.maxAge;
-      return (min == null || age >= min) && (max == null || age <= max);
+      return (min == null || age > min) && (max == null || age <= max);
     }).toList();
   }
 

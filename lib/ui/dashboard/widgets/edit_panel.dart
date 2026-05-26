@@ -88,7 +88,9 @@ class StudentEditPanel extends StatelessWidget {
     final isMobile = ResponsiveUtils.isMobile(context);
     final matchedLevel = levels.firstWhere(
       (l) => l.title == currentLevel,
-      orElse: () => levels.isNotEmpty ? levels.first : CompetitionLevel(title: '', content: ''),
+      orElse: () => levels.isNotEmpty 
+          ? levels.first 
+          : CompetitionLevel(title: currentLevel ?? 'غير محدد', content: 'يرجى إضافة مستويات أولاً'),
     );
     
     return Container(

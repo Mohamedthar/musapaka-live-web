@@ -41,6 +41,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   int? _sortColumnIndex;
   bool _sortAscending = true;
 
+  // Cached results
+  List<Student> _cachedFiltered = [];
+  List<RankedStudent> _cachedRanked = [];
+  bool _needsRecompute = true;
+
   static const _primary = Color(0xFF03121C);
 
   @override
@@ -61,26 +66,44 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       _error = null;
     });
     try {
-      final levels = await _service.getLevels();
-      final students = await _service.getAllStudents();
+      final results = await Future.wait([_service.getLevels(), _service.getAllStudents()]);
+      final levels = results[0] as List<CompetitionLevel>;
+      final students = results[1] as List<Student>;
       if (!mounted) return;
       setState(() {
         _levels = levels;
         _allStudents = students;
         if (_levels.isNotEmpty) _selectedLevel = _levels.first;
         _isLoading = false;
+        _needsRecompute = true;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _error = 'حدث خطأ أثناء تحميل البيانات: $e';
         _isLoading = false;
+        _needsRecompute = true;
       });
     }
   }
 
   List<Student> get _filteredStudents {
-    if (_selectedLevel == null) return [];
+    if (_needsRecompute) _computeDerived();
+    return _cachedFiltered;
+  }
+
+  List<RankedStudent> get _rankedStudents {
+    if (_needsRecompute) _computeDerived();
+    return _cachedRanked;
+  }
+
+  void _computeDerived() {
+    _needsRecompute = false;
+    if (_selectedLevel == null) {
+      _cachedFiltered = [];
+      _cachedRanked = [];
+      return;
+    }
     Iterable<Student> filtered = _allStudents.where((s) => s.level == _selectedLevel!.title);
 
     if (_searchQuery.trim().isNotEmpty) {
@@ -98,50 +121,46 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       filtered = filtered.where((s) => (s.totalScore ?? 0) <= _maxScoreFilter!);
     }
     
-    return filtered.toList();
-  }
+    _cachedFiltered = filtered.toList();
+    _cachedRanked = RankingUtils.calculateRanks(_cachedFiltered, _levels);
 
-  List<RankedStudent> get _rankedStudents {
-    final ranked = RankingUtils.calculateRanks(_filteredStudents, _levels);
-
-    // Apply percentage filter (on the computed percentage)
     if (_minPctFilter != null) {
-      ranked.removeWhere((r) => r.percentage < _minPctFilter!);
+      _cachedRanked.removeWhere((r) => r.percentage < _minPctFilter!);
     }
     if (_maxPctFilter != null) {
-      ranked.removeWhere((r) => r.percentage > _maxPctFilter!);
+      _cachedRanked.removeWhere((r) => r.percentage > _maxPctFilter!);
     }
     
     if (_sortColumnIndex != null) {
-      ranked.sort((a, b) {
+      _cachedRanked.sort((a, b) {
         int comp = 0;
         switch (_sortColumnIndex) {
-          case 0: // الترتيب
+          case 0:
             comp = a.rankNumber.compareTo(b.rankNumber);
             break;
-          case 1: // الاسم
+          case 1:
             comp = a.student.name.compareTo(b.student.name);
             break;
-          case 2: // الهاتف
+          case 2:
             comp = a.student.phone.compareTo(b.student.phone);
             break;
-          case 3: // الرقم القومي
+          case 3:
             comp = (a.student.nationalId ?? '').compareTo(b.student.nationalId ?? '');
             break;
-          case 4: // الدرجة (والنسبة)
+          case 4:
             comp = (a.student.totalScore ?? 0).compareTo(b.student.totalScore ?? 0);
             break;
         }
         return _sortAscending ? comp : -comp;
       });
     }
-    return ranked;
   }
 
   void _onSort(int columnIndex, bool ascending) {
     setState(() {
       _sortColumnIndex = columnIndex;
       _sortAscending = ascending;
+      _invalidateCache();
     });
   }
 
@@ -168,6 +187,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             color: Colors.red);
       }
     }
+  }
+
+  void _invalidateCache() {
+    _needsRecompute = true;
   }
 
   void _generateCeremonyCodes() async {
@@ -464,7 +487,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       ),
       child: TextField(
         controller: _searchCtrl,
-        onChanged: (val) => setState(() => _searchQuery = val),
+        onChanged: (val) => setState(() { _searchQuery = val; _invalidateCache(); }),
         style: const TextStyle(
           fontFamily: 'Cairo', 
           fontSize: 13, 
@@ -527,7 +550,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               .toList(),
           onChanged: (val) {
             if (val != null) {
-              setState(() => _selectedLevel = val);
+              setState(() { _selectedLevel = val; _invalidateCache(); });
             }
           },
         ),
@@ -551,6 +574,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               onChanged: (val) {
                 setState(() {
                   _minScoreFilter = double.tryParse(val);
+                  _invalidateCache();
                 });
               },
               style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700),
@@ -580,6 +604,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               onChanged: (val) {
                 setState(() {
                   _maxScoreFilter = double.tryParse(val);
+                  _invalidateCache();
                 });
               },
               style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700),
@@ -612,6 +637,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               onChanged: (val) {
                 setState(() {
                   _minPctFilter = double.tryParse(val);
+                  _invalidateCache();
                 });
               },
               style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700),
@@ -641,6 +667,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               onChanged: (val) {
                 setState(() {
                   _maxPctFilter = double.tryParse(val);
+                  _invalidateCache();
                 });
               },
               style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700),

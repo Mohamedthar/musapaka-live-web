@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2 } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 
 interface FieldProps {
   label: string;
@@ -52,7 +52,7 @@ export default function Field({
         )}
         {!loading && error && (
           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-500">
-            <CheckCircle2 size={16} />
+            <AlertTriangle size={16} />
           </div>
         )}
       </div>

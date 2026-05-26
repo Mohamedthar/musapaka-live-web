@@ -133,7 +133,7 @@ export default function Step3Level({
                       <div className="flex items-center gap-1.5 mr-4 flex-shrink-0">
                         {(l.min_age || l.max_age) && (
                           <span className="text-[9px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
-                            {l.min_age ? `من ${l.min_age}` : ''}{l.min_age && l.max_age ? ' — ' : ''}{l.max_age ? `إلى ${l.max_age}` : ''} سنة
+                            {l.min_age ? `فوق ${l.min_age}` : ''}{l.min_age && l.max_age ? ' — ' : ''}{l.max_age ? `${l.max_age} فأقل` : ''} عام
                           </span>
                         )}
                         {isFull ? (

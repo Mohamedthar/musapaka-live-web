@@ -10,12 +10,11 @@ import 'dart:convert';
 class ExamScheduleSlot {
   ExamScheduleSlot({
     this.date,
-    this.startHour = 8,
-    this.endHour = 12,
+    int? startHour,
+    int? endHour,
     this.studentsPerHour = 4,
-  }) {
-    if (endHour <= startHour) endHour = startHour + 1;
-  }
+  }) : startHour = startHour ?? 8,
+       endHour = (endHour != null && endHour > (startHour ?? 8)) ? endHour : (startHour ?? 8) + 1;
 
   DateTime? date;
 

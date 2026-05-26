@@ -1,321 +1,496 @@
 'use client';
 
-import React from 'react';
-import Image from 'next/image';
-import { 
-  UserPlus, MapPin, Phone, 
-  Trophy, Sparkles,
-  BookOpen, ShieldCheck, Users, ArrowLeft, CheckCircle, Calendar, ClipboardCheck, Award, Gem
-} from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import CountUp from '@/components/CountUp';
 import { motion } from 'framer-motion';
+import { supabase } from '@/lib/supabase';
 
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.08 } }
-} as const;
+const features = [
+  { icon: 'app_registration', title: 'التسجيل الذكي', desc: 'نظام تسجيل متكامل من ٥ خطوات مع رفع المستندات وتحديد المستوى حسب الحفظ والعمر والتحقق الفوري من السعة المتاحة.' },
+  { icon: 'calendar_month', title: 'جدولة الاختبارات', desc: 'مواعيد اختبار محددة بأيام وساعات دقيقة مع توزيع المتسابقين على الفترات المتاحة حسب السعة الاستيعابية لكل توقيت.' },
+  { icon: 'gavel', title: 'التحكيم الرقمي', desc: 'نظام توثيق رقمي لدرجات المتسابقين مع احتساب آلي للنسب المئوية وتحديد دقيق لنتائج التقييم في كل مستوى.' },
+  { icon: 'analytics', title: 'النتائج الفورية', desc: 'إعلان النتائج فور اعتمادها مع إمكانية طباعة الشهادات والاستعلام عن أهلية حضور حفل التكريم.' },
+];
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 15 },
-  show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 100, damping: 22 } }
-} as const;
+interface LiveStats {
+  levelCount: number;
+  totalCapacity: number;
+  daysLeft: number;
+  registeredCount: number;
+}
 
-export default function Home() {
-  const features = [
-    {
-      icon: <Trophy size={22} />,
-      title: 'تكريم وجوائز قيمة',
-      desc: 'دروع تقديرية متألقة وجوائز مالية محفزة لجميع المتسابقين الأوائل في كافة الفروع.'
-    },
-    {
-      icon: <ShieldCheck size={22} />,
-      title: 'تحكيم مهني متخصص',
-      desc: 'لجان تقييم عادلة ودقيقة بمشاركة نخبة من مشايخ وقراء كتاب الله الكريم.'
-    },
-    {
-      icon: <Users size={22} />,
-      title: 'فئات تناسب الجميع',
-      desc: 'مستويات متعددة تبدأ من جزء واحد للبراعم الصغار وصولاً للقرآن كاملاً.'
-    },
-    {
-      icon: <Gem size={22} />,
-      title: 'بوابة إلكترونية متكاملة',
-      desc: 'سهولة تامة في التسجيل، مع استعلام فوري عن مواعيد الاختبار والنتائج والشهادات.'
+const journey = [
+  { icon: 'how_to_reg', title: 'التسجيل', desc: 'قم بتسجيل بياناتك ورفع المستندات المطلوبة لإنشاء ملفك في المسابقة.' },
+  { icon: 'edit_note', title: 'الاختبار', desc: 'خضع للتقييم في الموعد المحدد من قبل لجنة التحكيم المتخصصة.' },
+  { icon: 'event_available', title: 'الاستعلام عن الحفل', desc: 'استعلم عن أهليتك لحضور حفل التكريم من خلال المنصة.' },
+  { icon: 'emoji_events', title: 'حضور الحفل', desc: 'احضر الحفل الختامي واستلم شهادتك وجائزتك.' },
+  { icon: 'analytics', title: 'الاستعلام عن النتيجة', desc: 'اطلع على نتيجتك النهائية بعد اعتمادها من اللجنة العليا.' },
+];
+
+export default function HomePage() {
+  const fullTitle = 'مسابقة أهل القرآن الكبرى';
+  const [displayedTitle, setDisplayedTitle] = useState('');
+  const [showCursor, setShowCursor] = useState(true);
+  const [titleDone, setTitleDone] = useState(false);
+
+  useEffect(() => {
+    let i = 0;
+    const interval = setInterval(() => {
+      i++;
+      setDisplayedTitle(fullTitle.slice(0, i));
+      if (i >= fullTitle.length) {
+        clearInterval(interval);
+        setTitleDone(true);
+        setTimeout(() => setShowCursor(false), 2000);
+      }
+    }, 90);
+    return () => clearInterval(interval);
+  }, []);
+
+  const paragraphText = 'رحلة إيمانية نحو التميز في كتاب الله، حيث تلتقي التقنية الحديثة بقدسية التلاوة لتكريم حفظة كتاب الله.';
+
+  const [openFaq, setOpenFaq] = useState(-1);
+  const [faq, setFaq] = useState<{ q: string; a: string }[]>([]);
+
+  useEffect(() => {
+    fetch('/api/faq')
+      .then((res) => res.json())
+      .then((json) => { if (json.data) setFaq(json.data); })
+      .catch(() => {});
+  }, []);
+
+  const [liveStats, setLiveStats] = useState<LiveStats>({ levelCount: 0, totalCapacity: 0, daysLeft: 0, registeredCount: 0 });
+  const [statsInView, setStatsInView] = useState(false);
+  const statsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setStatsInView(true); },
+      { threshold: 0.4 }
+    );
+    if (statsRef.current) obs.observe(statsRef.current);
+    return () => obs.disconnect();
+  }, []);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const { data: levels } = await supabase
+          .from('competition_levels')
+          .select('max_capacity')
+          .eq('is_active', true);
+
+        const { data: settings } = await supabase
+          .from('app_settings')
+          .select('registration_end_date')
+          .eq('id', 1)
+          .maybeSingle();
+
+        const { count: studentCount } = await supabase
+          .from('students')
+          .select('*', { count: 'exact', head: true });
+
+        const levelCount = levels?.length ?? 0;
+        const totalCapacity = levels?.reduce((sum, l) => sum + (l.max_capacity ?? 0), 0) ?? 0;
+        const registeredCount = studentCount ?? 0;
+
+        let daysLeft = 0;
+        if (settings?.registration_end_date) {
+          const end = new Date(settings.registration_end_date);
+          const now = new Date();
+          daysLeft = Math.max(0, Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+        }
+
+        setLiveStats({ levelCount, totalCapacity, daysLeft, registeredCount });
+      } catch { }
     }
-  ];
-
-  const journeySteps = [
-    {
-      icon: <ClipboardCheck size={20} />,
-      title: '1. التسجيل الإلكتروني',
-      desc: 'تعبئة استمارة الاشتراك وتحديد مستوى الحفظ المناسب بدقة تامة مع رفع صورتك الشخصية وشهادة الميلاد.'
-    },
-    {
-      icon: <Calendar size={20} />,
-      title: '2. حجز موعد الاختبار',
-      desc: 'بعد تأكيد البيانات، سيتم تحديد يوم وساعة الاختبار الخاص بك تلقائياً ليظهر في بوابة استعلام الاستمارة.'
-    },
-    {
-      icon: <Users size={20} />,
-      title: '3. تأدية الاختبار',
-      desc: 'الحضور في الموعد المحدد للوقوف أمام لجان التحكيم المتخصصة في مقر التصفيات بالديدامون والحيدامون.'
-    },
-    {
-      icon: <Award size={20} />,
-      title: '4. استعلام النتيجة',
-      desc: 'متابعة بوابتك الإلكترونية لاستعراض درجات الفروع والتقدير العام فور اعتماد النتائج رسمياً.'
-    },
-    {
-      icon: <Trophy size={20} />,
-      title: '5. حفل التكريم الختامي',
-      desc: 'تتويج مهيب للفائزين بالمراكز الأولى وتوزيع الجوائز النقدية الكبرى والدروع التقديرية التذكارية.'
-    }
-  ];
+    fetchStats();
+  }, []);
 
   return (
-    <div className="min-h-screen bg-white flex flex-col font-cairo overflow-x-hidden" dir="rtl">
+    <div className="min-h-screen bg-surface font-cairo" dir="rtl">
       <Header />
 
-      {/* ─── HERO SECTION (Clean White + Beige) ─── */}
-      <section className="relative flex flex-col items-center justify-center px-4 pt-20 pb-28 bg-gradient-to-b from-white via-white to-[var(--beige-light)] overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.15]">
-          <div className="absolute top-10 left-10 w-72 h-72 bg-[var(--beige)] rounded-full blur-3xl" />
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-[var(--beige)] rounded-full blur-3xl" />
-        </div>
-        <motion.div 
-          variants={staggerContainer}
-          initial="hidden"
-          animate="show"
-          className="max-w-4xl mx-auto text-center relative z-10 w-full mt-4 flex flex-col items-center"
-        >
-          <motion.div 
-            variants={fadeUp} 
-            className="badge mb-6"
+      {/* ─── HERO ─── */}
+      <section className="relative min-h-[75vh] md:min-h-[85vh] flex items-center overflow-hidden bg-primary-container">
+        {/* Islamic pattern — very subtle */}
+        <div className="absolute inset-0 islamic-pattern z-0 opacity-[0.5]" />
+
+        {/* Soft gold glow from behind */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.5, ease: 'easeOut' }}
+          className="absolute -top-32 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-secondary-fixed/8 rounded-full blur-[120px] pointer-events-none z-[1]"
+        />
+
+        {/* Decorative blobs */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.5, ease: 'easeOut', delay: 0.2 }}
+          className="absolute -bottom-48 -right-48 w-[600px] h-[600px] bg-secondary-fixed/6 rounded-full blur-[150px] pointer-events-none z-[1]"
+        />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.5, ease: 'easeOut', delay: 0.4 }}
+          className="absolute -top-48 -left-48 w-[500px] h-[500px] bg-white/4 rounded-full blur-[150px] pointer-events-none z-[1]"
+        />
+
+        {/* Subtle dark overlay for depth */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-primary-container/60 z-[2]" />
+
+        {/* Smooth transition to next section */}
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-surface to-transparent z-[3] pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-6 relative z-10 text-center w-full py-24">
+          <motion.h1
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="text-[32px] sm:text-[44px] md:text-[56px] font-black text-white leading-[1.15] mb-5 min-h-[1.2em]"
+            style={{ fontFamily: "'Noto Serif', serif", textShadow: titleDone ? '0 0 30px rgba(255,224,136,0.25)' : 'none' }}
           >
-            <Sparkles size={12} />
-            <span>مسابقة القرآن الكريم السنوية الكبرى بالديدامون</span>
-          </motion.div>
-          
-          <motion.h1 
-            variants={fadeUp} 
-            className="text-4xl sm:text-5xl lg:text-6xl font-black mb-6 leading-tight tracking-tight text-[var(--text-primary)]"
-          >
-            مسابقة أهل <span className="text-[var(--beige-dark)]">القرآن</span> الكبرى
+            <span className={titleDone ? '' : 'animate-title-glow'}>
+              {displayedTitle}
+            </span>
+            {showCursor && displayedTitle.length < fullTitle.length && (
+              <span className="inline-block w-[3px] h-[0.9em] bg-secondary-fixed mr-1 animate-pulse align-middle" />
+            )}
           </motion.h1>
-          
-          <motion.p 
-            variants={fadeUp} 
-            className="text-sm sm:text-base text-[var(--text-secondary)] mb-10 max-w-xl mx-auto leading-relaxed font-semibold"
+
+          <motion.p
+            initial="hidden"
+            animate="visible"
+            variants={{
+              visible: { transition: { staggerChildren: 0.035, delayChildren: 2.5 } }
+            }}
+            className="text-base sm:text-lg text-on-primary-container max-w-2xl mx-auto mb-10 leading-relaxed opacity-90 overflow-hidden"
           >
-            بوابة التسجيل والاستعلام الإلكتروني الموحدة لمنافسات حفظ وتلاوة كتاب الله عز وجل، بمشاركة وتكريم حفظة القرآن بمختلف الأعمار.
+            {paragraphText.split(' ').map((word, i) => (
+              <motion.span
+                key={i}
+                variants={{
+                  hidden: { opacity: 0, y: 12, filter: 'blur(4px)' },
+                  visible: { opacity: 1, y: 0, filter: 'blur(0px)' }
+                }}
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="inline-block ml-1"
+              >
+                {word}
+              </motion.span>
+            ))}
           </motion.p>
 
-          <motion.div 
-            variants={fadeUp} 
-            className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto px-4 sm:px-0"
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: {},
+              visible: { transition: { staggerChildren: 0.15, delayChildren: 3.8 } }
+            }}
+            className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-stretch sm:items-center w-full max-w-md sm:max-w-none mx-auto"
           >
-            <Link 
-              href="/register" 
-              className="w-full sm:w-auto flex justify-center items-center gap-2 px-7 py-3.5 btn-primary text-sm font-bold shadow-sm"
+            <motion.div
+              variants={{
+                hidden: { opacity: 0, y: 20, scale: 0.9 },
+                visible: { opacity: 1, y: 0, scale: 1 }
+              }}
+              transition={{ type: 'spring', stiffness: 200, damping: 14 }}
+              className="w-full sm:w-auto"
             >
-              <UserPlus size={16} />
-              <span>ابدأ تسجيلك الآن</span>
-            </Link>
-            
-            <Link 
-              href="/levels" 
-              className="w-full sm:w-auto flex justify-center items-center gap-2 px-7 py-3.5 btn-outline text-sm font-bold"
+              <Link href="/register" className="inline-flex w-full sm:w-auto bg-secondary-fixed text-on-secondary-fixed px-5 sm:px-6 py-3 sm:py-2.5 rounded-xl font-bold text-sm shadow-xl hover:bg-secondary-container active:scale-95 transition-all duration-300 items-center justify-center gap-2 whitespace-nowrap">
+                <span className="material-symbols-outlined text-base sm:text-lg">person_add</span>
+                سجل الآن
+              </Link>
+            </motion.div>
+            <motion.div
+              variants={{
+                hidden: { opacity: 0, y: 20, scale: 0.9 },
+                visible: { opacity: 1, y: 0, scale: 1 }
+              }}
+              transition={{ type: 'spring', stiffness: 200, damping: 14 }}
+              className="w-full sm:w-auto"
             >
-              <BookOpen size={16} />
-              <span>عرض فروع وجوائز المسابقة</span>
-            </Link>
+              <Link href="/status?tab=result" className="inline-flex w-full sm:w-auto bg-transparent border-2 border-primary-fixed text-primary-fixed px-5 sm:px-6 py-3 sm:py-2.5 rounded-xl font-bold text-sm hover:bg-primary-fixed/10 active:scale-95 transition-all duration-300 items-center justify-center gap-2 whitespace-nowrap">
+                <span className="material-symbols-outlined text-lg">search</span>
+                الاستعلام عن النتيجة
+              </Link>
+            </motion.div>
           </motion.div>
+        </div>
+
+        {/* Scroll Indicator */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 4, duration: 0.5 }}
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 animate-bounce z-10"
+        >
+          <span className="material-symbols-outlined text-secondary-fixed text-3xl">expand_more</span>
         </motion.div>
       </section>
 
-      {/* ─── QUICK STATS BAR ─── */}
-      <section className="relative -mt-8 z-20 px-4 max-w-4xl mx-auto w-full">
-        <div className="card-elevated p-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="flex items-center gap-3 px-3 py-1 justify-center sm:justify-start">
-            <div className="w-10 h-10 rounded-xl bg-[var(--beige-light)] flex items-center justify-center text-[var(--beige-dark)] flex-shrink-0">
-              <BookOpen size={20} />
+      {/* ─── STATS ─── */}
+      <section ref={statsRef} className="py-16 bg-surface">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="group"
+          >
+            <div className="text-4xl md:text-5xl font-black text-primary mb-2 group-hover:scale-110 transition-transform">
+              {statsInView ? <CountUp end={liveStats.levelCount} duration={2} /> : '٠'}
             </div>
-            <div>
-              <h4 className="text-[10px] font-bold text-[var(--text-muted)]">مستويات الحفظ</h4>
-              <p className="text-xs font-black text-[var(--primary)]">فروع تنافسية متعددة</p>
+            <div className="text-secondary font-bold text-sm">مستوى فني</div>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+            className="group"
+          >
+            <div className="text-4xl md:text-5xl font-black text-primary mb-2 group-hover:scale-110 transition-transform">
+              {statsInView ? <CountUp end={liveStats.totalCapacity} duration={2.5} /> : '٠'}
             </div>
-          </div>
-          
-          <div className="flex items-center gap-3 px-3 py-1 justify-center">
-            <div className="w-10 h-10 rounded-xl bg-[var(--beige-light)] flex items-center justify-center text-[var(--beige-dark)] flex-shrink-0">
-              <Trophy size={20} />
+            <div className="text-secondary font-bold text-sm">العدد المطلوب</div>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="group"
+          >
+            <div className="text-4xl md:text-5xl font-black text-primary mb-2 group-hover:scale-110 transition-transform">
+              {statsInView ? <CountUp end={liveStats.daysLeft} duration={1.5} /> : '٠'}
             </div>
-            <div>
-              <h4 className="text-[10px] font-bold text-[var(--text-muted)]">حفل التكريم</h4>
-              <p className="text-xs font-black text-[var(--primary)]">جوائز مالية قيمة للأوائل</p>
+            <div className="text-secondary font-bold text-sm">أيام للتسجيل</div>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.45 }}
+            className="group"
+          >
+            <div className="text-4xl md:text-5xl font-black text-primary mb-2 group-hover:scale-110 transition-transform">
+              {statsInView ? <CountUp end={liveStats.registeredCount} duration={3} /> : '٠'}
+            </div>
+            <div className="text-secondary font-bold text-sm">إجمالي المتسابقين</div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ─── FEATURES ─── */}
+      <section className="py-16 bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-14"
+          >
+            <span className="text-secondary font-bold text-sm mb-2 block">مميزاتنا</span>
+            <h2 className="text-[30px] md:text-[38px] font-black text-primary"
+              style={{ fontFamily: "'Noto Serif', serif" }}>
+              منظومة رقمية متكاملة
+            </h2>
+          </motion.div>
+
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-50px' }}
+            variants={{
+              hidden: {},
+              visible: { transition: { staggerChildren: 0.1 } }
+            }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5"
+          >
+            {features.map((f, i) => (
+              <motion.div
+                key={i}
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0 }
+                }}
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="group"
+              >
+                <div className="glass-card p-7 rounded-2xl h-full transition-all duration-500 hover:-translate-y-1 hover:shadow-lg relative overflow-hidden">
+                  <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-[0.04] pointer-events-none"
+                    style={{ background: `radial-gradient(circle, #735c00 0%, transparent 70%)` }}
+                  />
+                  <div className="w-12 h-12 rounded-xl bg-primary-container/10 flex items-center justify-center mb-4 text-primary group-hover:bg-primary group-hover:text-white transition-all duration-400">
+                    <span className="material-symbols-outlined text-xl">{f.icon}</span>
+                  </div>
+                  <h3 className="text-base font-black text-primary mb-2">{f.title}</h3>
+                  <p className="text-on-surface-variant text-sm leading-relaxed">{f.desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ─── JOURNEY ─── */}
+      <section className="py-16 bg-surface overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-12"
+          >
+            <span className="text-secondary font-bold text-sm mb-2 block">خطوات المتسابق</span>
+            <h2 className="text-[30px] md:text-[38px] font-black text-primary"
+              style={{ fontFamily: "'Noto Serif', serif" }}>
+              رحلة المتسابق
+            </h2>
+          </motion.div>
+
+          {/* ── Desktop: horizontal connected circles ── */}
+          <div className="hidden lg:block">
+            <div className="relative pt-2">
+              <div className="absolute top-[30px] right-0 left-0 h-[2px] bg-gradient-to-l from-secondary/15 via-secondary/10 to-secondary/15 rounded-full" />
+              <div className="grid grid-cols-5 gap-4 relative">
+                {journey.map((step, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: i * 0.1 }}
+                    className="flex flex-col items-center text-center group"
+                  >
+                    <div className="relative mb-5">
+                      <div className="w-[60px] h-[60px] rounded-full bg-white border-2 border-secondary/20 flex items-center justify-center shadow-sm group-hover:shadow-lg group-hover:border-secondary transition-all duration-500 relative z-10">
+                        <span className="absolute -top-1.5 -left-1.5 w-6 h-6 rounded-full bg-secondary text-white flex items-center justify-center text-[11px] font-black shadow-sm">
+                          {i + 1}
+                        </span>
+                        <span className="material-symbols-outlined text-secondary text-2xl">{step.icon}</span>
+                      </div>
+                    </div>
+                    <h4 className="font-black text-primary text-sm mb-1.5">{step.title}</h4>
+                    <p className="text-on-surface-variant text-[11px] leading-relaxed px-1">{step.desc}</p>
+                  </motion.div>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 px-3 py-1 justify-center sm:justify-end">
-            <div className="w-10 h-10 rounded-xl bg-[var(--beige-light)] flex items-center justify-center text-[var(--beige-dark)] flex-shrink-0">
-              <CheckCircle size={20} />
-            </div>
-            <div>
-              <h4 className="text-[10px] font-bold text-[var(--text-muted)]">معايير الاختبار</h4>
-              <p className="text-xs font-black text-[var(--primary)]">تقييم دقيق وشفاف</p>
+          {/* ── Mobile/Tablet: vertical timeline ── */}
+          <div className="lg:hidden">
+            <div className="relative">
+              <div className="absolute right-[23px] top-2 bottom-2 w-[2px] bg-secondary/10 rounded-full" />
+              <div className="space-y-0">
+                {journey.map((step, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -15 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: i * 0.08 }}
+                    className="relative flex gap-4 pb-7 last:pb-0"
+                  >
+                    {/* Circle + line connector */}
+                    <div className="relative z-10 flex-shrink-0 w-[48px] h-[48px] rounded-full bg-white border-2 border-secondary/15 flex items-center justify-center shadow-sm group-hover:border-secondary transition-colors duration-300">
+                      <span className="text-secondary font-black text-sm">{i + 1}</span>
+                    </div>
+                    {/* Content card */}
+                    <div className="flex-1 min-w-0 bg-white/60 rounded-2xl p-4 border border-secondary/5 shadow-sm">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="material-symbols-outlined text-secondary text-lg">{step.icon}</span>
+                        <h4 className="font-black text-primary text-sm">{step.title}</h4>
+                      </div>
+                      <p className="text-on-surface-variant text-xs leading-relaxed">{step.desc}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ─── FEATURES SECTION ─── */}
-      <section className="py-20 px-4 bg-white relative">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <div className="badge mb-3 inline-flex">
-              <span>مزايا المسابقة</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-black text-[var(--primary)]">خدمات متميزة لحفظة القرآن</h2>
-            <div className="divider-beige" />
-            <p className="text-[var(--text-muted)] max-w-lg mx-auto text-xs sm:text-sm mt-3 font-semibold">
-              نوظف الوسائل التقنية الحديثة لضمان تجربة تسجيل واستعلام سلسلة وعادلة تليق بالمتسابقين.
-            </p>
-          </div>
+      {/* ─── FAQ ─── */}
+      {faq.length > 0 && (
+      <section className="py-16 bg-surface-container-low">
+        <div className="max-w-3xl mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-12"
+          >
+            <span className="text-secondary font-bold text-sm mb-2 block">الأسئلة الشائعة</span>
+            <h2 className="text-[30px] md:text-[38px] font-black text-primary"
+              style={{ fontFamily: "'Noto Serif', serif" }}>
+              إجابات لاستفساراتك
+            </h2>
+          </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {features.map((feat, i) => (
-              <motion.div 
+          <div className="space-y-3">
+            {faq.map((item, i) => (
+              <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.06 }}
-                className="card-elevated p-6 flex gap-4 items-start"
+                transition={{ duration: 0.4, delay: i * 0.06 }}
+                className={`rounded-2xl border transition-all duration-300 overflow-hidden ${
+                  openFaq === i
+                    ? 'bg-white border-secondary/15 shadow-sm'
+                    : 'bg-white/50 border-secondary/5 hover:border-secondary/10'
+                }`}
               >
-                <div className="w-11 h-11 rounded-xl bg-[var(--primary)] flex items-center justify-center text-[var(--beige)] flex-shrink-0">
-                  {feat.icon}
-                </div>
-                <div className="text-right">
-                  <h3 className="text-base font-extrabold text-[var(--primary)] mb-1">{feat.title}</h3>
-                  <p className="text-xs font-semibold text-[var(--text-secondary)] leading-relaxed">{feat.desc}</p>
-                </div>
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? -1 : i)}
+                  className="w-full flex items-center justify-between gap-3 p-5 text-right"
+                >
+                  <span className="font-black text-primary text-sm flex-1">{item.q}</span>
+                  <motion.span
+                    animate={{ rotate: openFaq === i ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="material-symbols-outlined text-secondary/40 text-xl flex-shrink-0"
+                  >
+                    expand_more
+                  </motion.span>
+                </button>
+                <motion.div
+                  initial={false}
+                  animate={{
+                    height: openFaq === i ? 'auto' : 0,
+                    opacity: openFaq === i ? 1 : 0,
+                  }}
+                  transition={{ duration: 0.25, ease: 'easeInOut' }}
+                  className="overflow-hidden"
+                >
+                  <div className="px-5 pb-5 pt-0 text-on-surface-variant text-sm leading-relaxed border-t border-secondary/5">
+                    {item.a}
+                  </div>
+                </motion.div>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
+      )}
 
-      {/* ─── JOURNEY TIMELINE SECTION ─── */}
-      <section className="py-20 px-4 bg-[var(--bg-section)] relative">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <div className="badge mb-3 inline-flex">
-              <span>رحلة المتسابق</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-black text-[var(--primary)]">خطوات المشاركة والجدول الزمني للرحلة</h2>
-            <div className="divider-beige" />
-            <p className="text-[var(--text-muted)] max-w-lg mx-auto text-xs sm:text-sm mt-3 font-semibold">
-              تعرف على المراحل الخمس لرحلة المتسابق منذ التسجيل الإلكتروني الأول وحتى تتويجه في الحفل الختامي.
-            </p>
-          </div>
 
-          <div className="max-w-3xl mx-auto space-y-6">
-            {journeySteps.map((step, i) => (
-              <motion.div 
-                key={i}
-                initial={{ opacity: 0, x: -10 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.06 }}
-                className="card-elevated p-5 sm:p-6 flex gap-4 items-start"
-              >
-                <div className="w-10 h-10 rounded-xl bg-[var(--primary)] flex items-center justify-center text-[var(--beige)] flex-shrink-0">
-                  {step.icon}
-                </div>
-                <div className="text-right flex-1">
-                  <h3 className="text-sm sm:text-base font-extrabold text-[var(--primary)] mb-1">{step.title}</h3>
-                  <p className="text-xs sm:text-xs text-[var(--text-secondary)] leading-relaxed font-semibold">{step.desc}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-          
-          <div className="text-center mt-12">
-            <Link 
-              href="/register" 
-              className="inline-flex items-center gap-2 px-8 py-3.5 btn-primary text-xs font-bold shadow-sm"
-            >
-              <span>ابدأ رحلتك القرآنية وسجل الآن</span>
-              <ArrowLeft size={14} />
-            </Link>
-          </div>
-        </div>
-      </section>
 
-      {/* ─── FOOTER (Black BG) ─── */}
-      <footer className="bg-[#111111] pt-16 pb-8 px-4 text-slate-300 relative">
-        <div className="absolute inset-0 opacity-[0.03]">
-          <div className="absolute top-0 left-1/4 w-64 h-64 bg-[var(--beige)] rounded-full blur-3xl" />
-        </div>
-        <div className="max-w-4xl mx-auto relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-12">
-            <div>
-              <h2 className="text-xl font-black text-white mb-4">اللجنة المنظمة للمسابقة</h2>
-              <p className="text-slate-400 text-xs sm:text-sm leading-relaxed mb-6 font-semibold">
-                يسعدنا الرد على استفساراتكم المتعلقة بالتسجيل الإلكتروني أو شروط مستويات وفروع الحفظ ومواعيد الاختبارات المجدولة.
-              </p>
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <span className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[var(--beige)]"><MapPin size={16} /></span>
-                  <div>
-                    <h4 className="text-[9px] font-bold text-slate-400">مقر الاختبارات والتصفيات</h4>
-                    <p className="text-xs font-bold text-white">الديدامون والحيدامون — مركز فاقوس — محافظة الشرقية</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <span className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[var(--beige)]"><Phone size={16} /></span>
-                  <div>
-                    <h4 className="text-[9px] font-bold text-slate-400">الدعم الفني واللجنة المنظمة</h4>
-                    <p className="text-xs font-bold text-white" dir="ltr">+20 100 123 4567</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/5 rounded-2xl p-6 border border-white/10 text-center flex flex-col justify-center items-center">
-              <Trophy size={32} className="text-[var(--beige)] mb-4" />
-              <h3 className="text-lg font-black text-white mb-2">حفل التكريم الختامي</h3>
-              <p className="text-slate-400 text-xs leading-relaxed max-w-xs mb-6 font-semibold">
-                تكريم سنوي بهيج لحفظة كتاب الله وتوزيع شهادات تقدير ودروع تميز وجوائز قيمة وسط كوكبة من المشايخ والعلماء.
-              </p>
-              <Link href="/register" className="inline-flex items-center gap-2 px-6 py-2.5 bg-[var(--beige)] hover:bg-[var(--beige-dark)] text-[#111111] font-bold text-xs rounded-xl transition-all">
-                <UserPlus size={14} /> 
-                <span>تسجيل متسابق جديد</span>
-              </Link>
-            </div>
-          </div>
-          
-          <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-right">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center justify-center sm:justify-start gap-2 text-white font-extrabold text-sm">
-                <span className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 border border-white/20">
-                  <Image src="/logo_musapaka.jpeg" alt="" width={24} height={24} className="object-cover w-full h-full" />
-                </span>
-                <span>مسابقة أهل القرآن بالديدامون والحيدامون</span>
-              </div>
-              <p className="text-[10px] font-semibold text-slate-500">
-                &copy; {new Date().getFullYear()} — جميع الحقوق محفوظة للجنة المنظمة للمسابقة.
-              </p>
-            </div>
-            <div className="text-[10px] font-black text-[var(--beige-dark)] bg-white/5 px-3.5 py-2 rounded-lg border border-white/10 shadow-sm">
-              إشراف وتنظيم: أ/ مصطفى عبدالرحمن محمد سالم
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

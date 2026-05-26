@@ -1,65 +1,38 @@
 import { NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
+import { getCorsHeaders, jsonResponse, optionsResponse, checkRateLimit, getClientIp } from '@/lib/api-utils';
 
-const ALLOWED_ORIGINS = [
-  process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-  'https://musapaka.vercel.app',
-].filter(Boolean);
+export { optionsResponse as OPTIONS };
 
-function getCorsHeaders(origin: string | null) {
-  const allowedOrigin =
-    origin && ALLOWED_ORIGINS.includes(origin)
-      ? origin
-      : ALLOWED_ORIGINS[0] || '';
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    Vary: 'Origin',
-  };
-}
-
-function jsonResponse(
-  data: unknown,
-  status = 200,
-  requestOrigin: string | null = null
-) {
-  return NextResponse.json(data, {
-    status,
-    headers: getCorsHeaders(requestOrigin ?? null),
-  });
-}
-
-export async function OPTIONS(request: Request) {
+export async function GET(request: Request) {
   const origin = request.headers.get('origin');
-  return new NextResponse(null, { status: 204, headers: getCorsHeaders(origin) });
-}
+  try {
+    const supabase = getAdminClient();
+    const { data: settings, error } = await supabase
+      .from('app_settings')
+      .select('is_ceremony_query_open')
+      .eq('id', 1)
+      .maybeSingle();
 
-// Rate limiting
-const ceremonyRateLimit = new Map<string, { count: number; resetAt: number }>();
-const RATE_WINDOW = 60_000;
-const RATE_MAX = 10;
+    if (error) {
+      return jsonResponse({ error: 'حدث خطأ في قراءة الإعدادات' }, 500, origin);
+    }
 
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = ceremonyRateLimit.get(ip);
-  if (!entry || now > entry.resetAt) {
-    ceremonyRateLimit.set(ip, { count: 1, resetAt: now + RATE_WINDOW });
-    return true;
+    return jsonResponse({
+      is_ceremony_query_open: !!settings?.is_ceremony_query_open,
+    }, 200, origin, 60);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';
+    return jsonResponse({ error: message }, 500, origin);
   }
-  if (entry.count >= RATE_MAX) return false;
-  entry.count++;
-  return true;
 }
 
 export async function POST(request: Request) {
   const origin = request.headers.get('origin');
 
   try {
-    const ip =
-      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-      'unknown';
-    if (!checkRateLimit(ip)) {
+    const ip = getClientIp(request);
+    if (!checkRateLimit(ip, 10)) {
       return jsonResponse(
         { error: 'طلبات كثيرة جداً. حاول بعد دقيقة.' },
         429,
@@ -68,11 +41,19 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { nationalId } = body;
+    const { nationalId, phone } = body;
 
     if (!nationalId || String(nationalId).length !== 14) {
       return jsonResponse(
         { error: 'الرقم القومي يجب أن يتكون من 14 رقماً' },
+        400,
+        origin
+      );
+    }
+
+    if (!phone || String(phone).trim().length < 10) {
+      return jsonResponse(
+        { error: 'رقم الهاتف مطلوب' },
         400,
         origin
       );
@@ -111,6 +92,7 @@ export async function POST(request: Request) {
         'id, name, gender, level, student_code, ceremony_code, score, rewaya_score, tajweed_score, voice_score, meaning_score, profile_image_url, national_id'
       )
       .eq('national_id', String(nationalId))
+      .eq('phone', String(phone).trim())
       .maybeSingle();
 
     if (studentError) {
@@ -126,7 +108,7 @@ export async function POST(request: Request) {
       return jsonResponse(
         {
           error:
-            'لم يُعثر على متسابق بهذا الرقم القومي. تأكد من الرقم المُدخل أو تواصل مع الإدارة.',
+            'لم يُعثر على متسابق بهذا الرقم القومي ورقم الهاتف. تأكد من البيانات المُدخلة أو تواصل مع الإدارة.',
         },
         404,
         origin
@@ -142,10 +124,10 @@ export async function POST(request: Request) {
 
     let maxScore = levelData?.total_points ?? 100;
     if (levelData) {
-      if (levelData.has_rewaya) maxScore += levelData.rewaya_max_score ?? 100;
-      if (levelData.has_tajweed) maxScore += levelData.tajweed_max_score ?? 100;
-      if (levelData.has_voice) maxScore += levelData.voice_max_score ?? 100;
-      if (levelData.has_meaning) maxScore += levelData.meaning_max_score ?? 100;
+      if (levelData.has_rewaya && (levelData.rewaya_max_score ?? 0) > 0) maxScore += levelData.rewaya_max_score ?? 0;
+      if (levelData.has_tajweed && (levelData.tajweed_max_score ?? 0) > 0) maxScore += levelData.tajweed_max_score ?? 0;
+      if (levelData.has_voice && (levelData.voice_max_score ?? 0) > 0) maxScore += levelData.voice_max_score ?? 0;
+      if (levelData.has_meaning && (levelData.meaning_max_score ?? 0) > 0) maxScore += levelData.meaning_max_score ?? 0;
     }
 
     const totalScore =

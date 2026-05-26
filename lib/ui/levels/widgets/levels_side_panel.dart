@@ -27,7 +27,7 @@ class LevelsSidePanel extends StatefulWidget {
 }
 
 class _LevelsSidePanelState extends State<LevelsSidePanel> {
-  late TextEditingController _titleCtrl, _contentCtrl, _notesCtrl, _minAgeCtrl, _maxAgeCtrl, _capCtrl, _totalPointsCtrl, _rewayaMaxScoreCtrl, _availableRewayasCtrl, _tajweedMaxScoreCtrl, _voiceMaxScoreCtrl, _meaningMaxScoreCtrl, _branchesCtrl, _firstPrizeCtrl, _secondPrizeCtrl, _thirdPrizeCtrl;
+  late TextEditingController _titleCtrl, _contentCtrl, _notesCtrl, _minAgeCtrl, _maxAgeCtrl, _capCtrl, _totalPointsCtrl, _rewayaMaxScoreCtrl, _availableRewayasCtrl, _tajweedMaxScoreCtrl, _voiceMaxScoreCtrl, _meaningMaxScoreCtrl, _branchesCtrl, _firstPrizeCtrl, _secondPrizeCtrl, _thirdPrizeCtrl, _prizesCtrl;
   bool _hasRewaya = false;
   bool _hasTajweed = false;
   bool _hasVoice = false;
@@ -83,6 +83,7 @@ class _LevelsSidePanelState extends State<LevelsSidePanel> {
     _firstPrizeCtrl = TextEditingController(text: widget.level?.firstPrize ?? '');
     _secondPrizeCtrl = TextEditingController(text: widget.level?.secondPrize ?? '');
     _thirdPrizeCtrl = TextEditingController(text: widget.level?.thirdPrize ?? '');
+    _prizesCtrl = TextEditingController(text: widget.level?.prizes ?? '');
     _hasRewaya = widget.level?.hasRewaya ?? false;
     _hasTajweed = widget.level?.hasTajweed ?? false;
     _hasVoice = widget.level?.hasVoice ?? false;
@@ -161,6 +162,7 @@ class _LevelsSidePanelState extends State<LevelsSidePanel> {
     _firstPrizeCtrl.dispose();
     _secondPrizeCtrl.dispose();
     _thirdPrizeCtrl.dispose();
+    _prizesCtrl.dispose();
     super.dispose();
   }
 
@@ -269,10 +271,10 @@ class _LevelsSidePanelState extends State<LevelsSidePanel> {
                       const SizedBox(height: 12),
                       Row(children: [
                         if (_ageType == 'range' || _ageType == 'min_only')
-                          Expanded(child: _field(_minAgeCtrl, 'من سن', Icons.arrow_upward_rounded, isNum: true)),
+                          Expanded(child: _field(_minAgeCtrl, 'فوق سن', Icons.arrow_upward_rounded, isNum: true)),
                         if (_ageType == 'range') const SizedBox(width: 12),
                         if (_ageType == 'range' || _ageType == 'max_only')
-                          Expanded(child: _field(_maxAgeCtrl, 'إلى سن', Icons.arrow_downward_rounded, isNum: true)),
+                          Expanded(child: _field(_maxAgeCtrl, 'سن فأقل', Icons.arrow_downward_rounded, isNum: true)),
                       ]),
                     ],
                     const SizedBox(height: 12),
@@ -438,9 +440,34 @@ class _LevelsSidePanelState extends State<LevelsSidePanel> {
                     ),
                     Divider(height: 20, color: Colors.grey.shade200),
 
+                    // 7. Prizes
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Row(children: [
+                        Icon(Icons.emoji_events_rounded, color: Colors.amber.shade700, size: 20),
+                        const SizedBox(width: 10),
+                        const Text('جوائز المستوى', style: TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.bold)),
+                      ]),
+                    ),
+                    const SizedBox(height: 12),
+                    _field(_firstPrizeCtrl, 'الجائزة الأولى', Icons.looks_one_rounded, maxLines: 1),
+                    const SizedBox(height: 10),
+                    _field(_secondPrizeCtrl, 'الجائزة الثانية', Icons.looks_two_rounded, maxLines: 1),
+                    const SizedBox(height: 10),
+                    _field(_thirdPrizeCtrl, 'الجائزة الثالثة', Icons.looks_3_rounded, maxLines: 1),
+                    const SizedBox(height: 14),
+                    _field(_prizesCtrl, 'نص عام للجوائز (اختياري — مثل: "الجائزة على أساس عدد الأجزاء المحفوظة")', Icons.description_rounded, maxLines: 3),
+                    const SizedBox(height: 4),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: Text(
+                        'إذا أُدخل هذا الحقل يُعرض بدلاً من الجوائز الثلاثة المنفصلة.',
+                        style: TextStyle(fontFamily: 'Cairo', fontSize: 10, color: Colors.grey.shade500),
+                      ),
+                    ),
+                    Divider(height: 20, color: Colors.grey.shade200),
 
-
-                    // 7. Require Custom Amount (ذوي الهمم)
+                    // 8. Require Custom Amount (ذوي الهمم)
                     SwitchListTile(
                       value: _requireCustomAmount,
                       onChanged: (v) => setState(() => _requireCustomAmount = v),
@@ -509,6 +536,7 @@ class _LevelsSidePanelState extends State<LevelsSidePanel> {
                             firstPrize: _firstPrizeCtrl.text.trim().isEmpty ? null : _firstPrizeCtrl.text.trim(),
                             secondPrize: _secondPrizeCtrl.text.trim().isEmpty ? null : _secondPrizeCtrl.text.trim(),
                             thirdPrize: _thirdPrizeCtrl.text.trim().isEmpty ? null : _thirdPrizeCtrl.text.trim(),
+                            prizes: _prizesCtrl.text.trim().isEmpty ? null : _prizesCtrl.text.trim(),
                           ));
                         },
                         style: ElevatedButton.styleFrom(

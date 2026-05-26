@@ -44,6 +44,17 @@ export default function Step2Official({
               setFormData((p: any) => {
                 const n = { ...p, nationalId: v };
                 if (v.trim().length === 14 && /^\d+$/.test(v.trim())) {
+                  const c = parseInt(v.trim()[0]);
+                  if (c === 2 || c === 3) {
+                    const y = (c === 2 ? 1900 : 2000) + parseInt(v.trim().substring(1, 3));
+                    const m = parseInt(v.trim().substring(3, 5));
+                    const d = parseInt(v.trim().substring(5, 7));
+                    const bd = new Date(y, m - 1, d);
+                    const now = new Date();
+                    let age = now.getFullYear() - bd.getFullYear();
+                    if (now.getMonth() < bd.getMonth() || (now.getMonth() === bd.getMonth() && now.getDate() < bd.getDate())) age--;
+                    if (age >= 0 && age < 100) n.age = age.toString();
+                  }
                   n.gender = parseInt(v.trim()[12]) % 2 !== 0 ? 'ذكر' : 'أنثى';
                 }
                 return n;
@@ -85,8 +96,8 @@ export default function Step2Official({
                 }}
                 className={`w-full bg-slate-50 border ${fieldErrors.gender ? 'border-amber-400' : 'border-slate-200'} rounded-xl py-3 px-4 text-slate-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900 appearance-none`}
               >
-                <option>ذكر</option>
-                <option>أنثى</option>
+                <option value="ذكر">ذكر</option>
+                <option value="أنثى">أنثى</option>
               </select>
               <ChevronDown size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             </div>

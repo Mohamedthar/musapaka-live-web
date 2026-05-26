@@ -50,6 +50,7 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 flutter_analyze.txt
+flutter_01.log
 supabase/test_ip.sql
 .vercel
 .env*.local

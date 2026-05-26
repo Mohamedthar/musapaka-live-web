@@ -58,7 +58,6 @@ export default function TourGuide({
       case 1:
         s = [
           { target: '.tour-start', content: 'مرحباً بك! هذا المرشد سيساعدك في تعبئة استمارة التسجيل بكل سهولة.', placement: 'center' },
-          { target: '.tour-stepper', content: 'هنا يمكنك متابعة تقدمك. الاستمارة مقسمة إلى 4 خطوات بسيطة.', placement: 'bottom' },
           { target: '.tour-photo', content: 'انقر هنا لرفع صورتك الشخصية. تأكد أن تكون صورة واضحة ومناسبة.', placement: 'left' },
           { target: '.tour-name', content: 'في هذه الخانات، اكتب بياناتك الشخصية بدقة (الاسم رباعي ورقم الهاتف).', placement: 'bottom' },
           { target: '.tour-next', content: 'بعد ملء الحقول المطلوبة، اضغط هنا للانتقال للخطوة التالية.', placement: 'top' }

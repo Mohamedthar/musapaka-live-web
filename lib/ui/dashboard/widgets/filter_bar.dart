@@ -1292,7 +1292,7 @@ class _RangeGroup extends StatelessWidget {
 // ─────────────────────────────────────────────
 // _RangeInput - حقل إدخال رقمي
 // ─────────────────────────────────────────────
-class _RangeInput extends StatelessWidget {
+class _RangeInput extends StatefulWidget {
   final String hint;
   final Function(String) onChanged;
   final String? initial;
@@ -1300,19 +1300,41 @@ class _RangeInput extends StatelessWidget {
   const _RangeInput({required this.hint, required this.onChanged, this.initial});
 
   @override
+  State<_RangeInput> createState() => _RangeInputState();
+}
+
+class _RangeInputState extends State<_RangeInput> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initial ?? '');
+    if (widget.initial != null) {
+      _controller.selection = TextSelection.fromPosition(
+        TextPosition(offset: widget.initial!.length),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 40,
       child: TextField(
         keyboardType: TextInputType.number,
-        onChanged: onChanged,
-        controller: initial != null
-            ? (TextEditingController()..text = initial!..selection = TextSelection.fromPosition(TextPosition(offset: initial!.length)))
-            : null,
+        onChanged: widget.onChanged,
+        controller: _controller,
         textAlign: TextAlign.center,
         style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w800, color: Colors.black87),
         decoration: InputDecoration(
-          hintText: hint,
+          hintText: widget.hint,
           hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 12),
           filled: true,
           fillColor: const Color(0xFFF7F7F7),

@@ -39,12 +39,11 @@ class RankingUtils {
 
   static int getLevelMaxScore(String levelName, List<CompetitionLevel> levels) {
     String normalizeArabic(String text) {
-      return text.replaceAll('ي', 'ى').replaceAll('أ', 'ا').replaceAll('إ', 'ا').replaceAll('آ', 'ا').replaceAll('ة', 'ه').trim();
-    }
-    
-    String displayLevel = levelName;
-    if (displayLevel.contains('المستو') && !displayLevel.contains('المستوى')) {
-      displayLevel = displayLevel.replaceAll('المستو', 'المستوى');
+      return text
+        .replaceAll('ي', 'ى').replaceAll('أ', 'ا').replaceAll('إ', 'ا')
+        .replaceAll('آ', 'ا').replaceAll('ة', 'ه')
+        .replaceAll('المستو', 'المستوى')
+        .trim();
     }
 
     final normalized = normalizeArabic(levelName);
