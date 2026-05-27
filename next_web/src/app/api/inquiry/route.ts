@@ -1,5 +1,4 @@
-import { NextResponse } from 'next/server';
-import { getAdminClient } from '@/lib/supabase-admin';
+import { getPublicClient } from '@/lib/supabase-public';
 import { getCorsHeaders, jsonResponse, optionsResponse, checkRateLimit, getClientIp } from '@/lib/api-utils';
 
 export { optionsResponse as OPTIONS };
@@ -19,21 +18,17 @@ export async function POST(request: Request) {
       return jsonResponse({ error: 'الرقم القومي يجب أن يتكون من 14 رقماً' }, 400, origin);
     }
 
-    const supabase = getAdminClient();
+    const supabase = getPublicClient();
 
     const [studentRes, levelsRes] = await Promise.all([
-      supabase
-        .from('students')
-        .select('id, student_code, name, phone, national_id, age, gender, level, selected_rewaya, branch_name, memorization_amount, memorizer_name, memorizer_phone, memorizer_address, location, birth_date, score, rewaya_score, tajweed_score, voice_score, meaning_score, profile_image_url, birth_certificate_url, exam_date, exam_hour, notes, created_at')
-        .eq('national_id', nationalId)
-        .maybeSingle(),
+      supabase.rpc('public_lookup_student', { p_national_id: nationalId }),
       supabase
         .from('competition_levels')
         .select('id, title, content, is_active, total_points, has_rewaya, rewaya_max_score, has_tajweed, tajweed_max_score, has_voice, voice_max_score, has_meaning, meaning_max_score')
         .eq('is_active', true)
     ]);
 
-    const { data: student, error: studentError } = studentRes;
+    const { data: studentData, error: studentError } = studentRes;
     const { data: levels, error: levelsError } = levelsRes;
 
     if (studentError) {
@@ -41,6 +36,7 @@ export async function POST(request: Request) {
       return jsonResponse({ error: 'حدث خطأ في قاعدة البيانات أثناء البحث' }, 500, origin);
     }
 
+    const student = Array.isArray(studentData) ? studentData[0] : studentData;
     if (!student) {
       return jsonResponse({ error: 'لم يُعثر على متسابق بهذا الرقم القومي. تأكد من البيانات المُدخلة أو تواصل مع الإدارة.' }, 404, origin);
     }

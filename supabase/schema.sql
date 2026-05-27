@@ -82,7 +82,7 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_students_level') THEN
         ALTER TABLE students ADD CONSTRAINT fk_students_level
             FOREIGN KEY (level) REFERENCES competition_levels(title)
-            ON DELETE CASCADE;
+            ON DELETE RESTRICT;
     END IF;
 END $$;
 
@@ -295,21 +295,11 @@ CREATE TABLE IF NOT EXISTS app_settings (
     exam_period_end DATE,
     exam_schedule JSONB NOT NULL DEFAULT '[]'::jsonb,
     
-    -- UI Information
-    timeline JSONB NOT NULL DEFAULT '[
-      {"title": "فتح باب التسجيل", "date": "1 رمضان 1446", "desc": "بدء استقبال طلبات التسجيل عبر البوابة الإلكترونية وتحديد المستويات."},
-      {"title": "إغلاق التسجيل ومراجعة الطلبات", "date": "15 رمضان 1446", "desc": "إغلاق البوابة ومراجعة البيانات والمستندات لتحديد لجان الاختبار المبدئية."},
-      {"title": "الاختبارات التمهيدية والنهائية", "date": "20 رمضان 1446", "desc": "انعقاد لجان الاستماع والاختبار للمتسابقين المقبولين بمقر المسابقة."},
-      {"title": "إعلان النتائج والحفل الختامي", "date": "27 رمضان 1446", "desc": "تكريم الفائزين في حفل قرآني مهيب وتوزيع الجوائز والشهادات."}
-    ]'::jsonb,
+    -- UI Information (managed via admin panel)
+    timeline JSONB NOT NULL DEFAULT '[]'::jsonb,
 
-    -- FAQs
-    faqs JSONB NOT NULL DEFAULT '[
-      {"q": "كيف أعرف أن تسجيلي تم بنجاح؟", "a": "بعد إتمام التسجيل ستظهر لك استمارة إلكترونية برقم تسجيل خاص، كما يمكنك الاستعلام في أي وقت من بوابة الاستعلامات."},
-      {"q": "هل يمكنني تغيير المستوى بعد التسجيل؟", "a": "لا يمكن تغيير المستوى بعد تأكيد التسجيل. ننصح باختيار المستوى المناسب بعناية قبل الإرسال."},
-      {"q": "كيف أعرف موعد اختباري؟", "a": "بعد اكتمال التسجيل، يتم تحديد الموعد تلقائياً ويظهر في بوابة الاستعلام عن الاستمارة برقمك القومي ورقم هاتفك."},
-      {"q": "ما هي معايير التقييم في المسابقة؟", "a": "يتم التقييم على: الحفظ وجودة التلاوة، أحكام التجويد، حسن الصوت والأداء، ومعاني الكلمات حسب المستوى."}
-    ]'::jsonb,
+    -- FAQs (managed via admin panel)
+    faqs JSONB NOT NULL DEFAULT '[]'::jsonb,
     
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -365,7 +355,7 @@ BEGIN
     );
     
     IF v_code_ascii IS NULL THEN 
-        RAISE EXCEPTION 'وصلت للحد الأقصى للمستويات (26 مستوى)'; 
+        RAISE EXCEPTION 'وصلت للحد الأقصى للمستويات (26 مستوى - A إلى Z)'; 
     END IF;
     
     NEW.level_code := CHR(v_code_ascii);
@@ -465,11 +455,23 @@ BEGIN
     v_gender_num := CASE WHEN NEW.gender = 'ذكر' THEN '1' WHEN NEW.gender = 'أنثى' THEN '0' ELSE '9' END;
     v_prefix := v_level_code || v_gender_num;
 
-    -- Find the smallest missing sequence number using LEFT JOIN (O(1) amortized)
-    SELECT COALESCE(MIN(s.seq), 1) INTO v_seq
-    FROM generate_series(1, 9999) AS s(seq)
-    LEFT JOIN students ON students.student_code = v_prefix || LPAD(s.seq::TEXT, 3, '0')
-    WHERE students.student_code IS NULL;
+    -- Find the smallest gap in sequential numbers using existing codes only
+    SELECT COALESCE(
+        (SELECT e.seq + 1
+         FROM (
+             SELECT SUBSTRING(student_code, 3)::int AS seq
+             FROM students
+             WHERE student_code LIKE v_prefix || '___'
+             UNION ALL SELECT 0
+         ) e
+         WHERE NOT EXISTS (
+             SELECT 1 FROM students
+             WHERE student_code = v_prefix || LPAD((e.seq + 1)::TEXT, 3, '0')
+         )
+         ORDER BY e.seq
+         LIMIT 1),
+        1
+    ) INTO v_seq;
 
     NEW.student_code := v_prefix || LPAD(v_seq::TEXT, 3, '0');
     RETURN NEW;
@@ -490,6 +492,8 @@ DECLARE
     v_capacity INTEGER;
     v_current INTEGER;
 BEGIN
+    PERFORM pg_advisory_xact_lock(987654325);
+
     SELECT max_capacity INTO v_capacity FROM competition_levels WHERE title = NEW.level;
     IF v_capacity IS NOT NULL THEN
         SELECT COUNT(*) INTO v_current FROM students WHERE level = NEW.level;
@@ -572,11 +576,24 @@ BEGIN
     v_gender_num := CASE WHEN NEW.gender = 'ذكر' THEN '1' WHEN NEW.gender = 'أنثى' THEN '0' ELSE '9' END;
     v_prefix := v_level_code || v_gender_num;
 
-    -- Find the smallest missing sequence number (gap filling), excluding current student
-    SELECT COALESCE(MIN(s.seq), 1) INTO v_seq
-    FROM generate_series(1, 9999) AS s(seq)
-    LEFT JOIN students ON students.student_code = v_prefix || LPAD(s.seq::TEXT, 3, '0') AND students.id != OLD.id
-    WHERE students.student_code IS NULL;
+    SELECT COALESCE(
+        (SELECT e.seq + 1
+         FROM (
+             SELECT SUBSTRING(student_code, 3)::int AS seq
+             FROM students
+             WHERE student_code LIKE v_prefix || '___'
+               AND id != OLD.id
+             UNION ALL SELECT 0
+         ) e
+         WHERE NOT EXISTS (
+             SELECT 1 FROM students
+             WHERE student_code = v_prefix || LPAD((e.seq + 1)::TEXT, 3, '0')
+               AND id != OLD.id
+         )
+         ORDER BY e.seq
+         LIMIT 1),
+        1
+    ) INTO v_seq;
 
     NEW.student_code := v_prefix || LPAD(v_seq::TEXT, 3, '0');
     RETURN NEW;
@@ -653,3 +670,13 @@ CREATE TRIGGER trg_app_settings_updated_at
     BEFORE UPDATE ON app_settings
     FOR EACH ROW
     EXECUTE FUNCTION update_app_settings_updated_at();
+
+-- =============================================
+-- 16. Add NOT NULL constraint for memorizer_name
+-- =============================================
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'students_memorizer_name_not_null') THEN
+        ALTER TABLE students ALTER COLUMN memorizer_name SET NOT NULL;
+    END IF;
+END $$;

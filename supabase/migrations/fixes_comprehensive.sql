@@ -156,10 +156,22 @@ BEGIN
     v_gender_num := CASE WHEN NEW.gender = 'ذكر' THEN '1' WHEN NEW.gender = 'أنثى' THEN '0' ELSE '9' END;
     v_prefix := v_level_code || v_gender_num;
 
-    SELECT COALESCE(MIN(s.seq), 1) INTO v_seq
-    FROM generate_series(1, 9999) AS s(seq)
-    LEFT JOIN students ON students.student_code = v_prefix || LPAD(s.seq::TEXT, 3, '0')
-    WHERE students.student_code IS NULL;
+    SELECT COALESCE(
+        (SELECT e.seq + 1
+         FROM (
+             SELECT SUBSTRING(student_code, 3)::int AS seq
+             FROM students
+             WHERE student_code LIKE v_prefix || '___'
+             UNION ALL SELECT 0
+         ) e
+         WHERE NOT EXISTS (
+             SELECT 1 FROM students
+             WHERE student_code = v_prefix || LPAD((e.seq + 1)::TEXT, 3, '0')
+         )
+         ORDER BY e.seq
+         LIMIT 1),
+        1
+    ) INTO v_seq;
 
     NEW.student_code := v_prefix || LPAD(v_seq::TEXT, 3, '0');
     RETURN NEW;
@@ -192,10 +204,24 @@ BEGIN
     v_gender_num := CASE WHEN NEW.gender = 'ذكر' THEN '1' WHEN NEW.gender = 'أنثى' THEN '0' ELSE '9' END;
     v_prefix := v_level_code || v_gender_num;
 
-    SELECT COALESCE(MIN(s.seq), 1) INTO v_seq
-    FROM generate_series(1, 9999) AS s(seq)
-    LEFT JOIN students ON students.student_code = v_prefix || LPAD(s.seq::TEXT, 3, '0') AND students.id != OLD.id
-    WHERE students.student_code IS NULL;
+    SELECT COALESCE(
+        (SELECT e.seq + 1
+         FROM (
+             SELECT SUBSTRING(student_code, 3)::int AS seq
+             FROM students
+             WHERE student_code LIKE v_prefix || '___'
+               AND id != OLD.id
+             UNION ALL SELECT 0
+         ) e
+         WHERE NOT EXISTS (
+             SELECT 1 FROM students
+             WHERE student_code = v_prefix || LPAD((e.seq + 1)::TEXT, 3, '0')
+               AND id != OLD.id
+         )
+         ORDER BY e.seq
+         LIMIT 1),
+        1
+    ) INTO v_seq;
 
     NEW.student_code := v_prefix || LPAD(v_seq::TEXT, 3, '0');
     RETURN NEW;
@@ -269,12 +295,34 @@ BEGIN
             s.gender,
             s.age,
             COALESCE(ASCII(c.level_code) - 64, 24) AS level_num,
-            DENSE_RANK() OVER (PARTITION BY s.level ORDER BY s.score DESC) as level_rank,
-            ROW_NUMBER() OVER (ORDER BY COALESCE(ASCII(c.level_code), 88) ASC, s.score DESC, s.name ASC) as global_seq
+            (
+                COALESCE(s.score, 0) + COALESCE(s.rewaya_score, 0) + COALESCE(s.tajweed_score, 0) + COALESCE(s.voice_score, 0) + COALESCE(s.meaning_score, 0)
+            ) AS total_score,
+            DENSE_RANK() OVER (PARTITION BY s.level ORDER BY (
+                COALESCE(s.score, 0) + COALESCE(s.rewaya_score, 0) + COALESCE(s.tajweed_score, 0) + COALESCE(s.voice_score, 0) + COALESCE(s.meaning_score, 0)
+            ) DESC) as level_rank,
+            ROW_NUMBER() OVER (ORDER BY COALESCE(ASCII(c.level_code), 88) ASC, (
+                COALESCE(s.score, 0) + COALESCE(s.rewaya_score, 0) + COALESCE(s.tajweed_score, 0) + COALESCE(s.voice_score, 0) + COALESCE(s.meaning_score, 0)
+            ) DESC, s.name ASC) as global_seq
         FROM students s
         JOIN competition_levels c ON c.title = s.level
-        WHERE s.score IS NOT NULL AND c.total_points > 0 
-          AND ((s.score::NUMERIC / c.total_points::NUMERIC) * 100) >= 95
+        WHERE (
+            c.total_points + 
+            CASE WHEN c.has_rewaya THEN COALESCE(c.rewaya_max_score, 0) ELSE 0 END +
+            CASE WHEN c.has_tajweed THEN COALESCE(c.tajweed_max_score, 0) ELSE 0 END +
+            CASE WHEN c.has_voice THEN COALESCE(c.voice_max_score, 0) ELSE 0 END +
+            CASE WHEN c.has_meaning THEN COALESCE(c.meaning_max_score, 0) ELSE 0 END
+        ) > 0
+          AND (
+            (COALESCE(s.score, 0) + COALESCE(s.rewaya_score, 0) + COALESCE(s.tajweed_score, 0) + COALESCE(s.voice_score, 0) + COALESCE(s.meaning_score, 0))::NUMERIC / 
+            (
+                c.total_points + 
+                CASE WHEN c.has_rewaya THEN COALESCE(c.rewaya_max_score, 0) ELSE 0 END +
+                CASE WHEN c.has_tajweed THEN COALESCE(c.tajweed_max_score, 0) ELSE 0 END +
+                CASE WHEN c.has_voice THEN COALESCE(c.voice_max_score, 0) ELSE 0 END +
+                CASE WHEN c.has_meaning THEN COALESCE(c.meaning_max_score, 0) ELSE 0 END
+            )::NUMERIC * 100
+          ) >= 95
     )
     UPDATE students
     SET ceremony_code = 

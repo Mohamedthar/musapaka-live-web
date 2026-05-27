@@ -344,7 +344,7 @@ export default function Step5Success({
                 <div style={{ border: '1pt solid #e2e8f0', borderRadius: '12pt', padding: '12pt', backgroundColor: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <div style={{ marginBottom: '8pt' }}><FlutterIconRow label="الاسم" value={formData.name} icon={<User size="12pt" color="white" />} /></div>
-                    <div style={{ marginBottom: '8pt' }}><FlutterIconRow label="المستوى" value={`${formData.level} - ${getLevelContent()}${formData.selectedRewaya ? ` - ${formData.selectedRewaya}` : ''}`} icon={<Layers size="12pt" color="white" />} /></div>
+                    <div style={{ marginBottom: '8pt' }}><FlutterIconRow label="المستوى" value={`${formData.level} - ${getLevelContent()}${formData.selectedRewaya ? ' - ' + formData.selectedRewaya : ''}${branchName ? ' - ' + branchName : ''}`} icon={<Layers size="12pt" color="white" />} bgColor="#f59e0b" /></div>
                     <div style={{ marginBottom: '8pt' }}><FlutterIconRow label="موعد الامتحان" value={examSlot || 'لم يتم التحديد'} icon={<Calendar size="12pt" color="white" />} valueColor="#1e40af" /></div>
                     <FlutterIconRow label="العمر" value={`${formData.age} سنة`} icon={<User size="12pt" color="white" />} />
                   </div>
@@ -515,9 +515,6 @@ export default function Step5Success({
                         {branchName && (
                           <span style={{ color: '#dc2626' }}>{` (${branchName})`}</span>
                         )}
-                        {memorizationAmount != null && !branchName && (
-                          <span style={{ color: '#dc2626' }}>{` (${memorizationAmount === 1 ? 'جزء واحد' : memorizationAmount === 2 ? 'جزئين' : `${memorizationAmount} أجزاء`})`}</span>
-                        )}
                       </span>
                     </div>
 
@@ -526,64 +523,64 @@ export default function Step5Success({
                       <table style={{ width: '100%', borderCollapse: 'collapse', direction: 'rtl' }}>
                         <thead>
                           <tr style={{ backgroundColor: '#003527' }}>
-                            <th style={{ width: '30%', padding: '8pt 10pt', textAlign: 'center', color: 'white', fontSize: '11pt', fontWeight: 700, fontFamily: '"Cairo", sans-serif', borderLeft: '1pt solid #334155' }}>السؤال</th>
+                            <th style={{ width: '25%', padding: '8pt 10pt', textAlign: 'center', color: 'white', fontSize: '11pt', fontWeight: 700, fontFamily: '"Cairo", sans-serif', borderLeft: '1pt solid #334155' }}>الدرجة</th>
                             <th style={{ width: '45%', padding: '8pt 10pt', textAlign: 'center', color: 'white', fontSize: '11pt', fontWeight: 700, fontFamily: '"Cairo", sans-serif', borderLeft: '1pt solid #334155' }}>ملاحظات</th>
-                            <th style={{ width: '25%', padding: '8pt 10pt', textAlign: 'center', color: 'white', fontSize: '11pt', fontWeight: 700, fontFamily: '"Cairo", sans-serif' }}>الدرجة</th>
+                            <th style={{ width: '30%', padding: '8pt 10pt', textAlign: 'center', color: 'white', fontSize: '11pt', fontWeight: 700, fontFamily: '"Cairo", sans-serif' }}>السؤال</th>
                           </tr>
                         </thead>
                         <tbody>
                           {questions.map((q, i) => (
                             <tr key={i} style={{ backgroundColor: i % 2 !== 0 ? '#f5f3ef' : 'white', borderTop: '1pt solid #e2e8f0' }}>
-                              <td style={{ padding: '7pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '11pt', color: '#003527', fontFamily: '"Cairo", sans-serif', borderLeft: '1pt solid #e2e8f0', whiteSpace: 'nowrap' }}>{q}</td>
+                              <td style={{ padding: '7pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '13pt', color: '#334155', fontFamily: 'monospace', paddingLeft: '20pt', borderLeft: '1pt solid #e2e8f0' }}>/ 10</td>
                               <td style={{ padding: '7pt 10pt', borderLeft: '1pt solid #e2e8f0', minWidth: '120pt' }}></td>
-                              <td style={{ padding: '7pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '13pt', color: '#334155', fontFamily: 'monospace', paddingLeft: '20pt' }}>/ 10</td>
+                              <td style={{ padding: '7pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '11pt', color: '#003527', fontFamily: '"Cairo", sans-serif', whiteSpace: 'nowrap' }}>{q}</td>
                             </tr>
                           ))}
                           {/* Questions subtotal */}
                           <tr style={{ backgroundColor: '#f1f5f9', borderTop: '2pt solid #94a3b8' }}>
-                            <td style={{ padding: '8pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '11pt', color: '#003527', fontFamily: '"Cairo", sans-serif', borderLeft: '1pt solid #e2e8f0', whiteSpace: 'nowrap' }}>المجموع</td>
+                            <td style={{ padding: '8pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '13pt', color: '#003527', fontFamily: 'monospace', paddingLeft: '20pt', borderLeft: '1pt solid #e2e8f0' }}>/ 100</td>
                             <td style={{ borderLeft: '1pt solid #e2e8f0' }}></td>
-                            <td style={{ padding: '8pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '13pt', color: '#003527', fontFamily: 'monospace', paddingLeft: '20pt' }}>/ 100</td>
+                            <td style={{ padding: '8pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '11pt', color: '#003527', fontFamily: '"Cairo", sans-serif', whiteSpace: 'nowrap' }}>المجموع</td>
                           </tr>
                           {/* Rewaya */}
                           {hasRewaya && (
                             <tr style={{ backgroundColor: 'white', borderTop: '1pt solid #e2e8f0' }}>
-                              <td style={{ padding: '8pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '11pt', color: '#003527', fontFamily: '"Cairo", sans-serif', borderLeft: '1pt solid #e2e8f0' }}>
+                              <td style={{ padding: '8pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '13pt', color: '#334155', fontFamily: 'monospace', paddingLeft: '24pt', borderLeft: '1pt solid #e2e8f0' }}>/ {rewayaScore}</td>
+                              <td style={{ borderLeft: '1pt solid #e2e8f0' }}></td>
+                              <td style={{ padding: '8pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '11pt', color: '#003527', fontFamily: '"Cairo", sans-serif' }}>
                                 الرواية{formData.selectedRewaya ? ` (${formData.selectedRewaya})` : ''}
                               </td>
-                              <td style={{ borderLeft: '1pt solid #e2e8f0' }}></td>
-                              <td style={{ padding: '8pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '13pt', color: '#334155', fontFamily: 'monospace', paddingLeft: '24pt' }}>/ {rewayaScore}</td>
                             </tr>
                           )}
                           {/* Tajweed */}
                           {hasTajweed && (
                             <tr style={{ backgroundColor: '#f5f3ef', borderTop: '1pt solid #e2e8f0' }}>
-                              <td style={{ padding: '8pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '11pt', color: '#003527', fontFamily: '"Cairo", sans-serif', borderLeft: '1pt solid #e2e8f0' }}>التجويد</td>
+                              <td style={{ padding: '8pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '13pt', color: '#334155', fontFamily: 'monospace', paddingLeft: '24pt', borderLeft: '1pt solid #e2e8f0' }}>/ {tajweedScore}</td>
                               <td style={{ borderLeft: '1pt solid #e2e8f0' }}></td>
-                              <td style={{ padding: '8pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '13pt', color: '#334155', fontFamily: 'monospace', paddingLeft: '24pt' }}>/ {tajweedScore}</td>
+                              <td style={{ padding: '8pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '11pt', color: '#003527', fontFamily: '"Cairo", sans-serif' }}>التجويد</td>
                             </tr>
                           )}
                           {/* Voice */}
                           {hasVoice && (
                             <tr style={{ backgroundColor: 'white', borderTop: '1pt solid #e2e8f0' }}>
-                              <td style={{ padding: '8pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '11pt', color: '#003527', fontFamily: '"Cairo", sans-serif', borderLeft: '1pt solid #e2e8f0' }}>حسن الصوت</td>
+                              <td style={{ padding: '8pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '13pt', color: '#334155', fontFamily: 'monospace', paddingLeft: '24pt', borderLeft: '1pt solid #e2e8f0' }}>/ {voiceScore}</td>
                               <td style={{ borderLeft: '1pt solid #e2e8f0' }}></td>
-                              <td style={{ padding: '8pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '13pt', color: '#334155', fontFamily: 'monospace', paddingLeft: '24pt' }}>/ {voiceScore}</td>
+                              <td style={{ padding: '8pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '11pt', color: '#003527', fontFamily: '"Cairo", sans-serif' }}>حسن الصوت</td>
                             </tr>
                           )}
                           {/* Meaning */}
                           {hasMeaning && (
                             <tr style={{ backgroundColor: '#f5f3ef', borderTop: '1pt solid #e2e8f0' }}>
-                              <td style={{ padding: '8pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '11pt', color: '#003527', fontFamily: '"Cairo", sans-serif', borderLeft: '1pt solid #e2e8f0' }}>فهم المعاني والوقف</td>
+                              <td style={{ padding: '8pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '13pt', color: '#334155', fontFamily: 'monospace', paddingLeft: '24pt', borderLeft: '1pt solid #e2e8f0' }}>/ {meaningScore}</td>
                               <td style={{ borderLeft: '1pt solid #e2e8f0' }}></td>
-                              <td style={{ padding: '8pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '13pt', color: '#334155', fontFamily: 'monospace', paddingLeft: '24pt' }}>/ {meaningScore}</td>
+                              <td style={{ padding: '8pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '11pt', color: '#003527', fontFamily: '"Cairo", sans-serif' }}>فهم المعاني والوقف</td>
                             </tr>
                           )}
                           {/* Grand Total */}
                           <tr style={{ backgroundColor: '#fef3c7', borderTop: '2.5pt solid #003527' }}>
-                            <td style={{ padding: '10pt 10pt', textAlign: 'center', fontWeight: 900, fontSize: '12pt', color: '#003527', fontFamily: '"Cairo", sans-serif', borderLeft: '1pt solid #003527' }}>المجموع الكلي للقسم</td>
+                            <td style={{ padding: '10pt 10pt', textAlign: 'left', fontWeight: 900, fontSize: '14pt', color: '#dc2626', fontFamily: 'monospace', paddingLeft: '20pt', borderLeft: '1pt solid #003527' }}>/ {grandTotal}</td>
                             <td style={{ borderLeft: '1pt solid #003527' }}></td>
-                            <td style={{ padding: '10pt 10pt', textAlign: 'left', fontWeight: 900, fontSize: '14pt', color: '#dc2626', fontFamily: 'monospace', paddingLeft: '20pt' }}>/ {grandTotal}</td>
+                            <td style={{ padding: '10pt 10pt', textAlign: 'center', fontWeight: 900, fontSize: '12pt', color: '#003527', fontFamily: '"Cairo", sans-serif' }}>المجموع الكلي للقسم</td>
                           </tr>
                         </tbody>
                       </table>

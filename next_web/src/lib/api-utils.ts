@@ -58,3 +58,20 @@ export function getClientIp(request: Request): string {
     'unknown'
   );
 }
+
+export function validateCsrf(request: Request): boolean {
+  const origin = request.headers.get('origin');
+  const referer = request.headers.get('referer');
+
+  if (!origin && !referer) return true;
+
+  if (origin) {
+    return ALLOWED_ORIGINS.some((allowed) => origin.startsWith(allowed));
+  }
+
+  if (referer) {
+    return ALLOWED_ORIGINS.some((allowed) => referer.startsWith(allowed));
+  }
+
+  return false;
+}

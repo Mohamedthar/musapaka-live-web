@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../data/models/student.dart';
 import '../../../services/supabase_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/validators.dart';
 
 class StudentDetailsScreen extends StatefulWidget {
   final Student student;
@@ -108,19 +109,19 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
             CircleAvatar(
               radius: 30,
               backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
-              backgroundImage: _student.profileImageUrl != null
+              backgroundImage: Validator.isValidImageUrl(_student.profileImageUrl)
                   ? CachedNetworkImageProvider(_student.profileImageUrl!)
                   : null,
-              child: _student.profileImageUrl == null
-                  ? Text(
+              child: Validator.isValidImageUrl(_student.profileImageUrl)
+                  ? null
+                  : Text(
                       _student.name.isNotEmpty ? _student.name[0] : '?',
                       style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
                         color: AppTheme.primaryColor,
                       ),
-                    )
-                  : null,
+                    ),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -254,11 +255,11 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
             color: Colors.grey[200],
             borderRadius: BorderRadius.circular(8),
           ),
-          child: url != null
+          child: Validator.isValidImageUrl(url)
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: CachedNetworkImage(
-                    imageUrl: url,
+                    imageUrl: url!,
                     fit: BoxFit.cover,
                     placeholder: (context, url) => const Center(
                       child: CircularProgressIndicator(),

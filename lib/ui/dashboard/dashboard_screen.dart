@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
-import 'package:image/image.dart' as img;
 import 'package:file_picker/file_picker.dart';
 
 import '../../data/models/student.dart';
@@ -13,6 +12,7 @@ import '../../services/cloudinary_service.dart';
 import '../../services/export_service.dart';
 import '../../services/print_service.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/validators.dart';
 import '../../core/utils/responsive.dart';
 import '../levels/levels_screen.dart';
 import '../auth/splash_screen.dart';
@@ -29,13 +29,9 @@ import 'widgets/top_bar.dart';
 import 'widgets/add_student_panel.dart';
 import 'widgets/resizable_panel.dart';
 
-Uint8List _compressForEdit(Uint8List bytes) {
-  final image = img.decodeImage(bytes);
-  if (image == null) return bytes;
-  img.Image resized = image;
-  if (image.width > 800) resized = img.copyResize(image, width: 800);
-  return Uint8List.fromList(img.encodeJpg(resized, quality: 75));
-}
+import '../../core/utils/image_utils.dart';
+
+final _compressForEdit = compressImage;
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -918,7 +914,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _fetchOriginalImageBytes(Student s) async {
-    if (s.profileImageUrl != null && s.profileImageUrl!.isNotEmpty) {
+    if (Validator.isValidImageUrl(s.profileImageUrl)) {
       try {
         final res = await http.get(Uri.parse(s.profileImageUrl!)).timeout(const Duration(seconds: 15));
         if (res.statusCode == 200 && mounted) {
@@ -931,7 +927,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         debugPrint('Error fetching original profile bytes: $e');
       }
     }
-    if (s.birthCertificateUrl != null && s.birthCertificateUrl!.isNotEmpty) {
+    if (Validator.isValidImageUrl(s.birthCertificateUrl)) {
       try {
         final res = await http.get(Uri.parse(s.birthCertificateUrl!)).timeout(const Duration(seconds: 15));
         if (res.statusCode == 200 && mounted) {

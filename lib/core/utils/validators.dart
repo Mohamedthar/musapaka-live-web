@@ -106,4 +106,10 @@ class Validator {
     final extension = fileName.split('.').last.toLowerCase();
     return extension == 'jpg' || extension == 'jpeg' || extension == 'png';
   }
+
+  static bool isValidImageUrl(String? url) {
+    if (url == null || url.trim().isEmpty) return false;
+    if (url.contains('placehold')) return false;
+    return true;
+  }
 }

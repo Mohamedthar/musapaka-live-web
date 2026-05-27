@@ -4,39 +4,41 @@ export function FlutterIconRow({
   label,
   value,
   icon,
-  valueColor = '#003527',
+  valueColor = '#0f172a',
+  bgColor = '#1e293b',
 }: {
   label: string;
   value: string;
   icon: React.ReactNode;
   valueColor?: string;
+  bgColor?: string;
 }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center' }}>
       <div style={{
-        minWidth: '30pt', height: '30pt',
-        borderRadius: '8pt',
+        minWidth: '34px', height: '34px',
+        borderRadius: '8px',
         display: 'flex',
         alignItems: 'center', justifyContent: 'center',
-        backgroundColor: '#003527',
+        backgroundColor: bgColor,
       }}>
         {icon}
       </div>
-      <div style={{ marginRight: '8pt' }}>
-        <p style={{
-          fontSize: '9pt', fontWeight: 600,
-          color: '#64748B',
-          margin: 0, fontFamily: '"Cairo", sans-serif',
+      <div style={{ marginRight: '8px' }}>
+        <span style={{
+          fontSize: '14px', fontWeight: 600,
+          color: '#0f172a',
+          fontFamily: '"Cairo", sans-serif',
         }}>
-          {label}
-        </p>
-        <p style={{
-          fontSize: '11pt', fontWeight: 700,
+          {label}:{' '}
+        </span>
+        <span style={{
+          fontSize: '16px', fontWeight: 700,
           color: valueColor,
-          margin: '2pt 0 0 0', fontFamily: '"Cairo", sans-serif',
+          fontFamily: '"Cairo", sans-serif',
         }}>
           {value}
-        </p>
+        </span>
       </div>
     </div>
   );
@@ -57,36 +59,37 @@ export function FlutterGridCell({
 }) {
   return (
     <div style={{
-      padding: '8pt 10pt',
+      padding: '10px 12px',
       display: 'flex', alignItems: 'center',
-      gap: '8pt',
+      gap: '8px',
       background: bg,
-      borderTop: isTopRow ? 'none' : '1pt solid #f1f5f9',
+      borderTop: isTopRow ? 'none' : '1px solid #e2e8f0',
     }}>
       <div style={{
-        minWidth: '24pt', height: '24pt',
-        borderRadius: '6pt',
+        minWidth: '32px', height: '32px',
+        borderRadius: '6px',
         display: 'flex',
         alignItems: 'center', justifyContent: 'center',
-        backgroundColor: '#003527',
+        backgroundColor: '#1e293b',
       }}>
         {icon}
       </div>
       <div>
-        <p style={{
-          fontSize: '8pt', fontWeight: 600,
-          color: '#94a3b8',
-          margin: 0, fontFamily: '"Cairo", sans-serif',
+        <span style={{
+          fontSize: '13px', fontWeight: 600,
+          color: '#0f172a',
+          fontFamily: '"Cairo", sans-serif',
         }}>
-          {label}
-        </p>
-        <p style={{
-          fontSize: '10pt', fontWeight: 700,
-          color: '#003527',
-          margin: '1pt 0 0 0', fontFamily: '"Cairo", sans-serif',
+          {label}:
+        </span>
+        <span style={{
+          fontSize: '14px', fontWeight: 700,
+          color: '#0f172a',
+          fontFamily: '"Cairo", sans-serif',
+          marginRight: '4px',
         }}>
           {value || '-'}
-        </p>
+        </span>
       </div>
     </div>
   );

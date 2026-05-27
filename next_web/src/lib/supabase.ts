@@ -13,11 +13,3 @@ export function getSupabase(): SupabaseClient {
   }
   return _supabase;
 }
-
-/** @deprecated Use `getSupabase()` instead to avoid build-time errors */
-export const supabase = new Proxy({} as SupabaseClient, {
-  get(_, prop) {
-    const client = getSupabase();
-    return Reflect.get(client, prop, client);
-  },
-});

@@ -6,7 +6,7 @@ import '../core/constants/app_constants.dart';
 class SupabaseService {
   final SupabaseClient _client = Supabase.instance.client;
 
-  static const String _studentColumns = 'id, student_code, ceremony_code, name, phone, national_id, age, gender, level, selected_rewaya, branch_name, memorization_amount, memorizer_name, memorizer_phone, memorizer_address, location, birth_date, score, rewaya_score, tajweed_score, voice_score, meaning_score, profile_image_url, birth_certificate_url, exam_date, exam_hour, notes, created_at, updated_at';
+  static const String _studentColumns = 'id, student_code, ceremony_code, name, phone, national_id, age, gender, level, level_id, selected_rewaya, branch_name, memorization_amount, memorizer_name, memorizer_phone, memorizer_address, location, birth_date, score, rewaya_score, tajweed_score, voice_score, meaning_score, profile_image_url, birth_certificate_url, exam_date, exam_hour, notes, created_at, updated_at';
 
   Future<List<Student>> getAllStudents({int? limit, int? offset}) async {
     try {
@@ -249,7 +249,7 @@ class SupabaseService {
       return await _client
           .from('app_settings')
           .select()
-          .eq('id', 1)
+          .limit(1)
           .maybeSingle();
     } catch (e) {
       throw Exception('فشل في جلب الإعدادات: $e');

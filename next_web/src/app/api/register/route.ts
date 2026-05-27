@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { getCorsHeaders, jsonResponse, optionsResponse, checkRateLimit, getClientIp } from '@/lib/api-utils';
+import { getCorsHeaders, jsonResponse, optionsResponse, checkRateLimit, getClientIp, validateCsrf } from '@/lib/api-utils';
 
 export { optionsResponse as OPTIONS };
 
 export async function POST(request: Request) {
   const origin = request.headers.get('origin');
   try {
+    if (!validateCsrf(request)) {
+      return jsonResponse({ error: 'طلب غير مصرح به' }, 403, origin);
+    }
+
     const body = await request.json();
     const token = body.token;
     const supabase = getAdminClient();
@@ -39,22 +43,24 @@ export async function POST(request: Request) {
     }
 
     // 2. Verify Turnstile Token
-    if (!token) {
-      return jsonResponse({ error: 'رمز التحقق مطلوب' }, 400, origin);
-    }
+    if (process.env.NODE_ENV !== 'development') {
+      if (!token) {
+        return jsonResponse({ error: 'رمز التحقق مطلوب' }, 400, origin);
+      }
 
-    const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        secret: process.env.TURNSTILE_SECRET_KEY,
-        response: token,
-      }),
-    });
+      const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          secret: process.env.TURNSTILE_SECRET_KEY,
+          response: token,
+        }),
+      });
 
-    const verifyData = await verifyRes.json();
-    if (!verifyData.success) {
-      return jsonResponse({ error: 'فشل التحقق من أمان المتصفح.' }, 400, origin);
+      const verifyData = await verifyRes.json();
+      if (!verifyData.success) {
+        return jsonResponse({ error: 'فشل التحقق من أمان المتصفح.' }, 400, origin);
+      }
     }
 
     // 2. Validate input fields

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/utils/responsive.dart';
+import '../../../core/utils/validators.dart';
 
 import '../../../data/models/student.dart';
 import '../../../data/models/competition_level.dart';
@@ -128,20 +129,26 @@ class StudentDetailPanel extends StatelessWidget {
                   border:
                       Border.all(color: primaryColor.withValues(alpha: 0.08), width: 3),
                 ),
-                child: ClipOval(
-                  child: CachedNetworkImage(
-                    imageUrl: student.profileImageUrl ?? '',
-                    placeholder: (_, __) => Container(
+                child: Validator.isValidImageUrl(student.profileImageUrl)
+                    ? ClipOval(
+                        child: CachedNetworkImage(
+                          imageUrl: student.profileImageUrl!,
+                          placeholder: (_, __) => Container(
+                              color: Colors.grey.shade100,
+                              child: const Icon(Icons.person,
+                                  size: 40, color: Colors.grey)),
+                          errorWidget: (_, __, ___) => Container(
+                              color: Colors.grey.shade100,
+                              child: const Icon(Icons.person,
+                                  size: 40, color: Colors.grey)),
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : Container(
                         color: Colors.grey.shade100,
                         child: const Icon(Icons.person,
-                            size: 40, color: Colors.grey)),
-                    errorWidget: (_, __, ___) => Container(
-                        color: Colors.grey.shade100,
-                        child: const Icon(Icons.person,
-                            size: 40, color: Colors.grey)),
-                    fit: BoxFit.cover,
-                  ),
-                ),
+                            size: 40, color: Colors.grey),
+                      ),
               ),
               const SizedBox(height: 10),
               Text(student.name,
@@ -489,8 +496,8 @@ class StudentDetailPanel extends StatelessWidget {
               const SizedBox(height: 24),
 
               // Documents
-              if (student.profileImageUrl != null ||
-                  student.birthCertificateUrl != null) ...[
+              if (Validator.isValidImageUrl(student.profileImageUrl) ||
+                  Validator.isValidImageUrl(student.birthCertificateUrl)) ...[
                 Text('المستندات المرفقة',
                     style: TextStyle(fontFamily: 'Cairo', 
                         fontSize: 14,
@@ -498,14 +505,14 @@ class StudentDetailPanel extends StatelessWidget {
                         color: primaryColor)),
                 const SizedBox(height: 12),
                 Row(children: [
-                  if (student.profileImageUrl != null)
+                  if (Validator.isValidImageUrl(student.profileImageUrl))
                     Expanded(
                         child: _docCard(
                             student.profileImageUrl!, 'الصورة الشخصية')),
-                  if (student.profileImageUrl != null &&
-                      student.birthCertificateUrl != null)
+                  if (Validator.isValidImageUrl(student.profileImageUrl) &&
+                      Validator.isValidImageUrl(student.birthCertificateUrl))
                     const SizedBox(width: 12),
-                  if (student.birthCertificateUrl != null)
+                  if (Validator.isValidImageUrl(student.birthCertificateUrl))
                     Expanded(
                         child: _docCard(
                             student.birthCertificateUrl!, 'شهادة الميلاد')),

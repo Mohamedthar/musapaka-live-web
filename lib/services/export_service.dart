@@ -9,6 +9,7 @@ import '../data/models/student.dart';
 import '../data/models/competition_level.dart';
 import '../core/theme/app_theme.dart';
 import '../core/utils/ranking_utils.dart';
+import '../core/utils/filter_utils.dart';
 
 class ExportService {
   static const _headerBg = '#03121C';
@@ -32,7 +33,7 @@ class ExportService {
     final wsStats = wb.worksheets.addWithName('الإحصائيات');
     wsStats.isRightToLeft = true;
 
-    final data = _filterStudents(students, level: levelTitle, minScore: minScore, maxScore: maxScore);
+    final data = filterStudents(students, level: levelTitle, minScore: minScore, maxScore: maxScore);
     final cols = _buildColumns(selectedLevel, levels);
 
     // Build Data Sheet
@@ -190,7 +191,7 @@ class ExportService {
       avg = data.map((s) => s.totalScore ?? 0).reduce((a, b) => a + b) / data.length;
       max = data.map((s) => s.totalScore ?? 0).reduce((a, b) => a > b ? a : b);
     }
-    _addStatBox(ws, startRow, 4, 7, 'النتائج الكلية', 'المتوسط: ${avg.toStringAsFixed(1)} | الأعلى: $max', '#E8F5E9', '#2E7D32');
+    _addStatBox(ws, startRow, 4, 7, 'النتائج الكلية', 'المتوسط: ${avg.toStringAsFixed(1)} | الأعلى: $max', '#E3F2FD', '#1976D2');
 
     // 3. Age Grid
     double avgAge = 0;
@@ -290,7 +291,7 @@ class ExportService {
     final arabicFont = await PdfGoogleFonts.cairoRegular();
     final arabicFontBold = await PdfGoogleFonts.cairoBold();
 
-    final data = _filterStudents(students, level: level, minScore: minScore, maxScore: maxScore);
+    final data = filterStudents(students, level: level, minScore: minScore, maxScore: maxScore);
 
     pdf.addPage(
       pw.MultiPage(
@@ -384,7 +385,7 @@ class ExportService {
     ws.name = 'المستويات';
     ws.isRightToLeft = true;
 
-    final data = _filterLevels(levels, status: status, minAge: minAge, maxAge: maxAge);
+    final data = filterLevels(levels, status: status, minAge: minAge, maxAge: maxAge);
 
     final title = ws.getRangeByIndex(1, 1, 1, 8);
     title.merge();
@@ -455,7 +456,7 @@ class ExportService {
     final fontBold = await PdfGoogleFonts.cairoBold();
     final now = DateTime.now().toString().split(' ')[0];
 
-    final data = _filterLevels(levels, status: status, minAge: minAge, maxAge: maxAge);
+    final data = filterLevels(levels, status: status, minAge: minAge, maxAge: maxAge);
 
     pdf.addPage(pw.MultiPage(
       pageFormat: PdfPageFormat.a4,
@@ -516,25 +517,6 @@ class ExportService {
       bytes: bytes,
     );
     return path;
-  }
-
-  List<Student> _filterStudents(List<Student> students, {String? level, double? minScore, double? maxScore}) {
-    return students.where((s) {
-      final matchesLevel = level == null || s.level == level;
-      final scoreVal = s.totalScore ?? s.score ?? 0.0;
-      final matchesScore = (minScore == null || scoreVal >= minScore) &&
-                           (maxScore == null || scoreVal <= maxScore);
-      return matchesLevel && matchesScore;
-    }).toList();
-  }
-
-  List<CompetitionLevel> _filterLevels(List<CompetitionLevel> levels, {String status = 'all', int? minAge, int? maxAge}) {
-    return levels.where((l) {
-      final matchesStatus = status == 'all' || (status == 'active' ? l.isActive : !l.isActive);
-      final matchesMin = minAge == null || l.maxAge == null || l.maxAge! >= minAge;
-      final matchesMax = maxAge == null || l.minAge == null || l.minAge! <= maxAge;
-      return matchesStatus && matchesMin && matchesMax;
-    }).toList();
   }
 
   Future<void> printPdf(Uint8List pdfBytes) async {

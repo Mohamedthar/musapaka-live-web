@@ -29,6 +29,7 @@ export interface CompetitionLevel {
 export interface StudentStatus {
   name: string;
   level: string;
+  level_id?: number;
   level_content?: string;
   location?: string;
   student_code?: string;
@@ -37,7 +38,6 @@ export interface StudentStatus {
   exam_hour?: number;
   selected_rewaya?: string | null;
   branch_name?: string | null;
-  // Level evaluation details
   level_has_rewaya?: boolean;
   level_rewaya_max_score?: number;
   level_has_tajweed?: boolean;

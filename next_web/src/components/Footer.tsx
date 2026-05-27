@@ -42,10 +42,10 @@ export default function Footer() {
     <footer className="w-full bg-gradient-to-b from-[#002117] to-[#003527] text-white relative overflow-hidden" dir="rtl">
       <div className="absolute inset-0 islamic-pattern z-0 opacity-[0.03]" />
 
-      <div className="relative z-10 max-w-6xl mx-auto px-6 py-12 lg:py-16">
+      <div className="relative z-10 max-w-6xl mx-auto px-5 py-10 lg:py-14">
         {/* Top decorative line */}
         <motion.div
-          className="w-16 h-[2px] bg-secondary-fixed/70 mx-auto mb-10 rounded-full"
+          className="w-16 h-[2px] bg-secondary-fixed/70 mx-auto mb-8 rounded-full"
           initial={{ width: 0, opacity: 0 }}
           whileInView={{ width: 64, opacity: 1 }}
           viewport={{ once: true }}
@@ -53,46 +53,45 @@ export default function Footer() {
         />
 
         {/* Main content */}
-        <div className="grid grid-cols-2 md:grid-cols-12 gap-6 md:gap-6">
-          {/* Brand - full width on all screens */}
+        <div className="grid grid-cols-2 md:grid-cols-12 gap-5 md:gap-5 lg:gap-4">
+          {/* Brand */}
           <motion.div
-            className="col-span-2 md:col-span-12 lg:col-span-5 flex flex-col items-center text-center gap-3"
+            className="col-span-2 md:col-span-12 lg:col-span-6 flex flex-col items-center lg:items-start text-center lg:text-right gap-3"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           >
             <h3
-              className="text-2xl lg:text-3xl font-black text-secondary-fixed"
+              className="text-3xl lg:text-4xl font-black text-secondary-fixed"
               style={{ fontFamily: "'Noto Serif', serif" }}
             >
               مسابقة أهل القرآن الكبرى
             </h3>
-            <p className="text-white/40 text-sm lg:text-base leading-[1.8] max-w-sm">
-              منصة مخصصة لمسابقة أهل القرآن الكريم الكبرى في الديدامون مركز فاقوس تحت إشراف الشيخ <span className="text-secondary-fixed font-bold">مصطفى عبدالرحمن</span>
+            <p className="text-white/40 text-base lg:text-lg leading-[1.9] max-w-md">
+              منصة مخصصة لمسابقة أهل القرآن الكريم الكبرى في الديدامون مركز فاقوس تحت إشراف
+              <br />
+              <span className="text-secondary-fixed font-bold">ش/ مصطفى عبدالرحمن</span>
             </p>
           </motion.div>
 
-          {/* Spacer for lg */}
-          <div className="hidden lg:block lg:col-span-1" />
-
-          {/* Links - 1 col on mobile, 4 on md, 2 on lg */}
+          {/* Links */}
           <motion.div
-            className="col-span-1 md:col-span-4 lg:col-span-2 flex flex-col items-center text-center gap-3"
+            className="col-span-1 md:col-span-4 lg:col-span-2 flex flex-col items-center lg:items-start text-center lg:text-right gap-3"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
           >
-            <h5 className="text-white/60 font-bold text-xs tracking-widest uppercase">
+            <h5 className="text-white/70 font-black text-sm lg:text-base">
               المنصة
             </h5>
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex flex-col items-center lg:items-start gap-2">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-white/40 hover:text-secondary-fixed transition-colors text-sm font-bold"
+                  className="text-white/40 hover:text-secondary-fixed transition-colors text-sm lg:text-base font-bold"
                 >
                   {link.label}
                 </Link>
@@ -100,25 +99,25 @@ export default function Footer() {
             </div>
           </motion.div>
 
-          {/* Contact - 1 col on mobile, 4 on md, 2 on lg */}
+          {/* Contact */}
           <motion.div
-            className="col-span-1 md:col-span-4 lg:col-span-2 flex flex-col items-center text-center gap-3"
+            className="col-span-1 md:col-span-4 lg:col-span-2 flex flex-col items-center lg:items-start text-center lg:text-right gap-3"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
           >
-            <h5 className="text-white/60 font-bold text-xs tracking-widest uppercase">
+            <h5 className="text-white/70 font-black text-sm lg:text-base">
               للاستفسار
             </h5>
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex flex-col items-center lg:items-start gap-2">
               {phones.map((phone) => (
                 <a
                   key={phone}
                   href={`https://wa.me/20${phone.replace(/^0/, '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group text-white/40 hover:text-secondary-fixed transition-colors text-sm font-bold flex items-center gap-2"
+                  className="group text-white/40 hover:text-secondary-fixed transition-colors text-sm lg:text-base font-bold flex items-center gap-2"
                   dir="ltr"
                 >
                   <span className="w-5 h-5 rounded bg-secondary-fixed/10 flex items-center justify-center text-secondary-fixed/70 shrink-0">
@@ -130,25 +129,25 @@ export default function Footer() {
             </div>
           </motion.div>
 
-          {/* Social - full width on mobile, 4 on md, 2 on lg */}
+          {/* Social */}
           <motion.div
-            className="col-span-2 md:col-span-4 lg:col-span-2 flex flex-col items-center text-center gap-3"
+            className="col-span-2 md:col-span-4 lg:col-span-2 flex flex-col items-center lg:items-start text-center lg:text-right gap-3"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
           >
-            <h5 className="text-white/60 font-bold text-xs tracking-widest uppercase">
+            <h5 className="text-white/70 font-black text-sm lg:text-base">
               روابط
             </h5>
-            <div className="flex flex-row md:flex-col items-center justify-center gap-4 md:gap-2">
+            <div className="flex flex-col items-center lg:items-start gap-2">
               {socialLinks.map((link) => (
                 <a
                   key={link.label}
                   href={link.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group text-white/40 hover:text-secondary-fixed transition-colors text-sm font-bold flex items-center gap-2"
+                  className="group text-white/40 hover:text-secondary-fixed transition-colors text-sm lg:text-base font-bold flex items-center gap-2"
                 >
                   <span className="w-5 h-5 rounded bg-secondary-fixed/10 flex items-center justify-center text-secondary-fixed/70 shrink-0">
                     {link.icon}
@@ -162,7 +161,7 @@ export default function Footer() {
 
         {/* Divider */}
         <motion.div
-          className="mt-10 border-t border-white/[0.04]"
+          className="mt-8 border-t border-white/[0.04]"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
@@ -171,13 +170,13 @@ export default function Footer() {
 
         {/* Copyright */}
         <motion.div
-          className="pt-6 flex justify-center"
+          className="pt-5 flex justify-center"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.5 }}
         >
-          <p className="text-white/15 text-[10px] font-bold tracking-widest">
+          <p className="text-white/15 text-xs lg:text-sm font-bold tracking-widest">
             جميع الحقوق محفوظة &copy; {year} مسابقة أهل القرآن الكبرى
           </p>
         </motion.div>

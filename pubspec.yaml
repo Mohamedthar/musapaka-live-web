@@ -28,7 +28,6 @@ dependencies:
   syncfusion_officechart: 33.2.5
   path_provider: ^2.1.5
   path: ^1.9.1
-  flutter_dotenv: ^5.2.1
 
 dev_dependencies:
   flutter_test:
@@ -51,7 +50,6 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
   assets:
-    - .env
     - assets/svg/
     - assets/images/
   fonts:

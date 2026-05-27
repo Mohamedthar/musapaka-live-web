@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/responsive.dart';
+import '../../../core/utils/validators.dart';
 import '../../../data/models/competition_level.dart';
 import '../../../data/models/student.dart';
 
@@ -228,14 +229,14 @@ class StudentTable extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.grey.shade100,
             borderRadius: BorderRadius.circular(10),
-            image: student.profileImageUrl != null
+            image: Validator.isValidImageUrl(student.profileImageUrl)
                 ? DecorationImage(
                     image: CachedNetworkImageProvider(student.profileImageUrl!),
                     fit: BoxFit.cover,
                   )
                 : null,
           ),
-          child: student.profileImageUrl == null
+          child: !Validator.isValidImageUrl(student.profileImageUrl)
               ? Icon(Icons.person, size: 24, color: Colors.grey.shade400)
               : null,
         ),
@@ -452,7 +453,7 @@ class StudentTable extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(10),
-                  image: student.profileImageUrl != null
+                  image: Validator.isValidImageUrl(student.profileImageUrl)
                       ? DecorationImage(
                           image: CachedNetworkImageProvider(
                             student.profileImageUrl!,
@@ -461,7 +462,7 @@ class StudentTable extends StatelessWidget {
                         )
                       : null,
                 ),
-                child: student.profileImageUrl == null
+                child: !Validator.isValidImageUrl(student.profileImageUrl)
                     ? Icon(Icons.person, size: 20, color: Colors.grey.shade400)
                     : null,
               ),

@@ -5,7 +5,7 @@ import { Trophy, BookOpen } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { motion } from 'framer-motion';
-import { supabase } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';
 import type { CompetitionLevel } from '@/lib/database.types';
 
 export default function LevelsPage() {
@@ -15,7 +15,7 @@ export default function LevelsPage() {
   useEffect(() => {
     const fetchLevels = async () => {
       try {
-        const { data } = await supabase
+        const { data } = await getSupabase()
           .from('competition_levels')
           .select('*')
           .eq('is_active', true)
@@ -131,7 +131,6 @@ export default function LevelsPage() {
 
         {/* ─── LEVELS GRID ─── */}
         <section className="relative py-16 bg-gradient-to-b from-surface via-surface to-surface-container-low overflow-hidden">
-          <div className="absolute inset-0 islamic-pattern opacity-[0.03]" />
           <div className="max-w-7xl mx-auto px-6 relative z-10">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20">

@@ -23,7 +23,7 @@ class CompetitionLevel {
   final String? firstPrize;
   final String? secondPrize;
   final String? thirdPrize;
-  final String? prizes;
+  final String? prizes;    // إذا وُجد، له الأولوية على first_prize/second_prize/third_prize في العرض
 
   CompetitionLevel({
     this.id,

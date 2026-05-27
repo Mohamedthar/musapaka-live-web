@@ -2,8 +2,8 @@
 'use client';
 // Deployment trigger: 2026-05-19T23:36:27Z
 import React, { useState, useEffect, useMemo } from 'react';
-import { supabase } from '@/lib/supabase';
-import { CheckCircle2, ChevronLeft, ChevronRight, HelpCircle, ShieldCheck, ArrowLeft, Send, CalendarX, BookOpen } from 'lucide-react';
+import { getSupabase } from '@/lib/supabase';
+import { CheckCircle2, ChevronLeft, ChevronRight, ShieldCheck, ArrowLeft, Send, CalendarX } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -13,12 +13,10 @@ import Footer from '@/components/Footer';
 import type { CompetitionLevel } from '@/lib/database.types';
 
 // Subcomponents
-import TourGuide from './components/TourGuide';
 import Step1Personal from './components/Step1Personal';
-import Step2Official from './components/Step2Official';
-import Step3Level from './components/Step3Level';
-import Step4Review from './components/Step4Review';
-import Step5Success from './components/Step5Success';
+import Step2Level from './components/Step3Level';
+import Step3Review from './components/Step4Review';
+import Step4Success from './components/Step5Success';
 
 /** Avoid UTC midnight shifting the calendar day */
 function parseLocalDateOnly(iso: string) {
@@ -56,10 +54,8 @@ export default function RegisterPage() {
   const [isWaitlistMode, setIsWaitlistMode] = useState(false);
   const [capacityFull, setCapacityFull] = useState(false);
 
-  const [runTour, setRunTour] = useState(false);
-  const [tourKey, setTourKey] = useState(0);
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({ name: '', phone: '', nationalId: '', age: '', memorizerName: '', memorizerPhone: '', memorizerAddress: '', location: '', gender: '???', level: '', selectedRewaya: '' });
+  const [formData, setFormData] = useState({ name: '', phone: '', nationalId: '', age: '', memorizerName: '', memorizerPhone: '', memorizerAddress: '', location: '', gender: '', level: '', selectedRewaya: '' });
   const [branchName, setBranchName] = useState('');
   const [memorizationAmount, setMemorizationAmount] = useState<number | null>(null);
   const [honeypot, setHoneypot] = useState(''); // Honeypot field to catch bots
@@ -74,18 +70,17 @@ export default function RegisterPage() {
   const [isCheckingName, setIsCheckingName] = useState(false);
   const [idExists, setIdExists] = useState(false);
   const [isCheckingId, setIsCheckingId] = useState(false);
-  const [levelSearch, setLevelSearch] = useState('');
-  const [levelDropdownOpen, setLevelDropdownOpen] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(
+    process.env.NODE_ENV === 'development' ? 'dev-bypass-token' : null
+  );
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [levelCounts, setLevelCounts] = useState<Record<string, number>>({});
   const clearErr = (key: string) => setFieldErrors(p => { if (!p[key]) return p; const n = { ...p }; delete n[key]; return n; });
 
   const steps = [
     { num: 1, label: 'البيانات الشخصية' },
-    { num: 2, label: 'المستندات الرسمية' },
-    { num: 3, label: 'مستوى المسابقة' },
-    { num: 4, label: 'مراجعة البيانات' },
+    { num: 2, label: 'مستوى المسابقة' },
+    { num: 3, label: 'مراجعة البيانات' },
   ];
 
   useEffect(() => {
@@ -95,7 +90,7 @@ export default function RegisterPage() {
         return;
       }
       setIsCheckingName(true);
-      const { data } = await supabase
+      const { data } = await getSupabase()
         .from('students')
         .select('id')
         .eq('name', formData.name.trim())
@@ -115,7 +110,7 @@ export default function RegisterPage() {
         return;
       }
       setIsCheckingId(true);
-      const { data } = await supabase
+      const { data } = await getSupabase()
         .from('students')
         .select('id')
         .eq('national_id', formData.nationalId.trim())
@@ -132,7 +127,7 @@ export default function RegisterPage() {
     const load = async () => {
       const countsMap: Record<string, number> = {};
       try {
-        const { count: studentCount, error: countErr } = await supabase
+        const { count: studentCount, error: countErr } = await getSupabase()
           .from('students')
           .select('*', { count: 'exact', head: true });
 
@@ -141,7 +136,7 @@ export default function RegisterPage() {
         }
         const count = studentCount ?? 0;
 
-        const { data } = await supabase
+        const { data } = await getSupabase()
           .from('app_settings')
           .select('is_registration_open, registration_start_date, registration_end_date, exam_schedule')
           .eq('id', 1)
@@ -172,7 +167,7 @@ export default function RegisterPage() {
       }
 
       try {
-        const { data: stdLevels } = await supabase.from('students').select('level');
+        const { data: stdLevels } = await getSupabase().from('students').select('level');
         stdLevels?.forEach(s => {
           countsMap[s.level] = (countsMap[s.level] || 0) + 1;
         });
@@ -182,7 +177,7 @@ export default function RegisterPage() {
       }
 
       try {
-        const { data: lvls } = await supabase.from('competition_levels').select('*').eq('is_active', true).order('level_code');
+        const { data: lvls } = await getSupabase().from('competition_levels').select('*').eq('is_active', true).order('level_code');
         if (lvls?.length) {
           setLevels(lvls);
           const preselected = searchParams.get('level');
@@ -194,11 +189,6 @@ export default function RegisterPage() {
         }
       } catch (err) {
         console.error("Error loading levels:", err);
-      }
-
-      if (typeof window !== 'undefined' && !localStorage.getItem('musapaka_tour_done')) {
-        localStorage.setItem('musapaka_tour_done', 'true');
-        setTimeout(() => setRunTour(true), 550);
       }
     };
     load();
@@ -220,21 +210,6 @@ export default function RegisterPage() {
     }
     return { birthDate: '', age: null, isMale: null, isValid: false };
   }, [formData.nationalId]);
-
-  const filteredLevels = useMemo(() => {
-    const studentAge = extractedInfo.age;
-    let filtered = levels;
-    if (studentAge !== null) {
-      filtered = levels.filter(l => {
-        if (l.min_age && studentAge <= l.min_age) return false;
-        if (l.max_age && studentAge > l.max_age) return false;
-        return true;
-      });
-    }
-    const q = levelSearch.trim().toLowerCase();
-    if (!q) return filtered;
-    return filtered.filter(l => l.content.toLowerCase().includes(q) || l.title.toLowerCase().includes(q));
-  }, [levels, extractedInfo.age, levelSearch]);
 
   const handleImagePick = (e: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'birthCert') => {
     const file = e.target.files?.[0]; if (!file) return;
@@ -327,21 +302,14 @@ export default function RegisterPage() {
       else if (!/^(010|011|012|015)\d{8}$/.test(formData.phone.trim())) errs.phone = 'رقم الهاتف غير صحيح';
       if (!formData.location.trim()) errs.location = 'حقل العنوان';
       if (!profileImage) errs.profile = 'الصورة الشخصية مطلوبة';
+      if (!extractedInfo.isValid) errs.nationalId = 'الرقم القومي غير صحيح';
+      if (parseInt(formData.age) !== extractedInfo.age) errs.age = 'العمر غير صحيح';
+      if (!formData.gender) errs.gender = 'حقل النوع مطلوب';
+      if (!birthCertImage) errs.birthCert = 'شهادة الميلاد مطلوبة';
       setFieldErrors(errs);
       if (Object.keys(errs).length) return toast.error(Object.values(errs)[0]);
       setStep(2); window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (step === 2) {
-      if (!extractedInfo.isValid) errs.nationalId = 'الرقم القومي غير صحيح';
-      if (parseInt(formData.age) !== extractedInfo.age) errs.age = 'العمر غير صحيح';
-      if (extractedInfo.isValid) {
-        const idGender = extractedInfo.isMale ? 'ذكر' : 'أنثى';
-        if (formData.gender !== idGender) errs.gender = 'النوع غير متطابق';
-      }
-      if (!birthCertImage) errs.birthCert = 'شهادة الميلاد مطلوبة';
-      setFieldErrors(errs);
-      if (Object.keys(errs).length) return toast.error(Object.values(errs)[0]);
-      setStep(3); window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else if (step === 3) {
       if (!formData.level) errs.level = 'حقل المستوى';
       const selLevel = levels.find(l => l.title === formData.level);
       if (selLevel?.has_rewaya && selLevel.available_rewayas?.length && !formData.selectedRewaya) {
@@ -358,7 +326,7 @@ export default function RegisterPage() {
       }
       setFieldErrors(errs);
       if (Object.keys(errs).length) return toast.error(Object.values(errs)[0]);
-      setStep(4); window.scrollTo({ top: 0, behavior: 'smooth' });
+      setStep(3); window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -423,15 +391,18 @@ export default function RegisterPage() {
     const uploadToast = toast.loading('جاري تجهيز بيانات التسجيل...');
 
     try {
-      const [profileBlob, birthBlob] = await Promise.all([
-        profileImage ? compressImage(profileImage) : Promise.resolve(null),
-        birthCertImage ? compressImage(birthCertImage) : Promise.resolve(null),
-      ]);
+      const [profileUrl, birthUrl] = await (async () => {
+            const [profileBlob, birthBlob] = await Promise.all([
+              profileImage ? compressImage(profileImage) : Promise.resolve(null),
+              birthCertImage ? compressImage(birthCertImage) : Promise.resolve(null),
+            ]);
 
-      const [profileUrl, birthUrl] = await Promise.all([
-        profileBlob ? uploadToCloudinary(profileBlob) : Promise.resolve(null),
-        birthBlob ? uploadToCloudinary(birthBlob) : Promise.resolve(null),
-      ]);
+            const [pUrl, bUrl] = await Promise.all([
+              profileBlob ? uploadToCloudinary(profileBlob) : Promise.resolve(null),
+              birthBlob ? uploadToCloudinary(birthBlob) : Promise.resolve(null),
+            ]);
+            return [pUrl, bUrl];
+          })();
 
       const res = await fetch('/api/register', {
         method: 'POST',
@@ -511,7 +482,7 @@ export default function RegisterPage() {
   // -- SUCCESS ----------------------------------------------------------
   if (success) {
     return (
-      <Step5Success
+      <Step4Success
         formData={formData}
         levels={levels}
         getLevelContent={getLevelContent}
@@ -531,111 +502,103 @@ export default function RegisterPage() {
       <Header />
 
       {/* ─── Hero Header ─── */}
-      <section className="relative bg-gradient-to-br from-primary via-[#0a2f1f] to-primary-container pt-16 pb-20 md:pt-20 md:pb-24 px-4 overflow-hidden">
-        {/* Glow lights */}
-        <div className="absolute -top-20 -right-20 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-secondary-fixed/6 rounded-full blur-[100px] z-0" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] md:w-[800px] h-[400px] md:h-[600px] bg-secondary-fixed/8 rounded-full blur-[130px] z-0" />
-        <div className="absolute -bottom-10 -left-20 w-[250px] md:w-[400px] h-[250px] md:h-[400px] bg-secondary-fixed/4 rounded-full blur-[90px] z-0" />
+      <section className="relative min-h-[40vh] md:min-h-[45vh] flex items-center overflow-hidden bg-primary-container">
+        <div className="absolute inset-0 islamic-pattern z-0 opacity-[0.5]" />
 
-        {/* Islamic geometric decoration */}
-        <div className="absolute inset-0 z-[1] opacity-[0.12]">
-          {/* Diamond shapes */}
-          <svg className="absolute top-8 right-8 w-32 h-32 md:w-48 md:h-48" viewBox="0 0 200 200" fill="none">
-            <polygon points="100,10 190,100 100,190 10,100" stroke="#ffe088" strokeWidth="1.2" />
-            <polygon points="100,35 165,100 100,165 35,100" stroke="#ffe088" strokeWidth="0.8" />
-            <polygon points="100,60 140,100 100,140 60,100" stroke="#ffe088" strokeWidth="0.5" />
-            <circle cx="100" cy="100" r="3" fill="#ffe088" />
-          </svg>
-          <svg className="absolute bottom-8 left-8 w-32 h-32 md:w-48 md:h-48" viewBox="0 0 200 200" fill="none">
-            <polygon points="100,10 190,100 100,190 10,100" stroke="#ffe088" strokeWidth="1.2" />
-            <polygon points="100,35 165,100 100,165 35,100" stroke="#ffe088" strokeWidth="0.8" />
-            <polygon points="100,60 140,100 100,140 60,100" stroke="#ffe088" strokeWidth="0.5" />
-            <circle cx="100" cy="100" r="3" fill="#ffe088" />
-          </svg>
+        <motion.div
+          initial={{ opacity: 0, scale: 1.05 }}
+          animate={{ opacity: 0.55, scale: 1 }}
+          transition={{ duration: 2, ease: 'easeOut' }}
+          className="absolute inset-0 z-[1]"
+        >
+          <div
+            className="absolute inset-0 bg-cover bg-center"
+            style={{
+              backgroundImage: "url('/background.png')",
+              backgroundPosition: 'center 40%',
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-primary-container/50" />
+        </motion.div>
 
-          {/* Star / Octagram */}
-          <svg className="absolute top-1/2 right-6 -translate-y-1/2 w-28 h-28 md:w-40 md:h-40" viewBox="0 0 200 200" fill="none">
-            <polygon points="100,10 125,75 190,100 125,125 100,190 75,125 10,100 75,75" stroke="#ffe088" strokeWidth="1" />
-            <polygon points="100,40 115,85 160,100 115,115 100,160 85,115 40,100 85,85" stroke="#ffe088" strokeWidth="0.6" />
-            <circle cx="100" cy="100" r="4" fill="#ffe088" />
-          </svg>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.5, ease: 'easeOut' }}
+          className="absolute -top-32 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-secondary-fixed/8 rounded-full blur-[120px] pointer-events-none z-[2]"
+        />
 
-          {/* Connecting lines */}
-          <svg className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-full opacity-50" viewBox="0 0 40 300" fill="none" preserveAspectRatio="none">
-            <line x1="20" y1="0" x2="20" y2="300" stroke="#ffe088" strokeWidth="0.4" />
-            <circle cx="20" cy="40" r="2" fill="#ffe088" />
-            <circle cx="20" cy="150" r="2" fill="#ffe088" />
-            <circle cx="20" cy="260" r="2" fill="#ffe088" />
-          </svg>
-        </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.5, ease: 'easeOut', delay: 0.2 }}
+          className="absolute -bottom-48 -right-48 w-[600px] h-[600px] bg-secondary-fixed/6 rounded-full blur-[150px] pointer-events-none z-[2]"
+        />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.5, ease: 'easeOut', delay: 0.4 }}
+          className="absolute -top-48 -left-48 w-[500px] h-[500px] bg-white/4 rounded-full blur-[150px] pointer-events-none z-[2]"
+        />
 
-        <div className="relative z-10 max-w-2xl mx-auto text-center">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-primary-container/60 z-[3]" />
+
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-surface to-transparent z-[4] pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-6 relative z-10 text-center w-full py-20">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-sm text-secondary-fixed text-[10px] font-black px-3 py-1.5 rounded-full mb-5 border border-white/5"
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-primary text-white font-black text-xs mb-5 shadow-md shadow-primary/20"
           >
-            <BookOpen size={11} />
-            <span>نموذج التسجيل الإلكتروني</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-secondary-fixed animate-pulse" />
+            نموذج التسجيل الإلكتروني
           </motion.div>
 
           <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.08 }}
-            className="text-3xl sm:text-4xl md:text-5xl font-black text-secondary-fixed mb-5"
-            style={{ fontFamily: "'Noto Serif', serif" }}
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="text-[32px] sm:text-[44px] md:text-[56px] font-black text-secondary-fixed leading-[1.2] mb-3"
+            style={{
+              fontFamily: "'Noto Serif', serif",
+              textShadow: '0 0 40px rgba(255,224,136,0.4), 0 4px 8px rgba(0,0,0,0.5)',
+            }}
           >
             سجل في مسابقة القرآن
           </motion.h1>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.14 }}
-            className="w-16 h-1 bg-secondary-fixed/40 mx-auto rounded-full mb-5"
-          />
+          <div className="flex items-center justify-center gap-2 mt-3 mb-6">
+            <span className="w-8 h-0.5 rounded-full bg-secondary-fixed/30" />
+            <span className="w-2 h-2 rounded-full bg-secondary-fixed/60" />
+            <span className="w-8 h-0.5 rounded-full bg-secondary-fixed/30" />
+          </div>
 
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-white/55 text-xs sm:text-sm leading-relaxed font-semibold max-w-lg mx-auto"
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="text-white text-sm sm:text-base max-w-xl mx-auto leading-relaxed font-semibold"
+            style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}
           >
             أدخل بياناتك الأساسية للاشتراك في مسابقة أهل القرآن الكبرى
           </motion.p>
         </div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.5, duration: 0.5 }}
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 animate-bounce z-10"
+        >
+          <span className="material-symbols-outlined text-secondary-fixed text-3xl">expand_more</span>
+        </motion.div>
       </section>
 
-      <main className="flex-1 max-w-2xl w-full mx-auto px-3 md:px-4 -mt-6 md:-mt-8 mb-16 md:mb-24 relative z-20 tour-start">
+      <main className="flex-1 max-w-2xl lg:max-w-5xl w-full mx-auto px-3 sm:px-4 mb-16 md:mb-24 relative z-20">
         
-        <TourGuide
-          tourKey={tourKey}
-          runTour={runTour}
-          setRunTour={setRunTour}
-          step={step}
-        />
-
-        {/* Floating Help Button */}
-        <div className="fixed bottom-6 left-6 z-50 print:hidden">
-          <button 
-            type="button" 
-            onClick={() => {
-              setTourKey(prev => prev + 1);
-              setRunTour(true);
-            }}
-            title="عرض دليل التسجيل"
-            className="flex items-center justify-center w-11 h-11 rounded-full bg-primary text-white shadow-md hover:scale-105 active:scale-95 transition-all duration-300 border border-outline-variant/30 group relative"
-          >
-            <HelpCircle size={18} className="text-secondary-fixed" />
-            <span className="absolute left-12 bg-primary text-white text-[10px] font-bold px-3 py-1.5 rounded-lg opacity-0 -translate-x-2 pointer-events-none group-hover:opacity-100 group-hover:translate-x-0 transition-all whitespace-nowrap shadow-sm border border-white/10">
-              شرح التسجيل
-            </span>
-          </button>
-        </div>
-
         {/* Stepper */}
-        <div className="mb-5 tour-stepper">
+        <div className="relative -mt-6 md:-mt-8 mb-5 tour-stepper">
           <div className="flex items-center justify-center gap-0">
             {steps.map((s, i) => (
               <React.Fragment key={s.num}>
@@ -644,24 +607,24 @@ export default function RegisterPage() {
                   onClick={() => { if (s.num < step) { setStep(s.num); window.scrollTo({ top: 0, behavior: 'smooth' }); } }}
                   className={`flex flex-col items-center gap-1.5 transition-all duration-300 ${s.num <= step ? 'cursor-pointer' : 'cursor-default'}`}
                 >
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-black border-2 transition-all duration-300 ${
+                  <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-black border-2 transition-all duration-300 ${
                     step > s.num
-                      ? 'bg-secondary border-secondary text-on-secondary shadow-sm'
-                      : step === s.num
-                        ? 'bg-primary border-primary text-white shadow-md scale-110'
-                        : 'bg-white border-outline-variant text-on-surface-variant'
+                      ? 'bg-secondary border-secondary text-white shadow-sm'
+                    : step === s.num
+                      ? 'bg-primary border-primary text-white shadow-md scale-110'
+                      : 'bg-white border-primary/15 text-primary/50'
                   }`}>
-                    {step > s.num ? <CheckCircle2 size={14} /> : s.num}
+                    {step > s.num ? <CheckCircle2 size={11} className="sm:size-[14px]" /> : s.num}
                   </div>
                   <span className={`text-[10px] sm:text-xs font-bold transition-colors duration-300 whitespace-nowrap ${
-                    step === s.num ? 'text-primary' : step > s.num ? 'text-on-surface' : 'text-on-surface-variant/70'
+                    step === s.num ? 'text-primary' : step > s.num ? 'text-primary/70' : 'text-primary/40'
                   }`}>
                     {s.label}
                   </span>
                 </button>
                 {i < steps.length - 1 && (
                   <div className={`h-0.5 w-6 sm:w-12 mx-1 sm:mx-2 mb-5 rounded-full transition-all duration-300 ${
-                    step > i + 1 ? 'bg-secondary' : 'bg-outline-variant/30'
+                    step > i + 1 ? 'bg-secondary' : 'bg-primary/10'
                   }`} />
                 )}
               </React.Fragment>
@@ -674,9 +637,9 @@ export default function RegisterPage() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="bg-white rounded-2xl border border-outline-variant/20 mx-auto shadow-lg shadow-black/3"
+          className="bg-white rounded-2xl border border-primary/10 mx-auto shadow-lg shadow-primary/8"
         >
-          <div className="p-4 md:p-8">
+          <div className="p-3 sm:p-6 md:p-8">
             <form onSubmit={handleSubmit}>
 
               {/* Honeypot */}
@@ -708,7 +671,10 @@ export default function RegisterPage() {
                       clearErr={clearErr}
                       isCheckingName={isCheckingName}
                       nameExists={nameExists}
+                      isCheckingId={isCheckingId}
+                      idExists={idExists}
                       profilePreview={profilePreview}
+                      birthCertPreview={birthCertPreview}
                       handleImagePick={handleImagePick}
                     />
                   </motion.div>
@@ -723,15 +689,18 @@ export default function RegisterPage() {
                     exit={{ opacity: 0, x: -30 }}
                     transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                   >
-                    <Step2Official
+                    <Step2Level
                       formData={formData}
                       setFormData={setFormData}
                       fieldErrors={fieldErrors}
                       clearErr={clearErr}
-                      isCheckingId={isCheckingId}
-                      idExists={idExists}
-                      birthCertPreview={birthCertPreview}
-                      handleImagePick={handleImagePick}
+                      levels={levels}
+                      studentAge={extractedInfo.age}
+                      levelCounts={levelCounts}
+                      branchName={branchName}
+                      setBranchName={setBranchName}
+                      memorizationAmount={memorizationAmount}
+                      setMemorizationAmount={setMemorizationAmount}
                     />
                   </motion.div>
                 )}
@@ -745,36 +714,7 @@ export default function RegisterPage() {
                     exit={{ opacity: 0, x: -30 }}
                     transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                   >
-                    <Step3Level
-                      formData={formData}
-                      setFormData={setFormData}
-                      fieldErrors={fieldErrors}
-                      clearErr={clearErr}
-                      levels={levels}
-                      filteredLevels={filteredLevels}
-                      levelSearch={levelSearch}
-                      setLevelSearch={setLevelSearch}
-                      levelDropdownOpen={levelDropdownOpen}
-                      setLevelDropdownOpen={setLevelDropdownOpen}
-                      levelCounts={levelCounts}
-                      branchName={branchName}
-                      setBranchName={setBranchName}
-                      memorizationAmount={memorizationAmount}
-                      setMemorizationAmount={setMemorizationAmount}
-                    />
-                  </motion.div>
-                )}
-
-                {/* STEP 4 */}
-                {step === 4 && (
-                  <motion.div
-                    key="step4"
-                    initial={{ opacity: 0, x: 30 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -30 }}
-                    transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                  >
-                    <Step4Review
+                    <Step3Review
                       formData={formData}
                       setFormData={setFormData}
                       isConfirmed={isConfirmed}
@@ -786,33 +726,33 @@ export default function RegisterPage() {
               </AnimatePresence>
 
               {/* Navigation */}
-              <div className="mt-8 pt-5 border-t border-outline-variant/20 flex items-center justify-between gap-3">
+              <div className="mt-6 sm:mt-8 pt-4 sm:pt-5 border-t border-primary/10 flex items-center justify-between gap-3">
                 {step > 1 ? (
                   <button 
                     type="button" 
                     onClick={() => { setStep(s => s - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
                     disabled={loading}
-                    className="flex items-center gap-1.5 px-5 py-3 rounded-xl text-sm font-bold border-2 border-outline-variant/40 text-on-surface hover:border-secondary hover:bg-secondary-fixed/10 active:scale-95 transition-all disabled:opacity-40"
+                    className="flex items-center gap-1.5 px-4 sm:px-6 py-3 sm:py-[14px] rounded-xl text-sm font-bold border-2 border-primary/20 text-primary hover:border-primary/40 hover:bg-primary/[0.03] active:scale-95 transition-all disabled:opacity-40"
                   >
-                    <ChevronRight size={16} /> السابق
+                    <ChevronRight size={16} className="sm:size-[18px]" /> السابق
                   </button>
                 ) : <div />}
                 
-                {step < 4 ? (
+                {step < 3 ? (
                   <button 
                     type="button" 
                     onClick={nextStep}
-                    className="flex items-center gap-1.5 px-6 py-3 rounded-xl text-sm font-bold bg-primary text-on-primary hover:bg-primary-container active:scale-95 transition-all shadow-md shadow-primary/15 tour-next"
+                    className="flex items-center gap-1.5 px-5 sm:px-7 py-3 sm:py-[14px] rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 active:scale-95 transition-all shadow-md shadow-primary/15 tour-next"
                   >
-                    التالي <ChevronLeft size={16} />
+                    التالي <ChevronLeft size={16} className="sm:size-[18px]" />
                   </button>
                 ) : (
                   <button 
                     type="submit" 
                     disabled={loading || !isConfirmed}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold bg-primary text-on-primary hover:bg-primary-container active:scale-95 transition-all shadow-md shadow-primary/15 disabled:opacity-50 disabled:cursor-not-allowed tour-step4-submit"
+                    className="flex-1 flex items-center justify-center gap-2 py-3 sm:py-[14px] rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 active:scale-95 transition-all shadow-md shadow-primary/15 disabled:opacity-50 disabled:cursor-not-allowed tour-step4-submit"
                   >
-                    {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Send size={16} /> إرسال طلب التسجيل</>}
+                    {loading ? <div className="w-5 h-5 sm:w-[22px] sm:h-[22px] border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Send size={16} className="sm:size-[18px]" /> إرسال طلب التسجيل</>}
                   </button>
                 )}
               </div>

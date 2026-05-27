@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cairo, Noto_Serif } from "next/font/google";
+import "material-symbols/outlined.css";
 import "./globals.css";
 import { Toaster } from 'react-hot-toast';
 
@@ -40,7 +41,6 @@ export default function RootLayout({
   return (
       <html lang="ar" dir="rtl" className="scroll-smooth">
         <head>
-          <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" />
           <link rel="preload" href="/background.png" as="image" />
         </head>
         <body className={`${cairo.variable} ${notoSerif.variable} font-cairo antialiased`}>

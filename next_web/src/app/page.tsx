@@ -254,7 +254,6 @@ export default function HomePage() {
 
       {/* ─── JOURNEY ─── */}
       <section className="relative py-20 bg-gradient-to-b from-surface via-surface to-surface-container-low overflow-hidden">
-        <div className="absolute inset-0 islamic-pattern opacity-[0.03]" />
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -390,7 +389,6 @@ export default function HomePage() {
       {/* ─── FAQ ─── */}
       {faq.length > 0 && (
       <section className="relative py-16 bg-white overflow-hidden">
-        <div className="absolute inset-0 islamic-pattern opacity-[0.04]" />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-secondary-fixed/[0.04] rounded-full blur-[180px] pointer-events-none" />
         <div className="max-w-3xl mx-auto px-6 relative z-10">
           <motion.div

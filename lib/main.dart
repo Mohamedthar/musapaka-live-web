@@ -2,19 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'ui/auth/splash_screen.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
+import 'core/config/env_config.dart';
 import 'config/routes.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  try {
-    await dotenv.load(fileName: '.env');
-  } catch (e) {
-    throw Exception('فشل تحميل ملف البيئة .env: $e');
-  }
+  await EnvConfig.load();
 
   final supabaseUrl = AppConstants.supabaseUrl;
   final supabaseAnonKey = AppConstants.supabaseAnonKey;

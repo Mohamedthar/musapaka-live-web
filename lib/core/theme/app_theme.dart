@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // الهوية الموحدة: الأزرق الليلي العميق فقط
-  static const Color primaryColor = Color(0xFF03121C); 
+  static const Color primaryColor = Color(0xFF03121C);
+  static const Color secondaryColor = Color(0xFF1E3A5F);
   static const Color backgroundColor = Color(0xFFFDFDFD);
 
-  // ألوان الحالة
   static const Color successColor = Color(0xFF10B981);
   static const Color errorColor = Color(0xFFEF4444);
   static const Color warningColor = Color(0xFFF59E0B);
 
-  // ألوان النصوص
   static const Color textDark = Color(0xFF03121C);
   static const Color textLight = Color(0xFF717171);
 
@@ -20,7 +18,7 @@ class AppTheme {
       primaryColor: primaryColor,
       colorScheme: const ColorScheme.light(
         primary: primaryColor,
-        secondary: primaryColor, // استبدال الذهبي باللون الأساسي
+        secondary: secondaryColor,
         surface: Colors.white,
         error: errorColor,
       ),
@@ -50,7 +48,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primaryColor, width: 2), // حدود بلون #010f19
+          borderSide: const BorderSide(color: primaryColor, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         labelStyle: const TextStyle(fontFamily: 'Cairo', fontSize: 14),

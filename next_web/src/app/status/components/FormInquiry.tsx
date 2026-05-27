@@ -63,14 +63,26 @@ export default function FormInquiry() {
     };
     const getLevelContent = () => levels.find(l => l.title === studentData.level)?.content ?? '';
     const examSlot = (() => {
-      if (!studentData.exam_date || studentData.exam_hour === null) return '';
+      if (!studentData.exam_date || studentData.exam_hour === null || studentData.exam_hour === undefined) return '';
       try {
         const date = new Date(studentData.exam_date);
         const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-        const h = studentData.exam_hour;
-        let timeStr = h === 0 ? '12 منتصف الليل' : h < 12 ? `${h} صباحاً` : h === 12 ? '12 ظهراً' : `${h - 12} مساءً`;
-        return `${days[date.getDay()]} - ${studentData.exam_date.split('T')[0]} (الساعة ${timeStr})`;
-      } catch { return ''; }
+        const dayName = days[date.getDay()];
+        const dateOnly = studentData.exam_date.split('T')[0];
+
+        let timeStr = `${studentData.exam_hour}:00`;
+        const h = Number(studentData.exam_hour);
+        if (!isNaN(h)) {
+          if (h === 0) timeStr = '12 منتصف الليل';
+          else if (h < 12) timeStr = `${h} صباحاً`;
+          else if (h === 12) timeStr = '12 ظهراً';
+          else timeStr = `${h - 12} مساءً`;
+        }
+
+        return `يوم ${dayName} الموافق ${dateOnly} - الساعة ${timeStr}`;
+      } catch {
+        return '';
+      }
     })();
 
     return (

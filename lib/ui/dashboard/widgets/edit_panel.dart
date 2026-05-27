@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../../../core/utils/responsive.dart';
+import '../../../core/utils/validators.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../data/models/student.dart';
 import '../../../data/models/competition_level.dart';
@@ -527,7 +528,7 @@ class StudentEditPanel extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     final hasNew = bytes != null;
-    final hasExisting = existingUrl != null && existingUrl.isNotEmpty;
+    final hasExisting = Validator.isValidImageUrl(existingUrl);
     final hasImage = hasNew || hasExisting;
     
     return GestureDetector(
@@ -564,10 +565,12 @@ class StudentEditPanel extends StatelessWidget {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(10),
                       child: CachedNetworkImage(
-                          imageUrl: existingUrl,
+                          imageUrl: existingUrl!,
                           width: double.infinity,
                           height: double.infinity,
-                          fit: BoxFit.cover),
+                          fit: BoxFit.cover,
+                          errorWidget: (_, __, ___) =>
+                              Icon(icon, size: 26, color: Colors.grey.shade400)),
                     ),
                     Positioned(
                         top: 6,
