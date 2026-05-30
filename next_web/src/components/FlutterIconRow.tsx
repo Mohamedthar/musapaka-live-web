@@ -59,14 +59,14 @@ export function FlutterGridCell({
 }) {
   return (
     <div style={{
-      padding: '10px 12px',
+      padding: '6px 10px',
       display: 'flex', alignItems: 'center',
-      gap: '8px',
+      gap: '6px',
       background: bg,
       borderTop: isTopRow ? 'none' : '1px solid #e2e8f0',
     }}>
       <div style={{
-        minWidth: '32px', height: '32px',
+        minWidth: '28px', height: '28px',
         borderRadius: '6px',
         display: 'flex',
         alignItems: 'center', justifyContent: 'center',
@@ -76,14 +76,14 @@ export function FlutterGridCell({
       </div>
       <div>
         <span style={{
-          fontSize: '13px', fontWeight: 600,
+          fontSize: '11px', fontWeight: 600,
           color: '#0f172a',
           fontFamily: '"Cairo", sans-serif',
         }}>
           {label}:
         </span>
         <span style={{
-          fontSize: '14px', fontWeight: 700,
+          fontSize: '12px', fontWeight: 700,
           color: '#0f172a',
           fontFamily: '"Cairo", sans-serif',
           marginRight: '4px',

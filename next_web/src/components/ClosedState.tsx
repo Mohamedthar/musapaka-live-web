@@ -1,44 +1,83 @@
-import { Lock, Award, CalendarCheck, FileText } from 'lucide-react';
+'use client';
+
+import { Lock, CalendarCheck, FileText, Award, Clock } from 'lucide-react';
 
 const configs = {
-  form: { icon: FileText, title: 'الاستعلام عن الاستمارة', desc: 'قسم الاستعلام عن بيانات التسجيل غير متاح حالياً. سيتم فتحه بعد انتهاء فترة التسجيل.' },
-  result: { icon: Award, title: 'نتائج المسابقة', desc: 'النتائج لم تُعلن بعد. سيتم فتح القسم بعد انتهاء الاختبارات وإعلان النتائج الرسمية.' },
-  ceremony: { icon: CalendarCheck, title: 'حفل التكريم', desc: 'قسم الاستعلام عن حفل التكريم غير متاح حالياً. سيتم فتحه بعد إعلان النتائج النهائية.' },
+  form: {
+    icon: FileText,
+    title: 'الاستعلام عن الاستمارة',
+    desc: 'هذا القسم غير متاح حالياً. سيتم فتحه بعد انتهاء فترة التسجيل.',
+  },
+  result: {
+    icon: Award,
+    title: 'نتائج المسابقة',
+    desc: 'النتائج لم تُعلن بعد. سيتم فتح القسم بعد انتهاء الاختبارات وإعلان النتائج الرسمية.',
+  },
+  ceremony: {
+    icon: CalendarCheck,
+    title: 'حفل التكريم',
+    desc: 'هذا القسم غير متاح حالياً. سيتم فتحه بعد إعلان النتائج النهائية.',
+  },
 };
 
-export default function ClosedState({ type }: { type: 'form' | 'result' | 'ceremony' }) {
+interface TimingInfo {
+  openDate?: string | null;
+  closeDate?: string | null;
+}
+
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    return `${d.getFullYear()}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getDate().toString().padStart(2, '0')}`;
+  } catch { return dateStr; }
+}
+
+export default function ClosedState({ type, timing }: { type: 'form' | 'result' | 'ceremony'; timing?: TimingInfo }) {
   const c = configs[type] || configs.result;
   const Icon = c.icon;
 
+  const openDateStr = formatDate(timing?.openDate);
+  const closeDateStr = formatDate(timing?.closeDate);
+  const hasTiming = !!openDateStr || !!closeDateStr;
+
   return (
-    <div className="w-full max-w-md mx-auto animate-fade-in" dir="rtl">
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        {/* Top accent bar */}
-        <div className="h-1.5 bg-gradient-to-r from-secondary via-secondary-fixed to-secondary" />
-
-        <div className="p-8 sm:p-10 text-center">
-          {/* Icon */}
-          <div className="w-18 h-18 mx-auto mb-5 rounded-2xl bg-secondary/10 flex items-center justify-center text-secondary">
-            <Icon size={30} />
-          </div>
-
-          {/* Lock badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gray-50 border border-gray-100 mb-4">
-            <Lock size={12} className="text-gray-400" />
-            <span className="text-xs font-bold text-on-surface-variant">مغلق مؤقتاً</span>
-          </div>
-
-          {/* Title */}
-          <h3 className="text-lg font-black text-primary mb-3">{c.title}</h3>
-
-          {/* Description */}
-          <p className="text-sm text-on-surface-variant leading-relaxed">{c.desc}</p>
-
-          {/* Hint */}
-          <div className="mt-7 pt-6 border-t border-gray-50">
-            <p className="text-xs text-gray-400">تابع الصفحة الرسمية لمعرفة مواعيد فتح الأقسام</p>
-          </div>
+    <div className="w-full max-w-sm mx-auto" dir="rtl">
+      <div className="text-center">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center mx-auto mb-4 shadow-sm border border-primary/10">
+          <Icon size={26} className="text-primary" />
         </div>
+
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50/80 border border-amber-200/60 mb-4 shadow-sm">
+          <Lock size={11} className="text-amber-500" />
+          <span className="text-xs font-bold text-amber-700">مغلق</span>
+        </div>
+
+        <h3 className="text-base font-black text-primary mb-2">{c.title}</h3>
+        <p className="text-sm text-on-surface-variant/70 leading-relaxed font-semibold">{c.desc}</p>
+
+        {hasTiming && (
+          <div className="mt-5 bg-surface rounded-xl border border-outline-variant/10 shadow-sm p-4 text-right">
+            <div className="flex items-center gap-1.5 mb-3">
+              <Clock size={12} className="text-on-surface-variant/40" />
+              <span className="text-xs font-bold text-on-surface-variant/60">المواعيد</span>
+            </div>
+            <div className="space-y-1.5 text-xs">
+              {openDateStr && (
+                <div className="flex justify-between items-center py-1">
+                  <span className="font-semibold text-on-surface-variant/50">الفتح:</span>
+                  <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">{openDateStr}</span>
+                </div>
+              )}
+              {closeDateStr && (
+                <div className="flex justify-between items-center py-1">
+                  <span className="font-semibold text-on-surface-variant/50">الإغلاق:</span>
+                  <span className="font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-md">{closeDateStr}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

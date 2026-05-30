@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../data/repositories/auth_repository.dart';
 import '../shared/widgets/hero_branding.dart';
 import '../dashboard/dashboard_screen.dart';
 import '../../core/utils/validators.dart';
+import 'admin_login_screen.dart';
 
 class CreateAdminScreen extends StatefulWidget {
   const CreateAdminScreen({super.key});
@@ -16,12 +18,32 @@ class _CreateAdminScreenState extends State<CreateAdminScreen> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+  final AuthRepository _authRepo = AuthRepository();
 
   bool _isLoading = false;
+  bool _isChecking = true;
   bool _obscurePassword = true;
   String? _errorMessage;
 
   static const _primary = Color(0xFF03121C);
+
+  @override
+  void initState() {
+    super.initState();
+    _checkExistingAdmins();
+  }
+
+  Future<void> _checkExistingAdmins() async {
+    final hasAdmins = await _authRepo.hasAdmins();
+    if (!mounted) return;
+    if (hasAdmins) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
+      );
+    } else {
+      setState(() => _isChecking = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -40,32 +62,12 @@ class _CreateAdminScreenState extends State<CreateAdminScreen> {
       final password = _passwordController.text;
       final name = _nameController.text.trim();
 
-      final supabase = Supabase.instance.client;
-      final authResponse = await supabase.auth.signUp(
-        email: '$phone@admin.com',
-        password: password,
-      );
+      await _authRepo.signUp(phone, password, name);
 
-      if (authResponse.user != null) {
-        if (authResponse.user?.emailConfirmedAt == null && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('تم إنشاء الحساب. قد تحتاج لتعطيل "Confirm email" في إعدادات Supabase Auth.',
-                  style: TextStyle(fontFamily: 'Cairo')),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
-        await supabase.from('admins').insert({
-          'id': authResponse.user!.id,
-          'name': name,
-          'phone': phone,
-        });
-        if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const DashboardScreen()),
-          );
-        }
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        );
       }
     } on AuthException catch (e) {
       setState(() => _errorMessage = e.message.contains('Email not confirmed')
@@ -137,6 +139,12 @@ class _CreateAdminScreenState extends State<CreateAdminScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isChecking) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final isWide = MediaQuery.of(context).size.width > 900;
 
     return Scaffold(

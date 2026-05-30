@@ -1,9 +1,9 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 // Deployment trigger: 2026-05-19T23:36:27Z
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { getSupabase } from '@/lib/supabase';
-import { CheckCircle2, ChevronLeft, ChevronRight, ShieldCheck, ArrowLeft, Send, CalendarX } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, ShieldCheck, ArrowLeft, Send, CalendarX, Download, Printer, FileText } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -75,6 +75,8 @@ export default function RegisterPage() {
   );
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [levelCounts, setLevelCounts] = useState<Record<string, number>>({});
+  const [isCapturing, setIsCapturing] = useState(false);
+  const hiddenFormRef = useRef<HTMLDivElement>(null);
   const clearErr = (key: string) => setFieldErrors(p => { if (!p[key]) return p; const n = { ...p }; delete n[key]; return n; });
 
   const steps = [
@@ -453,6 +455,143 @@ export default function RegisterPage() {
     }
   };
 
+  // -- CAPTURE / DOWNLOAD HANDLERS -------------------------------------
+  const showFormTemporarily = async (): Promise<boolean> => {
+    const container = hiddenFormRef.current;
+    if (!container) return false;
+    container.style.display = 'block';
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.style.top = '0';
+    container.style.zIndex = '9999';
+    document.body.style.overflowX = 'hidden';
+    await new Promise(r => requestAnimationFrame(() => setTimeout(r, 100)));
+    return true;
+  };
+
+  const hideForm = () => {
+    const container = hiddenFormRef.current;
+    if (!container) return;
+    container.style.display = '';
+    container.style.position = '';
+    container.style.left = '';
+    container.style.top = '';
+    container.style.zIndex = '';
+    document.body.style.overflowX = '';
+  };
+
+  const yieldToUi = () => new Promise(r => setTimeout(r, 0));
+
+  const handleDownloadImage = async () => {
+    setIsCapturing(true);
+    await yieldToUi();
+    const toastId = toast.loading('جاري تجهيز الاستمارة...');
+    try {
+      await showFormTemporarily();
+
+      const receiptCanvas = await captureElement('receipt');
+      if (!receiptCanvas) throw new Error('الاستمارة غير موجودة');
+      await yieldToUi();
+
+      const link = document.createElement('a');
+      link.href = receiptCanvas.toDataURL('image/png');
+      link.download = `استمارة_${formData.name.replace(/\s+/g, '_')}.png`;
+      link.click();
+
+      const evalCanvas = await captureElement('evaluation-form');
+      await yieldToUi();
+      if (evalCanvas) {
+        const link2 = document.createElement('a');
+        link2.href = evalCanvas.toDataURL('image/png');
+        link2.download = `استمارة_تقييم_${formData.name.replace(/\s+/g, '_')}.png`;
+        link2.click();
+      }
+
+      toast.success('تم تحميل الاستمارة بنجاح!', { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error('فشل تحميل الصورة', { id: toastId });
+    } finally {
+      hideForm();
+      setIsCapturing(false);
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const captureElement = async (id: string): Promise<HTMLCanvasElement | null> => {
+    const el = document.getElementById(id);
+    if (!el) return null;
+
+    const html2canvas = (await import('html2canvas-pro')).default;
+    return html2canvas(el, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      windowWidth: 850,
+      windowHeight: el.scrollHeight + 150,
+      onclone: (clonedDoc) => {
+        const clonedEl = clonedDoc.getElementById(id);
+        if (clonedEl) {
+          clonedEl.style.transform = 'none';
+          clonedEl.style.transformOrigin = 'top center';
+          clonedEl.style.width = '800px';
+          clonedEl.style.height = 'auto';
+
+          const clonedParent = clonedEl.parentElement;
+          if (clonedParent) {
+            clonedParent.style.height = 'auto';
+            clonedParent.style.overflow = 'visible';
+            clonedParent.style.transform = 'none';
+          }
+        }
+      },
+    });
+  };
+
+  const handleDownloadPdf = async () => {
+    setIsCapturing(true);
+    await yieldToUi();
+    const toastId = toast.loading('جاري تجهيز ملف PDF...');
+    try {
+      await showFormTemporarily();
+
+      const jsPdfModule = await import('jspdf');
+      const jsPDF = jsPdfModule.default;
+
+      const receiptCanvas = await captureElement('receipt');
+      if (!receiptCanvas) throw new Error('الاستمارة غير موجودة');
+      await yieldToUi();
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+
+      const receiptHeight = (receiptCanvas.height * pdfWidth) / receiptCanvas.width;
+      pdf.addImage(receiptCanvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, receiptHeight);
+
+      const evalCanvas = await captureElement('evaluation-form');
+      await yieldToUi();
+      if (evalCanvas) {
+        const evalHeight = (evalCanvas.height * pdfWidth) / evalCanvas.width;
+        pdf.addPage();
+        pdf.addImage(evalCanvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, evalHeight);
+      }
+
+      pdf.save(`استمارة_${formData.name.replace(/\s+/g, '_')}.pdf`);
+
+      toast.success('تم حفظ ملف PDF بنجاح!', { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error('فشل حفظ PDF', { id: toastId });
+    } finally {
+      hideForm();
+      setIsCapturing(false);
+    }
+  };
+
   // -- CLOSED ----------------------------------------------------------
   if (!registrationAllowed && !success) return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-surface" dir="rtl">
@@ -482,17 +621,100 @@ export default function RegisterPage() {
   // -- SUCCESS ----------------------------------------------------------
   if (success) {
     return (
-      <Step4Success
-        formData={formData}
-        levels={levels}
-        getLevelContent={getLevelContent}
-        examSlot={examSlot}
-        profilePreview={profilePreview}
-        studentCode={studentCode}
-        isWaitlistMode={isWaitlistMode}
-        branchName={branchName}
-        memorizationAmount={memorizationAmount}
-      />
+      <>
+        {isCapturing && (
+          <div className="fixed inset-0 z-[99999] bg-black/50 flex items-center justify-center" style={{ backdropFilter: 'blur(4px)' }}>
+            <div className="bg-white rounded-2xl px-8 py-6 shadow-xl text-center max-w-md">
+              <div className="w-10 h-10 border-3 border-secondary/25 border-t-primary rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-sm font-bold text-on-surface">جاري تجهيز الاستمارة</p>
+              <p className="text-xs font-semibold text-on-surface-variant/60 mt-1">يرجى الانتظار قليلاً...</p>
+            </div>
+          </div>
+        )}
+
+        <div className="min-h-screen flex flex-col bg-surface print:hidden" dir="rtl" style={{ fontFamily: 'var(--font-cairo), Cairo, sans-serif' }}>
+          <Header />
+
+          <main className="flex-1 flex items-center justify-center p-4 py-12">
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="bg-white rounded-2xl border border-primary/10 p-8 sm:p-10 max-w-md w-full text-center shadow-lg"
+            >
+              {isWaitlistMode && (
+                <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl mb-5 text-center text-xs font-bold leading-relaxed">
+                  <p className="text-xs font-extrabold">تم وضعك في قائمة الانتظار</p>
+                  <p className="text-[11px] font-bold text-amber-700 mt-1">لقد اكتمل العدد الأساسي للمسابقة. سنتواصل معك في حال توفر مقعد لك.</p>
+                </div>
+              )}
+
+              <div className="w-16 h-16 bg-secondary-fixed/30 rounded-full flex items-center justify-center mx-auto mb-5">
+                <CheckCircle2 size={36} className="text-secondary" />
+              </div>
+
+              <h2 className="text-2xl sm:text-3xl font-black text-primary mb-3">تم التسجيل بنجاح!</h2>
+              <p className="text-sm font-bold text-on-surface-variant leading-relaxed mb-6">
+                تم تسجيل بياناتك في مسابقة أهل القرآن الكبرى.<br />
+                يمكنك الآن تحميل استمارة التسجيل كصورة أو طباعتها أو حفظها كملف PDF.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                <button
+                  onClick={handleDownloadImage}
+                  disabled={isCapturing}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-secondary text-white text-sm font-bold hover:bg-secondary/85 active:scale-95 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <Download size={16} />
+                  <span>{isCapturing ? 'جاري...' : 'تحميل كصورة'}</span>
+                </button>
+
+                <button
+                  onClick={handlePrint}
+                  disabled={isCapturing}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/85 active:scale-95 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <Printer size={16} />
+                  <span>طباعة</span>
+                </button>
+
+                <button
+                  onClick={handleDownloadPdf}
+                  disabled={isCapturing}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-800 text-white text-sm font-bold hover:bg-slate-700 active:scale-95 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <FileText size={16} />
+                  <span>{isCapturing ? 'جاري...' : 'حفظ PDF'}</span>
+                </button>
+              </div>
+
+              <Link
+                href="/"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-on-surface-variant hover:text-primary transition-colors"
+              >
+                <ArrowLeft size={14} />
+                العودة للصفحة الرئيسية
+              </Link>
+            </motion.div>
+          </main>
+
+          <Footer />
+        </div>
+
+        <div ref={hiddenFormRef} className="hidden print:block">
+          <Step4Success
+            formData={formData}
+            levels={levels}
+            getLevelContent={getLevelContent}
+            examSlot={examSlot}
+            profilePreview={profilePreview}
+            studentCode={studentCode}
+            isWaitlistMode={isWaitlistMode}
+            branchName={branchName}
+            memorizationAmount={memorizationAmount}
+          />
+        </div>
+      </>
     );
   }
 
@@ -585,14 +807,6 @@ export default function RegisterPage() {
           </motion.p>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5, duration: 0.5 }}
-          className="absolute bottom-6 left-1/2 -translate-x-1/2 animate-bounce z-10"
-        >
-          <span className="material-symbols-outlined text-secondary-fixed text-3xl">expand_more</span>
-        </motion.div>
       </section>
 
       <main className="flex-1 max-w-2xl lg:max-w-5xl w-full mx-auto px-3 sm:px-4 mb-16 md:mb-24 relative z-20">

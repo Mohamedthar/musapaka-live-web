@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../../data/repositories/auth_repository.dart';
 import '../shared/widgets/hero_branding.dart';
 import '../dashboard/dashboard_screen.dart';
 
@@ -15,6 +15,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+  final AuthRepository _authRepo = AuthRepository();
 
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -36,18 +37,11 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     try {
       final phone = _phoneController.text.trim();
       final password = _passwordController.text;
-      final response = await Supabase.instance.client.auth.signInWithPassword(
-        email: '$phone@admin.com',
-        password: password,
-      );
-      if (response.user != null) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isAdminLoggedIn', true);
-        if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const DashboardScreen()),
-          );
-        }
+      await _authRepo.signInWithPhone(phone, password);
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        );
       }
     } on AuthException catch (e) {
       setState(() {

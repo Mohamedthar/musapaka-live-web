@@ -466,21 +466,23 @@ class _RegistrationFormContentState extends State<RegistrationFormContent> {
                         onChanged: (v) => setState(() => _selectedBranch = v),
                         validator: (v) => v == null ? 'يرجى اختيار القسم أو الكمية' : null,
                       ),
-                      const SizedBox(height: 12),
-                      DropdownButtonFormField<int>(
-                        initialValue: _memorizationAmount,
-                        decoration: _inputDec('عدد الأجزاء المحفوظة', Icons.format_list_numbered_rounded),
-                        isExpanded: true,
-                        dropdownColor: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        items: List.generate(30, (i) => i + 1).map((n) => DropdownMenuItem(
-                              value: n,
-                              child: Text(n == 1 ? 'جزء واحد' : n == 2 ? 'جزئين' : '$n أجزاء',
-                                  style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.bold)),
-                            )).toList(),
-                        onChanged: (v) => setState(() => _memorizationAmount = v),
-                        validator: (v) => v == null ? 'يرجى اختيار عدد الأجزاء' : null,
-                      ),
+                      if (_selectedLevelObj!.requireCustomAmount) ...[
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<int>(
+                          initialValue: _memorizationAmount,
+                          decoration: _inputDec('عدد الأجزاء المحفوظة', Icons.format_list_numbered_rounded),
+                          isExpanded: true,
+                          dropdownColor: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          items: List.generate(30, (i) => i + 1).map((n) => DropdownMenuItem(
+                                value: n,
+                                child: Text(n == 1 ? 'جزء واحد' : n == 2 ? 'جزئين' : '$n أجزاء',
+                                    style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.bold)),
+                              )).toList(),
+                          onChanged: (v) => setState(() => _memorizationAmount = v),
+                          validator: (v) => v == null ? 'يرجى اختيار عدد الأجزاء' : null,
+                        ),
+                      ],
                     ] else if (_selectedLevelObj!.requireCustomAmount) ...[
                       const SizedBox(height: 12),
                       DropdownButtonFormField<int>(

@@ -157,99 +157,32 @@ export default function Step5Success({
     };
   }, [formData]);
 
+  const selLevel = levels.find(l => l.title === formData.level);
+  const hasTajweed = selLevel?.has_tajweed ?? false;
+  const hasRewaya  = selLevel?.has_rewaya  ?? false;
+  const hasVoice   = selLevel?.has_voice   ?? false;
+  const hasMeaning = selLevel?.has_meaning  ?? false;
+  const rewayaScore  = selLevel?.rewaya_max_score  ?? 100;
+  const tajweedScore = selLevel?.tajweed_max_score ?? 100;
+  const voiceScore   = selLevel?.voice_max_score   ?? 100;
+  const meaningScore = selLevel?.meaning_max_score ?? 100;
+  const basePoints   = selLevel?.total_points      ?? 100;
+  const grandTotal = basePoints
+    + (hasRewaya  ? rewayaScore  : 0)
+    + (hasTajweed ? tajweedScore : 0)
+    + (hasVoice   ? voiceScore   : 0)
+    + (hasMeaning ? meaningScore : 0);
+
+  const questions = ['السؤال الأول','السؤال الثاني','السؤال الثالث','السؤال الرابع','السؤال الخامس','السؤال السادس','السؤال السابع','السؤال الثامن','السؤال التاسع','السؤال العاشر'];
+
+  const printCss = '@media print { @page { margin: 0; size: A4 portrait; } header, nav, footer, .print\\\\:hidden, button { display: none !important; } html, body { margin: 0 !important; padding: 0 !important; width: 100% !important; height: auto !important; min-height: 0 !important; background-color: white !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } #print-wrapper-outer, #print-wrapper-inner { margin: 0 !important; padding: 0 !important; width: 100% !important; max-width: none !important; min-height: 0 !important; height: auto !important; transform: none !important; box-shadow: none !important; background: none !important; display: block !important; } body * { visibility: hidden; } #receipt, #receipt *, #evaluation-form, #evaluation-form * { visibility: visible; } #receipt, #evaluation-form { position: relative !important; margin: 0 auto !important; padding: 0 !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; width: 100% !important; max-width: 100% !important; page-break-inside: avoid; } #receipt { page-break-before: avoid; page-break-after: always; } #evaluation-form { page-break-before: always; } .print-no-scale { transform: none !important; width: 100% !important; height: auto !important; } }';
+
   return (
     <div id="print-wrapper-outer" className="min-h-screen bg-slate-50/50 print:bg-white py-6 md:py-10 px-4 print:p-0" dir="rtl" style={{ fontFamily: 'Cairo, sans-serif' }}>
       <div id="print-wrapper-inner" className="max-w-[832px] mx-auto print:w-full print:max-w-full">
         
         {/* CSS for print and scaling override */}
-        <style dangerouslySetInnerHTML={{ __html: `
-          @media print {
-            @page { 
-              margin: 0;
-              size: A4 portrait;
-            }
-            
-            /* Hide general web layout elements */
-            header,
-            nav,
-            footer,
-            .print\\:hidden,
-            button {
-              display: none !important;
-            }
-
-            /* Clean html and body margins/paddings */
-            html, body {
-              margin: 0 !important;
-              padding: 0 !important;
-              width: 100% !important;
-              height: auto !important;
-              background-color: white !important;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
-
-            /* Collapse Next.js layouts and wrapper spaces */
-            body > div,
-            main,
-            main > div,
-            #status-page-root,
-            #status-content-wrapper,
-            #form-inquiry-wrapper,
-            #print-wrapper-outer,
-            #print-wrapper-inner {
-              margin: 0 !important;
-              padding: 0 !important;
-              width: 100% !important;
-              max-width: none !important;
-              min-height: 0 !important;
-              height: auto !important;
-              transform: none !important;
-              box-shadow: none !important;
-              background: none !important;
-              display: block !important;
-            }
-
-            /* Hide all by default */
-            body * {
-              visibility: hidden;
-            }
-
-            /* Make only the printable components visible */
-            #receipt, #receipt *,
-            #evaluation-form, #evaluation-form * {
-              visibility: visible;
-            }
-
-            /* Position printable components on their own pages */
-            #receipt, #evaluation-form {
-              position: relative !important;
-              margin: 0 auto !important;
-              padding: 0 !important;
-              border: none !important;
-              box-shadow: none !important;
-              border-radius: 0 !important;
-              width: 100% !important;
-              max-width: 100% !important;
-              page-break-inside: avoid;
-            }
-
-            #receipt {
-              page-break-before: avoid;
-              page-break-after: always;
-            }
-
-            #evaluation-form {
-              page-break-before: always;
-            }
-
-            .print-no-scale {
-              transform: none !important;
-              width: 100% !important;
-              height: auto !important;
-            }
-          }
-        ` }} />
+        <style dangerouslySetInnerHTML={{ __html: printCss }} />
 
         {/* ── HEADER ACTIONS BAR ── */}
         <div className="w-full max-w-[800px] mx-auto mb-6 p-2.5 bg-white border border-slate-200/60 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm print:hidden">
@@ -308,21 +241,12 @@ export default function Step5Success({
           </div>
         ) : null}
 
-        {/* ── RECEIPT — مطابقة تامة لاستمارة الأدمن (Scaled Down on Screen to Fit viewport) ── */}
-        <div 
-          className="w-full flex justify-center overflow-x-auto overflow-y-visible print:block print:w-full print:h-auto print:overflow-visible mb-8 print:mb-0" 
-          style={{ height: scale < 1 ? `${(receiptHeight + 16) * scale}px` : 'auto' }}
-        >
+        {/* ── RECEIPT ── */}
+        <div className="w-full flex justify-center mb-8 print:mb-0">
           <div 
             id="receipt" 
-            className="print-no-scale bg-white border border-slate-200 shadow-lg rounded-3xl print:border-none print:rounded-none print:shadow-none" 
-            style={{ 
-              transform: scale < 1 ? `scale(${scale})` : 'none', 
-              transformOrigin: 'top center',
-              width: 'min(800px, 100%)',
-              fontFamily: '"Cairo", sans-serif', 
-              direction: 'rtl' 
-            }}
+            className="bg-white border border-slate-200 shadow-lg rounded-3xl print:border-none print:rounded-none print:shadow-none" 
+            style={{ width: '100%', maxWidth: '800px', fontFamily: '"Cairo", sans-serif', direction: 'rtl' }}
           >
             <div ref={receiptRef} style={{ padding: '20pt 24pt 24pt 24pt' }}>
               {/* ── HEADER ──── */}
@@ -453,41 +377,11 @@ export default function Step5Success({
         </div>
 
         {/* ── EVALUATION FORM — الصفحة الثانية (Scaled Down on Screen to Fit viewport) ── */}
-        {(() => {
-          const selLevel = levels.find(l => l.title === formData.level);
-          const hasTajweed = selLevel?.has_tajweed ?? false;
-          const hasRewaya  = selLevel?.has_rewaya  ?? false;
-          const hasVoice   = selLevel?.has_voice   ?? false;
-          const hasMeaning = selLevel?.has_meaning  ?? false;
-          const rewayaScore  = selLevel?.rewaya_max_score  ?? 100;
-          const tajweedScore = selLevel?.tajweed_max_score ?? 100;
-          const voiceScore   = selLevel?.voice_max_score   ?? 100;
-          const meaningScore = selLevel?.meaning_max_score ?? 100;
-          const basePoints   = selLevel?.total_points      ?? 100;
-          const grandTotal = basePoints
-            + (hasRewaya  ? rewayaScore  : 0)
-            + (hasTajweed ? tajweedScore : 0)
-            + (hasVoice   ? voiceScore   : 0)
-            + (hasMeaning ? meaningScore : 0);
-
-          const questions = ['السؤال الأول','السؤال الثاني','السؤال الثالث','السؤال الرابع','السؤال الخامس','السؤال السادس','السؤال السابع','السؤال الثامن','السؤال التاسع','السؤال العاشر'];
-
-          return (
-            <div 
-              className="w-full flex justify-center overflow-x-auto overflow-y-visible print:block print:w-full print:h-auto print:overflow-visible mb-8 print:mb-0" 
-              style={{ height: scale < 1 ? `${(evalHeight + 16) * scale}px` : 'auto' }}
-            >
+            <div className="w-full flex justify-center mb-8 print:mb-0">
               <div 
                 id="evaluation-form" 
-                className="print-no-scale bg-white border border-slate-200 shadow-lg rounded-3xl print:border-none print:rounded-none print:shadow-none" 
-                style={{ 
-                  transform: scale < 1 ? `scale(${scale})` : 'none', 
-                  transformOrigin: 'top center',
-                  width: 'min(800px, 100%)',
-                  fontFamily: '"Cairo", sans-serif', 
-                  direction: 'rtl',
-                  pageBreakBefore: 'always'
-                }}
+                className="bg-white border border-slate-200 shadow-lg rounded-3xl print:border-none print:rounded-none print:shadow-none" 
+                style={{ width: '100%', maxWidth: '800px', fontFamily: '"Cairo", sans-serif', direction: 'rtl', pageBreakBefore: 'always' }}
               >
                 <div ref={evalRef} style={{ padding: '20pt 24pt 24pt 24pt' }}>
 
@@ -590,8 +484,6 @@ export default function Step5Success({
                 </div>
               </div>
             </div>
-          );
-        })()}
 
       </div>
     </div>

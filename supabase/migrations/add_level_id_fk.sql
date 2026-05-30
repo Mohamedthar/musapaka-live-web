@@ -65,7 +65,7 @@ BEGIN
 
     SELECT max_capacity INTO v_capacity FROM competition_levels WHERE title = NEW.level;
     IF v_capacity IS NOT NULL THEN
-        SELECT COUNT(*) INTO v_current FROM students WHERE level_id = NEW.level_id;
+        SELECT COUNT(*) INTO v_current FROM students WHERE level = NEW.level;
         IF v_current >= v_capacity THEN
             RAISE EXCEPTION 'المستوى المطلوب ممتلئ تماماً بالحد الأقصى للمتسابقين';
         END IF;

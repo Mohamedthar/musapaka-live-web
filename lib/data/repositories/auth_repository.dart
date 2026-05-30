@@ -21,13 +21,19 @@ class AuthRepository {
   }
 
   Future<void> signInWithPhone(String phone, String password) async {
-    final response = await _client.auth.signInWithPassword(
-      email: '$phone@admin.com',
-      password: password,
-    );
-    if (response.user != null) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isAdminLoggedIn', true);
+    try {
+      final response = await _client.auth.signInWithPassword(
+        email: '$phone@admin.com',
+        password: password,
+      );
+      if (response.user != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isAdminLoggedIn', true);
+      }
+    } on AuthException {
+      rethrow;
+    } catch (e) {
+      throw Exception('فشل تسجيل الدخول: $e');
     }
   }
 

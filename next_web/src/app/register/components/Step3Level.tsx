@@ -170,25 +170,27 @@ export default function Step3Level({
             </div>
             {fieldErrors.branch && <p className="text-[11px] font-bold text-amber-600 mt-1">{fieldErrors.branch}</p>}
 
-            {/* Memorization amount selector for branches */}
-            <div className="mt-4">
-              <label className="block text-sm font-bold text-primary mb-1.5">
-                عدد الأجزاء المحفوظة
-              </label>
-              <div className="relative">
-                <select
-                  value={memorizationAmount ?? ''}
-                  onChange={e => setMemorizationAmount(e.target.value ? parseInt(e.target.value) : null)}
-                  className="w-full bg-white border-2 border-primary/15 rounded-xl py-[14px] px-3 sm:px-4 text-primary text-sm font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/8 transition-all appearance-none shadow-sm"
-                >
-                  <option value="">-- اختر عدد الأجزاء --</option>
-                  {Array.from({ length: 30 }, (_, i) => i + 1).map(n => (
-                    <option key={n} value={n}>{n === 1 ? 'جزء واحد' : n === 2 ? 'جزئين' : `${n} أجزاء`}</option>
-                  ))}
-                </select>
-                <ChevronDown size={14} className="sm:size-[16px] absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-primary/30 pointer-events-none" />
+            {/* Memorization amount selector - only when require_custom_amount is enabled */}
+            {selLevel.require_custom_amount && (
+              <div className="mt-4">
+                <label className="block text-sm font-bold text-primary mb-1.5">
+                  عدد الأجزاء المحفوظة
+                </label>
+                <div className="relative">
+                  <select
+                    value={memorizationAmount ?? ''}
+                    onChange={e => setMemorizationAmount(e.target.value ? parseInt(e.target.value) : null)}
+                    className="w-full bg-white border-2 border-primary/15 rounded-xl py-[14px] px-3 sm:px-4 text-primary text-sm font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/8 transition-all appearance-none shadow-sm"
+                  >
+                    <option value="">-- اختر عدد الأجزاء --</option>
+                    {Array.from({ length: 30 }, (_, i) => i + 1).map(n => (
+                      <option key={n} value={n}>{n === 1 ? 'جزء واحد' : n === 2 ? 'جزئين' : `${n} أجزاء`}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={14} className="sm:size-[16px] absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-primary/30 pointer-events-none" />
+                </div>
               </div>
-            </div>
+            )}
           </div>
         );
       })()}

@@ -11,25 +11,36 @@ const DEFAULT_FAQS = [
 export async function GET() {
   try {
     const supabase = getPublicClient();
-    const { data, error } = await supabase
+
+    const timeout = new Promise<{ data: { faqs: { q: string; a: string }[] } | null; error: null }>((resolve) => {
+      setTimeout(() => resolve({ data: null, error: null }), 2500);
+    });
+
+    const query = supabase
       .from('app_settings')
       .select('faqs')
       .limit(1)
       .maybeSingle();
 
+    const result = await Promise.race([query, timeout]);
+    const { data, error } = result as { data: { faqs: { q: string; a: string }[] } | null; error: any };
+
     if (error) {
       console.error('FAQ fetch error:', error);
-      return NextResponse.json({ data: DEFAULT_FAQS });
+      return NextResponse.json({ data: DEFAULT_FAQS }, {
+        headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
+      });
     }
 
     const faqs = (data?.faqs as { q: string; a: string }[]) ?? [];
-    const result = faqs.length > 0 ? faqs : DEFAULT_FAQS;
+    const result_faqs = faqs.length > 0 ? faqs : DEFAULT_FAQS;
 
-    return NextResponse.json(
-      { data: result },
-      { headers: { 'Cache-Control': 'no-store' } }
-    );
+    return NextResponse.json({ data: result_faqs }, {
+      headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
+    });
   } catch {
-    return NextResponse.json({ data: DEFAULT_FAQS });
+    return NextResponse.json({ data: DEFAULT_FAQS }, {
+      headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
+    });
   }
 }

@@ -3,7 +3,7 @@ export interface CompetitionLevel {
   title: string;
   content: string;
   is_active: boolean;
-  level_code: string | number;
+  level_code: string | null;
   min_age?: number | null;
   max_age?: number | null;
   max_capacity?: number | null;

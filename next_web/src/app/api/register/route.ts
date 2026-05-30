@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { getCorsHeaders, jsonResponse, optionsResponse, checkRateLimit, getClientIp, validateCsrf } from '@/lib/api-utils';
+import { parseNationalId, calculateAgeFromNationalId } from '@/lib/national-id';
 
 export { optionsResponse as OPTIONS };
 
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
     }
 
     // 2. Verify Turnstile Token
-    if (process.env.NODE_ENV !== 'development') {
+    if (process.env.NODE_ENV !== 'development' && process.env.SKIP_TURNSTILE !== 'true') {
       if (!token) {
         return jsonResponse({ error: 'رمز التحقق مطلوب' }, 400, origin);
       }
@@ -116,6 +117,24 @@ export async function POST(request: Request) {
       return jsonResponse({ error: 'النوع غير صحيح' }, 400, origin);
     }
 
+    // Validate age and gender against national ID
+    if (nationalId) {
+      const idInfo = parseNationalId(nationalId);
+      if (!idInfo) {
+        return jsonResponse({ error: 'الرقم القومي غير صالح' }, 400, origin);
+      }
+
+      const idAge = calculateAgeFromNationalId(nationalId);
+      if (idAge !== null && age !== idAge) {
+        return jsonResponse({ error: 'العمر غير صحيح' }, 400, origin);
+      }
+
+      const idGender = idInfo.gender;
+      if (gender && gender !== idGender) {
+        return jsonResponse({ error: 'النوع غير صحيح' }, 400, origin);
+      }
+    }
+
     // 3. Sanitize and Extract Data (Security: Prevent Mass Assignment)
     const studentData = {
       name,
@@ -137,20 +156,22 @@ export async function POST(request: Request) {
       memorization_amount: body.memorization_amount ?? null,
     };
 
-    // 4. Duplicate Checks (inside a transaction to prevent race conditions)
-    if (studentData.national_id) {
-      const { data: idCheck } = await supabase
-        .from('students')
-        .select('id')
-        .eq('national_id', studentData.national_id)
-        .maybeSingle();
-      
-      if (idCheck) {
-        return jsonResponse({ error: 'الرقم القومي هذا مسجّل مسبقاً' }, 409, origin);
-      }
+    // 3. Check for duplicate name or national ID
+    const [dupName, dupId] = await Promise.all([
+      supabase.from('students').select('id').eq('name', name).maybeSingle(),
+      nationalId
+        ? supabase.from('students').select('id').eq('national_id', nationalId).maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+    ]);
+
+    if (dupName.data) {
+      return jsonResponse({ error: 'هذا الاسم مسجل مسبقاً في النظام' }, 409, origin);
+    }
+    if (dupId.data) {
+      return jsonResponse({ error: 'هذا الرقم القومي مسجل مسبقاً في النظام' }, 409, origin);
     }
 
-    // 4.5 Check Selected Level Age Restrictions
+    // 4. Check Selected Level Age & Capacity Restrictions
     const { data: levelData } = await supabase
       .from('competition_levels')
       .select('min_age, max_age, max_capacity, branches, has_rewaya, available_rewayas')
@@ -171,7 +192,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // 4.6 Check Selected Level Capacity
+    // 4.1 Check Selected Level Capacity
     if (levelData.max_capacity !== null) {
       const { count } = await supabase
         .from('students')
@@ -183,7 +204,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // 4.7 Validate rewaya
+    // 4.2 Validate rewaya
     if (studentData.selected_rewaya) {
       if (!levelData.has_rewaya) {
         return jsonResponse({ error: 'هذا المستوى لا يدعم اختيار الروايات' }, 400, origin);
@@ -194,7 +215,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // 4.8 Validate branch
+    // 4.3 Validate branch
     if (studentData.branch_name) {
       const branches = (levelData.branches as string[]) || [];
       if (branches.length && !branches.includes(studentData.branch_name.trim())) {

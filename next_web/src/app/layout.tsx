@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Cairo, Noto_Serif } from "next/font/google";
-import "material-symbols/outlined.css";
 import "./globals.css";
 import { Toaster } from 'react-hot-toast';
 
@@ -8,7 +7,7 @@ const cairo = Cairo({
   subsets: ["arabic", "latin"],
   variable: "--font-cairo",
   display: "swap",
-  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  weight: ["400", "600", "700", "900"],
 });
 
 const notoSerif = Noto_Serif({
@@ -39,7 +38,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-      <html lang="ar" dir="rtl" className="scroll-smooth">
+      <html lang="ar" dir="rtl" className="scroll-smooth" data-scroll-behavior="smooth">
         <head>
           <link rel="preload" href="/background.png" as="image" />
         </head>

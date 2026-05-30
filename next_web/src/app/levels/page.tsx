@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Trophy, BookOpen } from 'lucide-react';
+import { Trophy, BookOpen, ChevronDown } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { motion } from 'framer-motion';
@@ -125,7 +125,7 @@ export default function LevelsPage() {
             transition={{ delay: 1.5, duration: 0.5 }}
             className="absolute bottom-6 left-1/2 -translate-x-1/2 animate-bounce z-10"
           >
-            <span className="material-symbols-outlined text-secondary-fixed text-3xl">expand_more</span>
+            <ChevronDown className="text-secondary-fixed text-3xl" />
           </motion.div>
         </section>
 

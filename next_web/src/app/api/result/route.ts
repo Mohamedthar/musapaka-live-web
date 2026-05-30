@@ -14,11 +14,15 @@ export async function GET(request: Request) {
       return jsonResponse({ error: 'حدث خطأ في قراءة الإعدادات' }, 500, origin);
     }
 
-    const status = settings as Record<string, unknown> | null;
+    const st = settings as Record<string, unknown> | null;
     return jsonResponse(
       {
         success: true,
-        is_result_query_open: !!(status as any)?.is_result_query_open,
+        is_result_query_open: !!(st as any)?.is_result_query_open,
+        registration_start_date: (st as any)?.registration_start_date ?? null,
+        registration_end_date: (st as any)?.registration_end_date ?? null,
+        result_query_open_date: (st as any)?.result_query_open_date ?? null,
+        result_query_close_date: (st as any)?.result_query_close_date ?? null,
       },
       200,
       origin,

@@ -63,7 +63,7 @@ export function validateCsrf(request: Request): boolean {
   const origin = request.headers.get('origin');
   const referer = request.headers.get('referer');
 
-  if (!origin && !referer) return true;
+  if (!origin && !referer) return false;
 
   if (origin) {
     return ALLOWED_ORIGINS.some((allowed) => origin.startsWith(allowed));

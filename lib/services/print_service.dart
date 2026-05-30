@@ -41,10 +41,11 @@ class PrintService {
 
     pw.ImageProvider? profileImage = await _fetchImage(s.profileImageUrl);
     pw.ImageProvider? logoImage = await _loadLogoAsset();
+    pw.ImageProvider? qrCodeImage = await _fetchQrCode();
     List<CompetitionLevel> freshLevels = await _fetchLevels(levels);
     CompetitionLevel levelData = _matchLevel(s.level, freshLevels);
 
-    pdf.addPage(_buildStudentPage(s, levelData, profileImage, arabicFont, arabicFontBold, logoImage: logoImage));
+    pdf.addPage(_buildStudentPage(s, levelData, profileImage, arabicFont, arabicFontBold, logoImage: logoImage, qrCodeImage: qrCodeImage));
     pdf.addPage(_buildEvaluationPage(s, levelData, profileImage, arabicFont, arabicFontBold, logoImage: logoImage));
 
     await Printing.layoutPdf(
@@ -59,12 +60,13 @@ class PrintService {
     final arabicFontBold = await PdfGoogleFonts.cairoBold();
     
     pw.ImageProvider? logoImage = await _loadLogoAsset();
+    pw.ImageProvider? qrCodeImage = await _fetchQrCode();
     List<CompetitionLevel> freshLevels = await _fetchLevels(levels);
 
     for (final s in students) {
       pw.ImageProvider? profileImage = await _fetchImage(s.profileImageUrl);
       CompetitionLevel levelData = _matchLevel(s.level, freshLevels);
-      pdf.addPage(_buildStudentPage(s, levelData, profileImage, arabicFont, arabicFontBold, logoImage: logoImage));
+      pdf.addPage(_buildStudentPage(s, levelData, profileImage, arabicFont, arabicFontBold, logoImage: logoImage, qrCodeImage: qrCodeImage));
       pdf.addPage(_buildEvaluationPage(s, levelData, profileImage, arabicFont, arabicFontBold, logoImage: logoImage));
     }
 
@@ -98,6 +100,7 @@ class PrintService {
     final arabicFont = await PdfGoogleFonts.cairoRegular();
     final arabicFontBold = await PdfGoogleFonts.cairoBold();
     pw.ImageProvider? logoImage = await _loadLogoAsset();
+    pw.ImageProvider? qrCodeImage = await _fetchQrCode();
     List<CompetitionLevel> freshLevels = await _fetchLevels(levels);
 
     for (final s in students) {
@@ -105,10 +108,10 @@ class PrintService {
       pw.ImageProvider? profileImage = await _fetchImage(s.profileImageUrl);
       CompetitionLevel levelData = _matchLevel(s.level, freshLevels);
       
-      pdf.addPage(_buildStudentPage(s, levelData, profileImage, arabicFont, arabicFontBold, logoImage: logoImage));
+      pdf.addPage(_buildStudentPage(s, levelData, profileImage, arabicFont, arabicFontBold, logoImage: logoImage, qrCodeImage: qrCodeImage));
       pdf.addPage(_buildEvaluationPage(s, levelData, profileImage, arabicFont, arabicFontBold, logoImage: logoImage));
 
-      final fileName = '${s.name}_${s.studentCode ?? s.id}.pdf'.replaceAll(' ', '_');
+      final fileName = '${s.name}_${s.studentCode ?? s.id}.pdf'.replaceAll(RegExp(r'[<>:"/\\|?* ]'), '_');
       final file = File(p.join(targetDir.path, fileName));
       await file.writeAsBytes(await pdf.save());
     }
@@ -120,6 +123,23 @@ class PrintService {
     try {
       final data = await rootBundle.load('assets/images/logo_musapaka.jpeg');
       return pw.MemoryImage(data.buffer.asUint8List());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<pw.ImageProvider?> _fetchQrCode() async {
+    const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://maps.app.goo.gl/F75xUpSbdsfzDmHn8';
+    try {
+      final response = await http.get(
+        Uri.parse(qrUrl),
+        headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'image/*' },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return pw.MemoryImage(response.bodyBytes);
+      }
+      return null;
     } catch (_) {
       return null;
     }
@@ -183,7 +203,7 @@ class PrintService {
     }
   }
 
-  pw.Page _buildStudentPage(Student s, CompetitionLevel levelData, pw.ImageProvider? profileImage, pw.Font arabicFont, pw.Font arabicFontBold, {pw.ImageProvider? logoImage}) {
+  pw.Page _buildStudentPage(Student s, CompetitionLevel levelData, pw.ImageProvider? profileImage, pw.Font arabicFont, pw.Font arabicFontBold, {pw.ImageProvider? logoImage, pw.ImageProvider? qrCodeImage}) {
     const String svgUser = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
     const String svgLayers = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z"/></svg>';
     const String svgCalendar = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>';
@@ -226,10 +246,10 @@ class PrintService {
 
     pw.Widget buildIconRow(String label, String value, String svg, {PdfColor? bgColor, PdfColor? textColor}) {
       return pw.Container(
-        padding: bgColor != null ? const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4) : const pw.EdgeInsets.all(0),
+        padding: bgColor != null ? const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 3) : const pw.EdgeInsets.all(0),
         decoration: bgColor != null ? pw.BoxDecoration(
           color: bgColor,
-          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(5)),
           border: pw.Border.all(color: PdfColors.blue100, width: 0.5),
         ) : null,
         child: pw.Row(
@@ -237,16 +257,16 @@ class PrintService {
           crossAxisAlignment: pw.CrossAxisAlignment.center,
           children: [
             pw.Container(
-              padding: const pw.EdgeInsets.all(5),
-              decoration: pw.BoxDecoration(color: blueLight, borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6))),
+              padding: const pw.EdgeInsets.all(4),
+              decoration: pw.BoxDecoration(color: blueLight, borderRadius: const pw.BorderRadius.all(pw.Radius.circular(5))),
               child: pw.SvgImage(svg: svg, width: 12, height: 12, colorFilter: PdfColors.white),
             ),
-            pw.SizedBox(width: 8),
-            pw.Text(label, style: pw.TextStyle(font: arabicFont, fontSize: 11, color: textColor ?? blueDark)),
-            pw.SizedBox(width: 4),
-            pw.Text(':', style: pw.TextStyle(font: arabicFont, fontSize: 11, color: textColor ?? blueDark)),
-            pw.SizedBox(width: 8),
-            pw.Expanded(child: pw.Text(value, style: pw.TextStyle(font: arabicFontBold, fontSize: 12, color: textColor ?? blueDark), textAlign: pw.TextAlign.right)),
+            pw.SizedBox(width: 6),
+            pw.Text(label, style: pw.TextStyle(font: arabicFont, fontSize: 13, color: textColor ?? blueDark)),
+            pw.SizedBox(width: 3),
+            pw.Text(':', style: pw.TextStyle(font: arabicFont, fontSize: 13, color: textColor ?? blueDark)),
+            pw.SizedBox(width: 5),
+            pw.Expanded(child: pw.Text(value, style: pw.TextStyle(font: arabicFontBold, fontSize: 14, color: textColor ?? blueDark), textAlign: pw.TextAlign.right)),
           ]
         )
       );
@@ -254,24 +274,43 @@ class PrintService {
 
     pw.Widget buildGridCell(String label, String value, String svg) {
       return pw.Container(
-        padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         child: pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.start,
           crossAxisAlignment: pw.CrossAxisAlignment.center,
           children: [
             pw.Container(
-              padding: const pw.EdgeInsets.all(4),
-              decoration: pw.BoxDecoration(color: blueLight, borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4))),
+              padding: const pw.EdgeInsets.all(3),
+              decoration: pw.BoxDecoration(color: blueLight, borderRadius: const pw.BorderRadius.all(pw.Radius.circular(3))),
               child: pw.SvgImage(svg: svg, width: 10, height: 10, colorFilter: PdfColors.white),
             ),
-            pw.SizedBox(width: 6),
-            pw.Text(label, style: pw.TextStyle(font: arabicFont, fontSize: 9, color: blueDark)),
-            pw.SizedBox(width: 4),
-            pw.Text(':', style: pw.TextStyle(font: arabicFont, fontSize: 9, color: blueDark)),
-            pw.SizedBox(width: 4),
-            pw.Expanded(child: pw.Text(value, style: pw.TextStyle(font: arabicFontBold, fontSize: 10, color: blueDark), textAlign: pw.TextAlign.right)),
+            pw.SizedBox(width: 5),
+            pw.Text(label, style: pw.TextStyle(font: arabicFont, fontSize: 11, color: blueDark)),
+            pw.SizedBox(width: 3),
+            pw.Text(':', style: pw.TextStyle(font: arabicFont, fontSize: 11, color: blueDark)),
+            pw.SizedBox(width: 3),
+            pw.Expanded(child: pw.Text(value, style: pw.TextStyle(font: arabicFontBold, fontSize: 12, color: blueDark), textAlign: pw.TextAlign.right)),
           ]
         )
+      );
+    }
+
+    pw.Widget _condRow(String num, String text) {
+      return pw.Padding(
+        padding: const pw.EdgeInsets.only(bottom: 3),
+        child: pw.Row(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Container(
+              width: 16, height: 16,
+              alignment: pw.Alignment.center,
+              decoration: pw.BoxDecoration(color: blueDark, shape: pw.BoxShape.circle),
+              child: pw.Text(num, style: pw.TextStyle(font: arabicFontBold, fontSize: 10, color: PdfColors.white)),
+            ),
+            pw.SizedBox(width: 6),
+            pw.Expanded(child: pw.Text(text, style: pw.TextStyle(font: arabicFont, fontSize: 12, color: blueDark))),
+          ],
+        ),
       );
     }
 
@@ -287,11 +326,11 @@ class PrintService {
           textDirection: pw.TextDirection.rtl,
           child: pw.Column(
             children: [
-              // Header
+               // Header
               pw.Container(
                 width: double.infinity,
-                padding: const pw.EdgeInsets.only(bottom: 12),
-                margin: const pw.EdgeInsets.only(top: 36, left: 24, right: 24),
+                padding: const pw.EdgeInsets.only(bottom: 8),
+                margin: const pw.EdgeInsets.fromLTRB(24, 24, 24, 0),
                 decoration: pw.BoxDecoration(
                   border: pw.Border(bottom: pw.BorderSide(color: PdfColor.fromHex('#e2e8f0'), width: 2)),
                 ),
@@ -304,12 +343,12 @@ class PrintService {
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
                           pw.Text('مسابقة أهل القرآن الكبرى', style: pw.TextStyle(color: blueDark, fontSize: 20, font: arabicFontBold)),
-                          pw.SizedBox(height: 6),
+                          pw.SizedBox(height: 2),
                           pw.Text('مقر اللجنة: مركز فاقوس - قرية الديدمون - شارع الشيخ - منزل المشرف العام', style: pw.TextStyle(color: gold, fontSize: 13, font: arabicFontBold)),
                         ]
                       )
                     ),
-                    pw.SizedBox(width: 16),
+                    pw.SizedBox(width: 12),
                     logoImage != null
                         ? pw.Container(
                             width: 70, height: 70,
@@ -324,16 +363,16 @@ class PrintService {
               ),
 
               pw.Padding(
-                padding: const pw.EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                padding: const pw.EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                 child: pw.Column(
                   children: [
                     // Basic Info Card
                     pw.Container(
-                      padding: const pw.EdgeInsets.all(12),
+                      padding: const pw.EdgeInsets.fromLTRB(12, 10, 12, 10),
                       decoration: pw.BoxDecoration(
                         color: PdfColors.white,
                         border: pw.Border.all(color: PdfColor.fromHex('#e2e8f0'), width: 1),
-                        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(12)),
+                        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10)),
                       ),
                       child: pw.Row(
                         children: [
@@ -341,31 +380,31 @@ class PrintService {
                             child: pw.Column(
                               children: [
                                 buildIconRow('الاسم', s.name, svgUser),
-                                pw.SizedBox(height: 8),
+                                pw.SizedBox(height: 6),
                                 buildIconRow('المستوى', '$displayLevel - ${levelData.content}', svgLayers),
-                                pw.SizedBox(height: 8),
+                                pw.SizedBox(height: 6),
                                 buildIconRow('موعد الامتحان', examDateStr, svgCalendar, textColor: PdfColor.fromHex('#1e40af')),
-                                pw.SizedBox(height: 8),
+                                pw.SizedBox(height: 6),
                                 buildIconRow('العمر', '${s.age} سنة', svgUser),
                               ]
                             )
                           ),
-                          pw.SizedBox(width: 20),
+                          pw.SizedBox(width: 16),
                           pw.Column(
                             children: [
                               pw.Container(
-                                width: 90, height: 90,
+                                width: 80, height: 80,
                                 decoration: pw.BoxDecoration(
                                   shape: pw.BoxShape.circle,
-                                  border: pw.Border.all(color: goldLight, width: 2.5),
+                                  border: pw.Border.all(color: goldLight, width: 2),
                                 ),
                                 child: pw.ClipOval(
-                                  child: profileImage != null ? pw.Image(profileImage, fit: pw.BoxFit.cover) : pw.Center(child: pw.SvgImage(svg: svgUser, width: 45, height: 45, colorFilter: PdfColors.grey)),
+                                  child: profileImage != null ? pw.Image(profileImage, fit: pw.BoxFit.cover) : pw.Center(child: pw.SvgImage(svg: svgUser, width: 40, height: 40, colorFilter: PdfColors.grey)),
                                 )
                               ),
-                              pw.SizedBox(height: 10),
+                              pw.SizedBox(height: 8),
                               pw.Container(
-                                padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                                 decoration: const pw.BoxDecoration(
                                   color: PdfColors.grey200,
                                   borderRadius: pw.BorderRadius.all(pw.Radius.circular(16)),
@@ -373,7 +412,7 @@ class PrintService {
                                 child: pw.Row(
                                   mainAxisSize: pw.MainAxisSize.min,
                                   children: [
-                                    pw.Text(s.studentCode ?? s.nationalId ?? '', style: pw.TextStyle(font: arabicFontBold, fontSize: 11, color: blueDark)),
+                                    pw.Text(s.studentCode ?? s.nationalId ?? '', style: pw.TextStyle(font: arabicFontBold, fontSize: 12, color: blueDark)),
                                     pw.SizedBox(width: 4),
                                     pw.SvgImage(svg: svgUser, width: 10, height: 10, colorFilter: blueDark),
                                   ]
@@ -384,21 +423,42 @@ class PrintService {
                         ]
                       )
                     ),
-                    pw.SizedBox(height: 14),
+                    pw.SizedBox(height: 16),
 
                     // Detailed Info Grid
-                    pw.Stack(
-                      alignment: pw.Alignment.topCenter,
-                      children: [
-                        pw.Container(
-                          margin: const pw.EdgeInsets.only(top: 12),
-                          decoration: pw.BoxDecoration(
-                            color: PdfColors.white,
-                            border: pw.Border.all(color: PdfColor.fromHex('#e2e8f0'), width: 1),
-                            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(12)),
+                    pw.Container(
+                      decoration: pw.BoxDecoration(
+                        color: PdfColors.white,
+                        border: pw.Border.all(color: PdfColor.fromHex('#e2e8f0'), width: 1),
+                        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10)),
+                      ),
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Center(
+                            child: pw.Container(
+                              margin: const pw.EdgeInsets.only(top: -12),
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+                              decoration: pw.BoxDecoration(
+                                color: blueDark,
+                                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+                              ),
+                              child: pw.Row(
+                                mainAxisSize: pw.MainAxisSize.min,
+                                children: [
+                                  pw.Container(
+                                    padding: const pw.EdgeInsets.all(2),
+                                    decoration: pw.BoxDecoration(color: blueDark, borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4))),
+                                    child: pw.SvgImage(svg: svgList, width: 10, height: 10, colorFilter: PdfColors.white),
+                                  ),
+                                  pw.SizedBox(width: 5),
+                                  pw.Text('البيانات التفصيلية', style: pw.TextStyle(color: PdfColors.white, font: arabicFontBold, fontSize: 13)),
+                                ]
+                              )
+                            ),
                           ),
-                          child: pw.Padding(
-                            padding: const pw.EdgeInsets.only(top: 16, bottom: 6, left: 6, right: 6),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.fromLTRB(5, 2, 5, 5),
                             child: pw.Table(
                               border: pw.TableBorder.all(color: PdfColor.fromHex('#e2e8f0'), width: 1),
                               columnWidths: { 0: const pw.FlexColumnWidth(1), 1: const pw.FlexColumnWidth(1) },
@@ -431,122 +491,125 @@ class PrintService {
                                 ),
                               ]
                             )
-                          )
-                        ),
-                        pw.Container(
-                          padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          decoration: pw.BoxDecoration(
-                            color: blueDark,
-                            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
                           ),
-                          child: pw.Row(
-                            mainAxisSize: pw.MainAxisSize.min,
-                            children: [
-                              pw.Container(
-                                padding: const pw.EdgeInsets.all(2),
-                                decoration: pw.BoxDecoration(color: blueDark, borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4))),
-                                child: pw.SvgImage(svg: svgList, width: 12, height: 12, colorFilter: PdfColors.white),
-                              ),
-                              pw.SizedBox(width: 6),
-                              pw.Text('البيانات التفصيلية', style: pw.TextStyle(color: PdfColors.white, font: arabicFontBold, fontSize: 12)),
-                            ]
-                          )
-                        ),
-                      ]
+                        ],
+                      ),
                     ),
-                    pw.SizedBox(height: 14),
+                    pw.SizedBox(height: 16),
 
                     // Conditions
-                    pw.Stack(
-                      alignment: pw.Alignment.topCenter,
-                      children: [
-                        pw.Container(
-                          margin: const pw.EdgeInsets.only(top: 12),
-                          padding: const pw.EdgeInsets.only(top: 20, bottom: 8, left: 12, right: 12),
-                          decoration: pw.BoxDecoration(
-                            color: faintGray,
-                            border: pw.Border.all(color: PdfColor.fromHex('#e2e8f0'), width: 1),
-                            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(12)),
+                    pw.Container(
+                      decoration: pw.BoxDecoration(
+                        color: faintGray,
+                        border: pw.Border.all(color: PdfColor.fromHex('#e2e8f0'), width: 1),
+                        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10)),
+                      ),
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Center(
+                            child: pw.Container(
+                              margin: const pw.EdgeInsets.only(top: -12),
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+                              decoration: pw.BoxDecoration(
+                                color: blueDark,
+                                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+                              ),
+                              child: pw.Row(
+                                mainAxisSize: pw.MainAxisSize.min,
+                                children: [
+                                  pw.Container(
+                                    padding: const pw.EdgeInsets.all(2),
+                                    decoration: pw.BoxDecoration(color: blueDark, borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4))),
+                                    child: pw.SvgImage(svg: svgList, width: 10, height: 10, colorFilter: PdfColors.white),
+                                  ),
+                                  pw.SizedBox(width: 5),
+                                  pw.Text('ملاحظات هامة', style: pw.TextStyle(color: PdfColors.white, font: arabicFontBold, fontSize: 13)),
+                                ]
+                              )
+                            ),
                           ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.fromLTRB(12, 2, 12, 8),
+                            child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                _condRow('1', 'القبول بشروط المسابقة، يحظر تقديم أي رسوم مالية'),
+                                _condRow('2', 'كل متسابق يلتزم بالمواعيد المحدده له( التقديم - الاختبار - الحفلة)'),
+                                _condRow('3', 'يتم التصفيه في المسابقة بوضع سؤال للتصفية في الامتحان سؤال في ضبط المتشابهات'),
+                                _condRow('4', 'سيتم تكريم الاوائل الثلاثة على المنصة فقط والباقي في أماكنهم والرجاء الرضا بذلك'),
+                                _condRow('5', 'عند عدم الحضور المكرم الحفل يحجب من الجائزة وتودع في الامانات'),
+                                _condRow('6', 'سيتم تكريم الحاصلين علي درجة نجاح 95% فأكثر، ويحظر الجمع بين أكثر من جائزة'),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    pw.SizedBox(height: 14),
+
+                    // Supervisor + Warning + QR Code
+                    pw.Row(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        // Left side: Supervisor + Warning
+                        pw.Expanded(
                           child: pw.Column(
                             crossAxisAlignment: pw.CrossAxisAlignment.start,
                             children: [
-                              'القبول بشروط المسابقة، يحظر تقديم أي رسوم مالية',
-                              'كل متسابق يلتزم بالمواعيد المحدده له( التقديم -الاختبار-الحفلة)',
-                              'يتم التصفيه في المسابقة بوضع سؤال للتصفية في الامتحان سؤال في ضبط المتشابهات',
-                              'سيتم تكريم الاوائل الثلاثة على المنصة فقط والباقي في أماكنهم والرجاء الرضا بذالك',
-                              'عند عدم الحضور المُكرم الحفل يحجب من الجائزة وتودع في الامانات',
-                              'يحظر الجمع بين جائزتين فأكثر ،سيتم تكريم الفائزين بدرجة الامتياز فأكثر',
-                            ].asMap().entries.map((e) => pw.Padding(
-                              padding: const pw.EdgeInsets.only(bottom: 4),
-                              child: pw.Row(
-                                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                                children: [
-                                  pw.Container(
-                                    width: 16, height: 16,
-                                    alignment: pw.Alignment.center,
-                                    decoration: pw.BoxDecoration(color: blueDark, shape: pw.BoxShape.circle),
-                                    child: pw.Text('${e.key + 1}', style: pw.TextStyle(font: arabicFontBold, fontSize: 9, color: PdfColors.white)),
-                                  ),
-                                  pw.SizedBox(width: 8),
-                                  pw.Expanded(child: pw.Text(e.value, style: pw.TextStyle(font: arabicFont, fontSize: 10, color: blueDark))),
-                                ],
+                              pw.Center(
+                                child: pw.Column(
+                                  children: [
+                                    pw.Text('المشرف العام علي المسابقة', style: pw.TextStyle(font: arabicFontBold, fontSize: 12, color: gold)),
+                                    pw.SizedBox(height: 1),
+                                    pw.Text('أ/ مصطفى عبدالرحمن محمد سالم', style: pw.TextStyle(font: arabicFontBold, fontSize: 16, color: blueDark)),
+                                  ],
+                                ),
                               ),
-                            )).toList(),
-                          )
+                              pw.SizedBox(height: 8),
+                              // Warning Box
+                              pw.Container(
+                                width: double.infinity,
+                                padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                                decoration: pw.BoxDecoration(
+                                  color: PdfColor.fromHex('#fffbeb'),
+                                  border: pw.Border.all(color: PdfColor.fromHex('#f59e0b'), width: 1.5),
+                                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+                                ),
+                                child: pw.Row(
+                                  mainAxisAlignment: pw.MainAxisAlignment.start,
+                                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                                  children: [
+                                    pw.SvgImage(svg: svgWarning, width: 14, height: 14, colorFilter: PdfColor.fromHex('#b45309')),
+                                    pw.SizedBox(width: 6),
+                                    pw.Expanded(child: pw.Text('يجب طباعة هذه الاستمارة في ورقة واحدة وإحضارها معك في موعد الاختبار المحدد لك أعلاه.', style: pw.TextStyle(font: arabicFontBold, fontSize: 10, color: PdfColor.fromHex('#92400e')))),
+                                  ]
+                                )
+                              ),
+                            ],
+                          ),
                         ),
-                        pw.Container(
-                          padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          decoration: pw.BoxDecoration(color: PdfColors.white, borderRadius: const pw.BorderRadius.all(pw.Radius.circular(16)), border: pw.Border.all(color: goldLight, width: 1.5)),
-                          child: pw.Row(
-                            mainAxisSize: pw.MainAxisSize.min,
+                        // Right side: QR Code
+                        if (qrCodeImage != null) ...[
+                          pw.SizedBox(width: 12),
+                          pw.Column(
                             children: [
                               pw.Container(
-                                padding: const pw.EdgeInsets.all(3),
-                                decoration: pw.BoxDecoration(color: blueDark, borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4))),
-                                child: pw.SvgImage(svg: svgList, width: 10, height: 10, colorFilter: PdfColors.white),
+                                width: 70,
+                                height: 70,
+                                child: pw.Image(qrCodeImage, fit: pw.BoxFit.contain),
                               ),
-                              pw.SizedBox(width: 6),
-                              pw.Text('ملاحظات هامة', style: pw.TextStyle(color: gold, font: arabicFontBold, fontSize: 12)),
-                            ]
-                          )
-                        ),
-                      ]
-                    ),
-                    
-                    pw.SizedBox(height: 24),
-
-                    // Supervisor
-                    pw.Center(
-                      child: pw.Column(
-                        children: [
-                          pw.Text('المشرف العام علي المسابقة', style: pw.TextStyle(font: arabicFontBold, fontSize: 11, color: gold)),
-                          pw.SizedBox(height: 2),
-                          pw.Text('أ/ مصطفى عبدالرحمن محمد سالم', style: pw.TextStyle(font: arabicFontBold, fontSize: 15, color: blueDark)),
-                        ]
-                      )
-                    ),
-                    pw.SizedBox(height: 20),
-
-                    // Warning Box
-                    pw.Container(
-                      width: double.infinity,
-                      padding: const pw.EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                      decoration: pw.BoxDecoration(
-                        color: PdfColor.fromHex('#fffbeb'),
-                        border: pw.Border.all(color: PdfColor.fromHex('#f59e0b'), width: 2),
-                        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10)),
-                      ),
-                      child: pw.Row(
-                        mainAxisAlignment: pw.MainAxisAlignment.start,
-                        children: [
-                          pw.SvgImage(svg: svgWarning, width: 18, height: 18, colorFilter: PdfColor.fromHex('#b45309')),
-                          pw.SizedBox(width: 10),
-                          pw.Text('ملاحظة هامة:', style: pw.TextStyle(font: arabicFontBold, fontSize: 11, color: PdfColor.fromHex('#92400e'))),
-                          pw.SizedBox(width: 6),
-                          pw.Expanded(child: pw.Text('يجب طباعة هذه الاستمارة في ورقة واحدة وإحضارها معك في موعد الاختبار المحدد لك أعلاه.', style: pw.TextStyle(font: arabicFontBold, fontSize: 9.5, color: PdfColor.fromHex('#92400e')))),
-                        ]
-                      )
+                              pw.SizedBox(height: 3),
+                              pw.Text(
+                                'امسح الباركود\nلمعرفة مقر اللجنة',
+                                style: pw.TextStyle(font: arabicFontBold, fontSize: 9, color: blueDark),
+                                textAlign: pw.TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
                     ),
                   ]
                 )
@@ -614,7 +677,7 @@ class PrintService {
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
                         pw.Text('مسابقة أهل القرآن الكبرى', style: pw.TextStyle(color: blueDark, fontSize: 20, font: arabicFontBold)),
-                        pw.SizedBox(height: 6),
+                        pw.SizedBox(height: 2),
                         pw.Text('استمارة تقييم المتسابق', style: pw.TextStyle(color: gold, fontSize: 14, font: arabicFontBold)),
                       ]
                     )

@@ -119,9 +119,11 @@ class ExportService {
           cell.setNumber((i + 1).toDouble());
         } else if (cols[c].isTotalFormula) {
           int scoreStartIdx = cols.indexWhere((col) => col.isScore);
-          final startColName = _getColName(scoreStartIdx + 1); // 1-based index for columns
-          final endColName = _getColName(c);
-          cell.setFormula('=SUM($startColName$row:$endColName$row)');
+          final startColName = _getColName(scoreStartIdx + 1);
+          // c is 0-based; _getColName expects 1-based so this yields the column
+          // immediately before the total column (the last score column)
+          final lastScoreColName = _getColName(c);
+          cell.setFormula('=SUM($startColName$row:$lastScoreColName$row)');
         } else if (cols[c].isScore) {
           if (val is num) {
             cell.setNumber(val.toDouble());

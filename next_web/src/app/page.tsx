@@ -5,13 +5,14 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { motion } from 'framer-motion';
+import { UserPlus, CalendarCheck, ChevronDown, UserCheck, FilePen, Trophy, BarChart3 } from 'lucide-react';
 
 const journey = [
-  { icon: 'how_to_reg', title: 'التسجيل', desc: 'قم بتسجيل بياناتك ورفع المستندات المطلوبة لإنشاء ملفك في المسابقة.' },
-  { icon: 'edit_note', title: 'الاختبار', desc: 'الحضور في الموعد المحدد لك الموضح في استمارة القبول.' },
-  { icon: 'event_available', title: 'الاستعلام عن الحفل', desc: 'بعد الاختبارات سنعلن عن موعد للاستعلام عن حضور الحفل عن طريق الرقم القومي.' },
-  { icon: 'emoji_events', title: 'حضور الحفل', desc: 'يلزمك حضور الحفلة، وإحضار بطاقة الدعوة معك.' },
-  { icon: 'analytics', title: 'الاستعلام عن النتيجة', desc: 'بعد الانتهاء من الحفلة سيتمكن الجميع من معرفة درجته من خلال بوابة الاستعلام عن النتيجة.' },
+  { Icon: UserCheck, title: 'التسجيل', desc: 'قم بتسجيل بياناتك ورفع المستندات المطلوبة لإنشاء ملفك في المسابقة.' },
+  { Icon: FilePen, title: 'الاختبار', desc: 'الحضور في الموعد المحدد لك الموضح في استمارة القبول.' },
+  { Icon: CalendarCheck, title: 'الاستعلام عن الحفل', desc: 'بعد الاختبارات سنعلن عن موعد للاستعلام عن حضور الحفل عن طريق الرقم القومي.' },
+  { Icon: Trophy, title: 'حضور الحفل', desc: 'يلزمك حضور الحفلة، وإحضار بطاقة الدعوة معك.' },
+  { Icon: BarChart3, title: 'الاستعلام عن النتيجة', desc: 'بعد الانتهاء من الحفلة سيتمكن الجميع من معرفة درجته من خلال بوابة الاستعلام عن النتيجة.' },
 ];
 
 
@@ -37,7 +38,8 @@ export default function HomePage() {
 
   const paragraphText = 'هذه المسابقة تأسست عام 2000 وبفضل الله هي الآن في نسختها السادسة والعشرون وهذا النسخة من المسابقة اول نسخة الكترونية';
 
-  const [yearCount, setYearCount] = useState(0);
+  const currentYear = new Date().getFullYear();
+  const [yearCount, setYearCount] = useState(currentYear);
   const [startYearAnim, setStartYearAnim] = useState(false);
   const yearRaf = useRef(0);
 
@@ -47,17 +49,20 @@ export default function HomePage() {
   }, []);
 
   const animateYear = useCallback(() => {
-    const duration = 1800;
+    const period = 3600;
+    const range = currentYear - 2000;
     const start = performance.now();
     const loop = () => {
       const elapsed = performance.now() - start;
-      const progress = Math.min(elapsed / duration, 1);
+      const t = elapsed % period;
+      const half = period / 2;
+      const progress = t <= half ? t / half : (period - t) / half;
       const eased = 1 - Math.pow(1 - progress, 3);
-      setYearCount(Math.round(eased * 2000));
-      if (progress < 1) yearRaf.current = requestAnimationFrame(loop);
+      setYearCount(Math.round(2000 + (1 - eased) * range));
+      yearRaf.current = requestAnimationFrame(loop);
     };
     yearRaf.current = requestAnimationFrame(loop);
-  }, []);
+  }, [currentYear]);
 
   useEffect(() => {
     if (startYearAnim) animateYear();
@@ -162,43 +167,47 @@ export default function HomePage() {
             {paragraphText.split(' ').map((word, i) => {
               if (word === '2000') {
                 return (
+                  <React.Fragment key={i}>
+                    <motion.span
+                      variants={{
+                        hidden: { opacity: 0, y: 12, filter: 'blur(4px)' },
+                        visible: { opacity: 1, y: 0, filter: 'blur(0px)' }
+                      }}
+                      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                      className="inline-block"
+                    >
+                      <motion.strong
+                        className="text-secondary-fixed font-black"
+                        animate={startYearAnim ? {
+                          textShadow: [
+                            '0 0 0px rgba(255,224,136,0)',
+                            '0 0 16px rgba(255,224,136,0.7)',
+                            '0 0 0px rgba(255,224,136,0)',
+                          ]
+                        } : {}}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                      >
+                        {startYearAnim ? yearCount : currentYear}
+                      </motion.strong>
+                    </motion.span>
+                    {' '}
+                  </React.Fragment>
+                );
+              }
+              return (
+                <React.Fragment key={i}>
                   <motion.span
-                    key={i}
                     variants={{
                       hidden: { opacity: 0, y: 12, filter: 'blur(4px)' },
                       visible: { opacity: 1, y: 0, filter: 'blur(0px)' }
                     }}
                     transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                    className="inline-block ml-1"
+                    className="inline-block"
                   >
-                    <motion.strong
-                      className="text-secondary-fixed font-black"
-                      animate={startYearAnim ? {
-                        textShadow: [
-                          '0 0 0px rgba(255,224,136,0)',
-                          '0 0 16px rgba(255,224,136,0.7)',
-                          '0 0 0px rgba(255,224,136,0)',
-                        ]
-                      } : {}}
-                      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                    >
-                      {startYearAnim ? yearCount : '2000'}
-                    </motion.strong>
+                    {word}
                   </motion.span>
-                );
-              }
-              return (
-                <motion.span
-                  key={i}
-                  variants={{
-                    hidden: { opacity: 0, y: 12, filter: 'blur(4px)' },
-                    visible: { opacity: 1, y: 0, filter: 'blur(0px)' }
-                  }}
-                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  className="inline-block ml-1"
-                >
-                  {word}
-                </motion.span>
+                  {' '}
+                </React.Fragment>
               );
             })}
           </motion.p>
@@ -221,7 +230,7 @@ export default function HomePage() {
               className="w-full sm:w-auto"
             >
               <Link href="/register" className="inline-flex w-full sm:w-auto bg-secondary-fixed text-on-secondary-fixed px-5 sm:px-6 py-3 sm:py-2.5 rounded-xl font-bold text-sm shadow-xl hover:bg-secondary-container active:scale-95 transition-all duration-300 items-center justify-center gap-2 whitespace-nowrap">
-                <span className="material-symbols-outlined text-base sm:text-lg">person_add</span>
+                <UserPlus className="text-base sm:text-lg" />
                 سجل الآن
               </Link>
             </motion.div>
@@ -234,7 +243,7 @@ export default function HomePage() {
               className="w-full sm:w-auto"
             >
               <Link href="/status?tab=ceremony" className="inline-flex w-full sm:w-auto bg-transparent border-2 border-primary-fixed text-primary-fixed px-5 sm:px-6 py-3 sm:py-2.5 rounded-xl font-bold text-sm hover:bg-primary-fixed/10 active:scale-95 transition-all duration-300 items-center justify-center gap-2 whitespace-nowrap">
-                <span className="material-symbols-outlined text-lg">event_available</span>
+                <CalendarCheck className="text-lg" />
                 الاستعلام عن حضور الحفل
               </Link>
             </motion.div>
@@ -248,7 +257,7 @@ export default function HomePage() {
           transition={{ delay: 2, duration: 0.5 }}
           className="absolute bottom-6 left-1/2 -translate-x-1/2 animate-bounce z-10"
         >
-          <span className="material-symbols-outlined text-secondary-fixed text-3xl">expand_more</span>
+          <ChevronDown className="text-secondary-fixed text-3xl" />
         </motion.div>
       </section>
 
@@ -321,13 +330,7 @@ export default function HomePage() {
                         >
                           {i + 1}
                         </motion.span>
-                        <motion.span
-                          className="material-symbols-outlined text-secondary text-2xl"
-                          whileHover={{ scale: 1.2, rotate: [0, -5, 5, 0] }}
-                          transition={{ duration: 0.4 }}
-                        >
-                          {step.icon}
-                        </motion.span>
+                        <step.Icon className="text-secondary text-2xl" />
                       </motion.div>
                     </div>
                     <h4 className="font-black text-primary text-sm mb-1.5 group-hover:text-secondary transition-colors duration-300">
@@ -373,7 +376,7 @@ export default function HomePage() {
                       whileHover={{ x: 4 }}
                     >
                       <div className="flex items-center gap-2 mb-1.5">
-                        <span className="material-symbols-outlined text-secondary text-lg">{step.icon}</span>
+                        <step.Icon className="text-secondary text-lg" />
                         <h4 className="font-black text-primary text-sm">{step.title}</h4>
                       </div>
                       <p className="text-on-surface-variant text-xs leading-relaxed">{step.desc}</p>
@@ -451,11 +454,11 @@ export default function HomePage() {
                   <motion.span
                     animate={{ rotate: openFaq === i ? 180 : 0 }}
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className={`material-symbols-outlined text-xl flex-shrink-0 transition-colors duration-300 ${
+                    className={`flex-shrink-0 transition-colors duration-300 ${
                       openFaq === i ? 'text-primary' : 'text-on-surface-variant/40'
                     }`}
                   >
-                    expand_more
+                    <ChevronDown />
                   </motion.span>
                 </button>
                 <motion.div

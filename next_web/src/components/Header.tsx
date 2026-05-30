@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X, ChevronDown, UserPlus } from 'lucide-react';
 
 const navItems = [
   { href: '/', label: 'الرئيسية' },
@@ -162,7 +162,7 @@ export default function Header() {
             href="/register"
             className="hidden sm:inline-flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-xl font-bold text-sm hover:bg-primary/90 active:scale-[0.97] transition-all duration-300 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30"
           >
-            <span className="material-symbols-outlined text-[16px]">person_add</span>
+            <UserPlus size={16} />
             سجل الآن
           </Link>
           <motion.button
@@ -279,7 +279,7 @@ export default function Header() {
                   href="/register"
                   className="flex items-center justify-center gap-2 w-full py-3 bg-primary text-white rounded-xl font-bold text-sm hover:bg-primary/90 active:scale-[0.97] transition-all duration-200"
                 >
-                  <span className="material-symbols-outlined text-[18px]">person_add</span>
+                  <UserPlus size={18} />
                   سجل الآن
                 </Link>
               </motion.div>

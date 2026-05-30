@@ -8,6 +8,7 @@ declare module 'lucide-react' {
   export const ArrowLeft: Icon;
   export const ArrowRight: Icon;
   export const Award: Icon;
+  export const BarChart3: Icon;
   export const BookOpen: Icon;
   export const Calendar: Icon;
   export const CalendarCheck: Icon;
@@ -17,9 +18,11 @@ declare module 'lucide-react' {
   export const ChevronDown: Icon;
   export const ChevronLeft: Icon;
   export const ChevronRight: Icon;
+  export const Clock: Icon;
   export const CreditCard: Icon;
   export const Download: Icon;
   export const FileImage: Icon;
+  export const FilePen: Icon;
   export const FileText: Icon;
   export const Hash: Icon;
   export const HelpCircle: Icon;
@@ -37,6 +40,8 @@ declare module 'lucide-react' {
   export const Trophy: Icon;
   export const User: Icon;
   export const UserCircle: Icon;
+  export const UserCheck: Icon;
+  export const UserPlus: Icon;
   export const Users: Icon;
   export const X: Icon;
 }

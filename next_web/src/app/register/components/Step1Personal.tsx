@@ -159,7 +159,7 @@ export default function Step1Personal({
             className={`flex flex-col items-center justify-center w-full min-h-[6rem] border-2 border-dashed rounded-xl cursor-pointer transition-all ${fieldErrors.profile ? 'border-amber-400 bg-amber-50/50' : profilePreview ? 'border-primary/40 bg-primary/[0.03]' : 'border-primary/20 hover:border-primary/40 hover:bg-primary/[0.03]'}`}
           >
             {profilePreview ? (
-              <div className="relative w-full p-2 min-h-[8rem]">
+               <div className="relative w-full p-2 min-h-[8rem]">
                 <img src={profilePreview} alt="الصورة الشخصية" className="w-full h-full object-contain rounded-xl max-h-48 mx-auto" />
                 <div className="absolute inset-2 bg-primary/40 rounded-xl opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity backdrop-blur-sm">
                   <span className="text-white text-xs font-bold bg-primary/70 px-3 py-1.5 rounded-lg">تغيير</span>
@@ -190,7 +190,7 @@ export default function Step1Personal({
             className={`flex flex-col items-center justify-center w-full min-h-[6rem] border-2 border-dashed rounded-xl cursor-pointer transition-all ${fieldErrors.birthCert ? 'border-amber-400 bg-amber-50/50' : birthCertPreview ? 'border-primary/40 bg-primary/[0.03]' : 'border-primary/20 hover:border-primary/40 hover:bg-primary/[0.03]'}`}
           >
             {birthCertPreview ? (
-              <div className="relative w-full p-2 min-h-[8rem]">
+               <div className="relative w-full p-2 min-h-[8rem]">
                 <img src={birthCertPreview} alt="شهادة الميلاد" className="w-full h-full object-contain rounded-xl max-h-48 mx-auto" />
                 <div className="absolute inset-2 bg-primary/40 rounded-xl opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity backdrop-blur-sm">
                   <span className="text-white text-xs font-bold bg-primary/70 px-3 py-1.5 rounded-lg">تغيير</span>

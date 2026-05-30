@@ -1,17 +1,28 @@
 'use client';
 
-import React, { useState } from 'react';
-import { CreditCard, Search, ShieldCheck, ArrowRight } from 'lucide-react';
-import Step5Success from '@/app/register/components/Step5Success';
+import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import dynamic from 'next/dynamic';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CreditCard, Search, ShieldCheck, AlertTriangle, Download, Printer, FileText, CheckCircle2, ArrowLeft } from 'lucide-react';
 import type { CompetitionLevel } from '@/lib/database.types';
+import toast from 'react-hot-toast';
+
+const Step5Success = dynamic(() => import('@/app/register/components/Step5Success'));
 
 export default function FormInquiry() {
+  const [mounted, setMounted] = useState(false);
   const [nationalId, setNationalId] = useState('');
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState('');
+  const [notFound, setNotFound] = useState(false);
   const [studentData, setStudentData] = useState<any>(null);
   const [levels, setLevels] = useState<CompetitionLevel[]>([]);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const hiddenFormRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setMounted(true); }, []);
 
   const idValid = nationalId.length === 14;
   const canSubmit = idValid && !loading;
@@ -21,6 +32,7 @@ export default function FormInquiry() {
     if (!idValid) { setError('الرقم القومي يجب أن يتكون من 14 رقماً'); return; }
 
     setError('');
+    setNotFound(false);
     setLoading(true);
     setSearched(true);
     setStudentData(null);
@@ -32,7 +44,15 @@ export default function FormInquiry() {
         body: JSON.stringify({ nationalId }),
       });
       const data = await response.json();
-      if (!response.ok) { setError(data.error || 'حدث خطأ أثناء الاستعلام'); return; }
+      if (!response.ok) {
+        const msg = data.error || 'حدث خطأ أثناء الاستعلام';
+        if (msg.includes('غير موجود') || msg.includes('يوجد') || msg.includes('العثور')) {
+          setNotFound(true);
+        } else {
+          setError(msg);
+        }
+        return;
+      }
       setStudentData(data.student);
       setLevels(data.levels);
     } catch {
@@ -43,8 +63,144 @@ export default function FormInquiry() {
   };
 
   const handleNewSearch = () => {
-    setStudentData(null); setSearched(false); setError('');
+    setStudentData(null); setSearched(false); setError(''); setNotFound(false);
     setNationalId('');
+  };
+
+  const showFormTemporarily = async (): Promise<boolean> => {
+    const container = hiddenFormRef.current;
+    if (!container) return false;
+    container.style.display = 'block';
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.style.top = '0';
+    container.style.zIndex = '9999';
+    document.body.style.overflowX = 'hidden';
+    await new Promise(r => requestAnimationFrame(() => setTimeout(r, 100)));
+    return true;
+  };
+
+  const hideForm = () => {
+    const container = hiddenFormRef.current;
+    if (!container) return;
+    container.style.display = '';
+    container.style.position = '';
+    container.style.left = '';
+    container.style.top = '';
+    container.style.zIndex = '';
+    document.body.style.overflowX = '';
+  };
+
+  const yieldToUi = () => new Promise(r => setTimeout(r, 0));
+
+  const captureElement = async (id: string): Promise<HTMLCanvasElement | null> => {
+    const el = document.getElementById(id);
+    if (!el) return null;
+
+    const html2canvas = (await import('html2canvas-pro')).default;
+    return html2canvas(el, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      windowWidth: 850,
+      windowHeight: el.scrollHeight + 150,
+      onclone: (clonedDoc) => {
+        const clonedEl = clonedDoc.getElementById(id);
+        if (clonedEl) {
+          clonedEl.style.transform = 'none';
+          clonedEl.style.transformOrigin = 'top center';
+          clonedEl.style.width = '800px';
+          clonedEl.style.height = 'auto';
+
+          const clonedParent = clonedEl.parentElement;
+          if (clonedParent) {
+            clonedParent.style.height = 'auto';
+            clonedParent.style.overflow = 'visible';
+            clonedParent.style.transform = 'none';
+          }
+        }
+      },
+    });
+  };
+
+  const handleDownloadImage = async () => {
+    setIsCapturing(true);
+    await yieldToUi();
+    const toastId = toast.loading('جاري تجهيز الاستمارة...');
+    try {
+      await showFormTemporarily();
+
+      const receiptCanvas = await captureElement('receipt');
+      if (!receiptCanvas) throw new Error('الاستمارة غير موجودة');
+      await yieldToUi();
+
+      const link = document.createElement('a');
+      link.href = receiptCanvas.toDataURL('image/png');
+      link.download = `استمارة_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.png`;
+      link.click();
+
+      const evalCanvas = await captureElement('evaluation-form');
+      await yieldToUi();
+      if (evalCanvas) {
+        const link2 = document.createElement('a');
+        link2.href = evalCanvas.toDataURL('image/png');
+        link2.download = `استمارة_تقييم_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.png`;
+        link2.click();
+      }
+
+      toast.success('تم تحميل الاستمارة بنجاح!', { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error('فشل تحميل الصورة', { id: toastId });
+    } finally {
+      hideForm();
+      setIsCapturing(false);
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleDownloadPdf = async () => {
+    setIsCapturing(true);
+    await yieldToUi();
+    const toastId = toast.loading('جاري تجهيز ملف PDF...');
+    try {
+      await showFormTemporarily();
+
+      const jsPdfModule = await import('jspdf');
+      const jsPDF = jsPdfModule.default;
+
+      const receiptCanvas = await captureElement('receipt');
+      if (!receiptCanvas) throw new Error('الاستمارة غير موجودة');
+      await yieldToUi();
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+
+      const receiptHeight = (receiptCanvas.height * pdfWidth) / receiptCanvas.width;
+      pdf.addImage(receiptCanvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, receiptHeight);
+
+      const evalCanvas = await captureElement('evaluation-form');
+      await yieldToUi();
+      if (evalCanvas) {
+        const evalHeight = (evalCanvas.height * pdfWidth) / evalCanvas.width;
+        pdf.addPage();
+        pdf.addImage(evalCanvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, evalHeight);
+      }
+
+      pdf.save(`استمارة_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.pdf`);
+
+      toast.success('تم حفظ ملف PDF بنجاح!', { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error('فشل حفظ PDF', { id: toastId });
+    } finally {
+      hideForm();
+      setIsCapturing(false);
+    }
   };
 
   if (studentData) {
@@ -86,85 +242,197 @@ export default function FormInquiry() {
     })();
 
     return (
-      <div className="animate-fade-in -mx-4 -mt-8 sm:-mt-14">
-        <Step5Success
-          formData={formData} levels={levels} getLevelContent={getLevelContent}
-          examSlot={examSlot} profilePreview={studentData.profile_image_url || null}
-          studentCode={studentData.student_code || ''}
-          isWaitlistMode={!studentData.exam_date || studentData.exam_hour === null}
-          branchName={studentData.branch_name || ''}
-          memorizationAmount={studentData.memorization_amount ?? null}
-          onNewSearch={handleNewSearch}
-        />
-      </div>
+      <>
+        {isCapturing && (
+          <div className="fixed inset-0 z-[99999] bg-black/50 flex items-center justify-center" style={{ backdropFilter: 'blur(4px)' }}>
+            <div className="bg-white rounded-2xl px-8 py-6 shadow-xl text-center max-w-md">
+              <div className="w-10 h-10 border-3 border-primary/25 border-t-primary rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-sm font-bold text-on-surface">جاري تجهيز الاستمارة</p>
+              <p className="text-xs font-semibold text-on-surface-variant/60 mt-1">يرجى الانتظار قليلاً...</p>
+            </div>
+          </div>
+        )}
+
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          className="max-w-lg mx-auto print:hidden"
+        >
+          <div className="w-16 h-16 bg-secondary-fixed/30 rounded-full flex items-center justify-center mx-auto mb-5">
+            <CheckCircle2 size={36} className="text-secondary" />
+          </div>
+
+          <h2 className="text-2xl sm:text-3xl font-black text-primary text-center mb-3">
+            {studentData.name}
+          </h2>
+          <p className="text-sm font-bold text-on-surface-variant text-center leading-relaxed mb-6">
+            {studentData.level}<br />
+            يمكنك الآن تحميل استمارة التسجيل كصورة أو طباعتها أو حفظها كملف PDF.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <button
+              onClick={handleDownloadImage}
+              disabled={isCapturing}
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-secondary text-white text-sm font-bold hover:bg-secondary/85 active:scale-95 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <Download size={16} />
+              <span>{isCapturing ? 'جاري...' : 'تحميل كصورة'}</span>
+            </button>
+
+            <button
+              onClick={handlePrint}
+              disabled={isCapturing}
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/85 active:scale-95 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <Printer size={16} />
+              <span>طباعة</span>
+            </button>
+
+            <button
+              onClick={handleDownloadPdf}
+              disabled={isCapturing}
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-800 text-white text-sm font-bold hover:bg-slate-700 active:scale-95 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <FileText size={16} />
+              <span>{isCapturing ? 'جاري...' : 'حفظ PDF'}</span>
+            </button>
+          </div>
+
+          <div className="text-center">
+            <button
+              onClick={handleNewSearch}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+            >
+              <ArrowLeft size={14} />
+              استعلام جديد
+            </button>
+          </div>
+        </motion.div>
+
+        {mounted && createPortal(
+          <div ref={hiddenFormRef} className="hidden print:block">
+            <Step5Success
+              formData={formData} levels={levels} getLevelContent={getLevelContent}
+              examSlot={examSlot} profilePreview={studentData.profile_image_url || null}
+              studentCode={studentData.student_code || ''}
+              isWaitlistMode={!studentData.exam_date || studentData.exam_hour === null}
+              branchName={studentData.branch_name || ''}
+              memorizationAmount={studentData.memorization_amount ?? null}
+              onNewSearch={handleNewSearch}
+            />
+          </div>,
+          document.body
+        )}
+      </>
     );
   }
 
   return (
-    <div className="w-full">
-      {/* Header */}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      className="w-full max-w-lg mx-auto"
+    >
+      {/* Heading */}
       <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-secondary/10 mb-4">
-          <ShieldCheck size={28} className="text-secondary" />
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center mx-auto mb-4 shadow-sm border border-primary/10">
+          <ShieldCheck size={22} className="text-primary" />
         </div>
-        <h1 className="text-xl sm:text-3xl font-black text-primary mb-2">استعلام الاستمارة وموعد الاختبار</h1>
-        <p className="text-sm text-on-surface-variant max-w-md mx-auto leading-relaxed">
-          أدخل الرقم القومي لعرض استمارة القبول
+        <h1 className="text-xl sm:text-2xl font-black text-primary" style={{ fontFamily: "'Noto Serif', serif" }}>
+          استعلام الاستمارة وموعد الاختبار
+        </h1>
+        <p className="text-sm sm:text-base text-on-surface-variant/70 mt-2 font-semibold">
+          أدخل الرقم القومي لعرض استمارة القبول وموعد الاختبار
         </p>
       </div>
 
-      {/* Form Card */}
-      <form onSubmit={handleInquiry} className="max-w-md mx-auto">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-8 space-y-5 sm:space-y-6">
-          {/* National ID */}
+      {/* Not found */}
+      <AnimatePresence>
+        {notFound && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="mb-6 p-4 bg-amber-50/80 border border-amber-200/60 rounded-xl text-center shadow-sm"
+          >
+            <AlertTriangle size={20} className="mx-auto text-amber-500 mb-2" />
+            <p className="text-amber-800 font-bold text-sm mb-0.5">لم يتم العثور على المتسابق</p>
+            <p className="text-amber-600 text-xs font-semibold">تأكد من صحة الرقم القومي المدخل</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Form */}
+      <form onSubmit={handleInquiry} dir="rtl">
+        <div className="space-y-5">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">الرقم القومي للمتسابق <span className="text-red-400">*</span></label>
+            <label className="block text-sm font-bold text-on-surface mb-2">
+              الرقم القومي
+              <span className="text-red-400 mr-1">*</span>
+            </label>
             <div className="relative">
               <input
-                type="text" inputMode="numeric" maxLength={14}
+                type="text"
+                inputMode="numeric"
+                maxLength={14}
                 value={nationalId}
-                onChange={e => { setNationalId(e.target.value.replace(/\D/g, '')); setSearched(false); setError(''); }}
+                onChange={e => { setNationalId(e.target.value.replace(/\D/g, '')); setSearched(false); setError(''); setNotFound(false); }}
                 placeholder="أدخل الـ 14 رقماً"
-                className={`w-full bg-gray-50 border-2 rounded-2xl py-3.5 pr-12 pl-4 text-sm font-semibold transition-all duration-200 outline-none
-                  ${searched && !idValid ? 'border-red-200 bg-red-50/30' : 'border-gray-100 focus:border-secondary focus:bg-white focus:ring-4 focus:ring-secondary/5'}
-                  text-gray-900 placeholder:text-gray-400`}
+                className={`block w-full min-w-0 border rounded-xl py-3 pr-11 pl-3 text-sm font-bold outline-none transition-all
+                  ${searched && !idValid
+                    ? 'border-red-300 bg-red-50 text-red-900'
+                    : 'border-outline-variant/30 bg-surface text-on-surface placeholder:text-on-surface-variant/30 hover:border-outline-variant/60 focus:border-primary focus:bg-white focus:shadow-sm focus:ring-2 focus:ring-primary/15'
+                  }`}
               />
-              <CreditCard size={18} className={`absolute right-4 top-1/2 -translate-y-1/2 transition-colors ${searched && !idValid ? 'text-red-400' : 'text-gray-400'}`} />
+              <CreditCard size={16} className={`absolute right-4 top-1/2 -translate-y-1/2 ${searched && !idValid ? 'text-red-400' : 'text-on-surface-variant/30'}`} />
             </div>
-            {searched && !idValid && <p className="text-red-500 text-xs font-bold mt-1.5 pr-1">الرقم القومي يجب أن يتكون من 14 رقماً</p>}
+            <AnimatePresence>
+              {searched && !idValid && (
+                <motion.p
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  className="text-red-500 text-xs font-bold mt-1.5"
+                >
+                  الرقم القومي يجب أن يتكون من 14 رقماً
+                </motion.p>
+              )}
+            </AnimatePresence>
           </div>
 
-          {/* Error */}
-          {error && (
-            <div className="bg-red-50 border border-red-100 rounded-2xl px-5 py-3.5">
-              <p className="text-red-600 text-xs font-bold text-center">{error}</p>
-            </div>
-          )}
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="bg-red-50/80 border border-red-200/60 rounded-xl px-4 py-3 shadow-sm"
+              >
+                <p className="text-red-600 text-xs font-bold text-center">{error}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          {/* Submit */}
           <button
-            type="submit" disabled={!canSubmit}
-            className="w-full flex items-center justify-center gap-2 sm:gap-2.5 py-3.5 sm:py-4 rounded-2xl font-bold text-white transition-all duration-300
-              bg-gradient-to-r from-secondary to-secondary-fixed-dim hover:from-secondary-fixed-dim hover:to-secondary
-              shadow-lg shadow-secondary/20 hover:shadow-xl hover:shadow-secondary/30 hover:-translate-y-0.5
-              disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-lg"
+            type="submit"
+            disabled={!canSubmit}
+            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm text-white bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 shadow-sm"
           >
             {loading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
-              <>
-                <span>عرض الاستمارة</span>
-                <ArrowRight size={18} />
-              </>
+              <><Search size={16} /><span>عرض الاستمارة</span></>
             )}
           </button>
         </div>
       </form>
 
-      {/* Footer hint */}
-      <p className="text-center text-xs text-gray-400 mt-6">
+      <p className="text-center text-xs text-on-surface-variant/40 mt-6 font-semibold">
         في حالة وجود أي استفسار، يرجى التواصل مع إدارة المسابقة
       </p>
-    </div>
+    </motion.div>
   );
 }
