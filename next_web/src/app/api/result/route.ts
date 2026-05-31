@@ -1,5 +1,5 @@
 import { getPublicClient } from '@/lib/supabase-public';
-import { getCorsHeaders, jsonResponse, optionsResponse, checkRateLimit, getClientIp } from '@/lib/api-utils';
+import { jsonResponse, optionsResponse, checkRateLimit, getClientIp, validateCsrf } from '@/lib/api-utils';
 
 export { optionsResponse as OPTIONS };
 
@@ -10,7 +10,6 @@ export async function GET(request: Request) {
     const { data: settings, error } = await supabase.rpc('public_get_registration_status');
 
     if (error) {
-      console.error('Settings error:', error);
       return jsonResponse({ error: 'حدث خطأ في قراءة الإعدادات' }, 500, origin);
     }
 
@@ -29,7 +28,6 @@ export async function GET(request: Request) {
       60
     );
   } catch (error: unknown) {
-    console.error('Result GET Error:', error);
     const message = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';
     return jsonResponse({ error: message }, 500, origin);
   }
@@ -39,6 +37,9 @@ export async function POST(request: Request) {
   const origin = request.headers.get('origin');
 
   try {
+    if (!validateCsrf(request)) {
+      return jsonResponse({ error: 'طلب غير مصرح به' }, 403, origin);
+    }
     const ip = getClientIp(request);
     if (!checkRateLimit(ip, 10)) {
       return jsonResponse({ error: 'طلبات كثيرة جداً. حاول بعد دقيقة.' }, 429, origin);
@@ -57,7 +58,6 @@ export async function POST(request: Request) {
     });
 
     if (error) {
-      console.error('Result lookup error:', error);
       return jsonResponse({ error: 'حدث خطأ في قاعدة البيانات أثناء البحث' }, 500, origin);
     }
 
@@ -70,9 +70,15 @@ export async function POST(request: Request) {
       return jsonResponse(result, (result as any).closed ? 403 : 400, origin);
     }
 
-    return jsonResponse({ success: true, ...result }, 200, origin);
+    // RPC returns flat object: extract level_info and restructure
+    const { level_info, ...studentData } = result as Record<string, unknown> & { level_info?: Record<string, unknown> };
+
+    return jsonResponse({
+      success: true,
+      student: studentData,
+      level: level_info ?? {},
+    }, 200, origin);
   } catch (error: unknown) {
-    console.error('Result API Error:', error);
     const message = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';
     return jsonResponse({ error: message }, 500, origin);
   }

@@ -26,7 +26,6 @@ export async function GET() {
     const { data, error } = result as { data: { faqs: { q: string; a: string }[] } | null; error: any };
 
     if (error) {
-      console.error('FAQ fetch error:', error);
       return NextResponse.json({ data: DEFAULT_FAQS }, {
         headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
       });

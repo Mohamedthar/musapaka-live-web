@@ -17,7 +17,6 @@ export async function POST(request: Request) {
     const supabase = getAdminClient();
 
     if (body.website_url_verification) {
-      console.warn('Honeypot triggered');
       return jsonResponse({
         success: true,
         message: 'تم التسجيل بنجاح'
@@ -258,7 +257,6 @@ export async function POST(request: Request) {
       .single();
 
     if (insertErr) {
-      console.error('Insert error:', insertErr);
       if (insertErr.code === '23505') {
         return jsonResponse({ error: 'الرقم القومي مسجل مسبقاً، أو يوجد حقل آخر يتطلب قيمة فريدة.' }, 409, origin);
       }
@@ -277,13 +275,8 @@ export async function POST(request: Request) {
 
     const finalStudent = fetchedStudent ?? newStudent;
 
-    if (!finalStudent?.exam_date || finalStudent?.exam_hour == null) {
-      console.warn(`Student ${finalStudent?.id} registered without an exam slot. Check app_settings.exam_schedule.`);
-    }
-
     return jsonResponse({ success: true, data: finalStudent }, 200, origin);
   } catch (error: unknown) {
-    console.error('API Error:', error);
     const message = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';
     return jsonResponse({ error: message }, 500, origin);
   }

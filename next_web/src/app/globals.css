@@ -261,8 +261,14 @@ body {
    Print
    ═══════════════════════════════════════════ */
 @media print {
-  @page { margin: 0; }
-  body { background: white !important; margin: 0 !important; padding: 0 !important; }
+  @page { margin: 0; size: landscape; }
+  body { margin: 0 !important; padding: 0 !important; background: white !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   .no-print { display: none !important; }
-  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 }
+
+@keyframes fall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  80% { opacity: 0.8; }
+  100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+}
+.animate-fall { animation: fall linear forwards; }

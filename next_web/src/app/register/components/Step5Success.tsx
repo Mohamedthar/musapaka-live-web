@@ -215,7 +215,7 @@ export default function Step5Success({
               onClick={downloadAsImages} 
               disabled={isDownloading}
               title="حفظ كصور"
-              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-bold text-xs sm:text-sm py-2.5 px-4 rounded-xl shadow-sm hover:shadow active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-900 disabled:bg-slate-500 text-white font-bold text-xs sm:text-sm py-2.5 px-4 rounded-xl shadow-sm hover:shadow active:scale-95 transition-all cursor-pointer whitespace-nowrap"
             >
               <Download size={15} className={isDownloading ? 'animate-spin' : ''} />
               <span>{isDownloading ? 'جاري الحفظ...' : 'حفظ كصور'}</span>
@@ -245,15 +245,15 @@ export default function Step5Success({
         <div className="w-full flex justify-center mb-8 print:mb-0">
           <div 
             id="receipt" 
-            className="bg-white border border-slate-200 shadow-lg rounded-3xl print:border-none print:rounded-none print:shadow-none" 
+            className="bg-white" 
             style={{ width: '100%', maxWidth: '800px', fontFamily: '"Cairo", sans-serif', direction: 'rtl' }}
           >
-            <div ref={receiptRef} style={{ padding: '20pt 24pt 24pt 24pt' }}>
+            <div ref={receiptRef} style={{ padding: '24pt 24pt 24pt 24pt' }}>
               {/* ── HEADER ──── */}
               {/* ── HEADER ──── */}
-              <div style={{ paddingBottom: '12pt', borderBottom: '2pt solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ paddingBottom: '8pt', borderBottom: '2pt solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', flex: 1, paddingLeft: '16pt' }}>
-                  <h1 style={{ color: 'var(--primary)', fontSize: '20pt', fontWeight: 900, margin: 0, lineHeight: 1.2, fontFamily: '"Cairo", sans-serif' }}>مسابقة أهل القرآن الكبرى</h1>
+                  <h1 style={{ color: '#0f172a', fontSize: '20pt', fontWeight: 700, margin: 0, lineHeight: 1.2, fontFamily: '"Cairo", sans-serif' }}>مسابقة أهل القرآن الكبرى</h1>
                   <p style={{ color: '#b45309', fontSize: '13pt', fontWeight: 700, margin: '4pt 0 0 0', lineHeight: 1.2, fontFamily: '"Cairo", sans-serif' }}>مقر اللجنة: مركز فاقوس - قرية الديدمون - شارع الشيخ - منزل المشرف العام</p>
                 </div>
                 <div style={{ width: '70pt', height: '70pt', borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
@@ -265,110 +265,145 @@ export default function Step5Success({
               <div style={{ paddingTop: '16pt' }}>
 
                 {/* ── INFO CARD ── */}
-                <div style={{ border: '1pt solid #e2e8f0', borderRadius: '12pt', padding: '12pt', backgroundColor: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ border: '1pt solid #e2e8f0', borderRadius: '10pt', padding: '10pt 12pt', backgroundColor: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <div style={{ marginBottom: '8pt' }}><FlutterIconRow label="الاسم" value={formData.name} icon={<User size="12pt" color="white" />} /></div>
-                    <div style={{ marginBottom: '8pt' }}><FlutterIconRow label="المستوى" value={`${formData.level} - ${getLevelContent()}${formData.selectedRewaya ? ' - ' + formData.selectedRewaya : ''}${branchName ? ' - ' + branchName : ''}`} icon={<Layers size="12pt" color="white" />} bgColor="#f59e0b" /></div>
+                    <div style={{ marginBottom: '8pt' }}><FlutterIconRow label="المستوى" value={`${formData.level} - ${getLevelContent()}${formData.selectedRewaya ? ' - ' + formData.selectedRewaya : ''}${branchName ? ' - ' + branchName : ''}`} icon={<Layers size="12pt" color="white" />} /></div>
                     <div style={{ marginBottom: '8pt' }}><FlutterIconRow label="موعد الامتحان" value={examSlot || 'لم يتم التحديد'} icon={<Calendar size="12pt" color="white" />} valueColor="#1e40af" /></div>
                     <FlutterIconRow label="العمر" value={`${formData.age} سنة`} icon={<User size="12pt" color="white" />} />
                   </div>
 
-                  <div style={{ width: '90pt', minWidth: '90pt', marginRight: '20pt', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <div style={{ width: '90pt', height: '90pt', borderRadius: '50%', border: '2.5pt solid var(--primary)', overflow: 'hidden', backgroundColor: '#f5f3ef', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: '100pt', minWidth: '100pt', marginRight: '20pt', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div style={{ width: '100pt', height: '100pt', borderRadius: '50%', border: '2pt solid #f59e0b', overflow: 'hidden', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {profilePreview ? (
                         <img src={profilePreview} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
-                        <img src="/logo_musapaka.jpeg" alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9' }}>
+                          <User size={48} color="#94a3b8" />
+                        </div>
                       )}
                     </div>
                     <div style={{ marginTop: '10pt', padding: '4pt 12pt', backgroundColor: '#eeeeee', borderRadius: '16pt', display: 'flex', alignItems: 'center' }}>
-                      <span style={{ fontSize: '11pt', fontWeight: 700, color: '#003527', fontFamily: "'Cairo', sans-serif" }}>{studentCode || formData.nationalId}</span>
-                      <span style={{ marginRight: '4pt', display: 'flex' }}><User size="10pt" color="#003527" /></span>
+                      <span style={{ fontSize: '12pt', fontWeight: 700, color: '#0f172a', fontFamily: "'Cairo', sans-serif" }}>{studentCode || formData.nationalId}</span>
+                      <span style={{ marginRight: '4pt', display: 'flex' }}><User size="10pt" color="#0f172a" /></span>
                     </div>
                   </div>
                 </div>
 
-                <div style={{ height: '24pt' }} />
+                <div style={{ height: '16pt' }} />
 
                 {/* ── DETAILED DATA GRID ── */}
-                <div style={{ position: 'relative', marginTop: '10pt' }}>
+                <div style={{ position: 'relative' }}>
                   <div style={{ 
                     border: '1pt solid #e2e8f0', 
                     borderRadius: '12pt', 
-                    overflow: 'hidden', 
-                    direction: 'rtl',
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    backgroundColor: '#e2e8f0',
-                    gap: '1px'
+                    backgroundColor: 'white',
+                    overflow: 'visible',
                   }}>
-                    <FlutterGridCell label="الرقم القومي" value={formData.nationalId} icon={<CreditCard size="10pt" color="white" />} isTopRow={true} bg="#f5f3ef" />
-                    <FlutterGridCell label="هاتف الطالب / ولي الأمر" value={formData.phone} icon={<Phone size="10pt" color="white" />} isTopRow={true} bg="#f5f3ef" />
+                    {/* Badge - centered, overlapping top border like Flutter */}
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <div style={{ 
+                        backgroundColor: '#0f172a', padding: '3pt 12pt', borderRadius: '8pt', 
+                        display: 'inline-flex', alignItems: 'center',
+                        marginTop: '-12pt',
+                      }}>
+                        <div style={{ padding: '2pt', backgroundColor: '#0f172a', borderRadius: '4pt', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 0 }}>
+                          <List size="12pt" color="white" />
+                        </div>
+                        <span style={{ marginRight: '6pt', fontSize: '12pt', fontWeight: 700, color: 'white', fontFamily: '"Cairo", sans-serif' }}>البيانات التفصيلية</span>
+                      </div>
+                    </div>
+                    {/* Grid content */}
+                    <div style={{ 
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      backgroundColor: '#e2e8f0',
+                      gap: '1px',
+                      marginTop: '2pt',
+                    }}>
+                    <FlutterGridCell label="الرقم القومي" value={formData.nationalId} icon={<CreditCard size="10pt" color="white" />} isTopRow={true} bg="#f8fafc" />
+                    <FlutterGridCell label="هاتف الطالب / ولي الأمر" value={formData.phone} icon={<Phone size="10pt" color="white" />} isTopRow={true} bg="#f8fafc" />
                     
                     <FlutterGridCell label="تاريخ الميلاد" value={parseNationalId(formData.nationalId)?.birthDate ?? ''} icon={<Calendar size="10pt" color="white" />} />
                     <FlutterGridCell label="النوع" value={formData.gender} icon={<User size="10pt" color="white" />} />
                     
-                    <FlutterGridCell label="المحفظ" value={formData.memorizerName || '-'} icon={<User size="10pt" color="white" />} bg="#f5f3ef" />
-                    <FlutterGridCell label="هاتف المحفظ" value={formData.memorizerPhone || '-'} icon={<BookOpen size="10pt" color="white" />} bg="#f5f3ef" />
+                    <FlutterGridCell label="المحفظ" value={formData.memorizerName || '-'} icon={<User size="10pt" color="white" />} bg="#f8fafc" />
+                    <FlutterGridCell label="هاتف المحفظ" value={formData.memorizerPhone || '-'} icon={<BookOpen size="10pt" color="white" />} bg="#f8fafc" />
                     
                     <FlutterGridCell label="عنوان الطالب" value={formData.location || '-'} icon={<MapPin size="10pt" color="white" />} />
                     <FlutterGridCell label="عنوان المحفظ" value={formData.memorizerAddress || '-'} icon={<MapPin size="10pt" color="white" />} />
                   </div>
-                  {/* Badge Overlay */}
-                  <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: '#003527', padding: '4pt 12pt', borderRadius: '8pt', display: 'flex', alignItems: 'center' }}>
-                    <div style={{ padding: '2pt', backgroundColor: '#003527', borderRadius: '4pt', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 0 }}>
-                      <List size="12pt" color="white" />
-                    </div>
-                    <span style={{ marginRight: '6pt', fontSize: '12pt', fontWeight: 700, color: 'white', fontFamily: '"Cairo", sans-serif' }}>البيانات التفصيلية</span>
                   </div>
                 </div>
 
-                <div style={{ height: '24pt' }} />
+                <div style={{ height: '16pt' }} />
 
                 {/* ── NOTES / CONDITIONS ── */}
-                <div style={{ position: 'relative', marginTop: '10pt' }}>
-                  <div style={{ border: '1pt solid #e2e8f0', borderRadius: '12pt', padding: '20pt 12pt 8pt 12pt', backgroundColor: '#f5f3ef' }}>
+                <div style={{ border: '1pt solid #e2e8f0', borderRadius: '10pt', backgroundColor: '#f8fafc' }}>
+                  {/* Badge - inside container, overlapping top border like Flutter */}
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <div style={{ 
+                      backgroundColor: '#0f172a', padding: '3pt 12pt', borderRadius: '8pt',
+                      display: 'inline-flex', alignItems: 'center',
+                      marginTop: '-12pt',
+                    }}>
+                      <div style={{ padding: '2pt', backgroundColor: '#0f172a', borderRadius: '4pt', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 0 }}>
+                        <List size="12pt" color="white" />
+                      </div>
+                      <span style={{ marginRight: '5pt', fontSize: '14pt', fontWeight: 700, color: 'white', fontFamily: '"Cairo", sans-serif' }}>ملاحظات هامة</span>
+                    </div>
+                  </div>
+                  {/* Content */}
+                  <div style={{ padding: '2pt 12pt 8pt 12pt' }}>
                     {[
                       'القبول بشروط المسابقة، يحظر تقديم أي رسوم مالية',
-                      'كل متسابق يلتزم بالمواعيد المحدده له( التقديم -الاختبار-الحفلة)',
+                      'كل متسابق يلتزم بالمواعيد المحدده له( التقديم - الاختبار - الحفلة)',
                       'يتم التصفيه في المسابقة بوضع سؤال للتصفية في الامتحان سؤال في ضبط المتشابهات',
-                      'سيتم تكريم الاوائل الثلاثة على المنصة فقط والباقي في أماكنهم والرجاء الرضا بذالك',
-                      'عند عدم الحضور المُكرم الحفل يحجب من الجائزة وتودع في الامانات',
-                      'يحظر الجمع بين جائزتين فأكثر ،سيتم تكريم الفائزين بدرجة الامتياز فأكثر'
+                      'سيتم تكريم الاوائل الثلاثة على المنصة فقط والباقي في أماكنهم والرجاء الرضا بذلك',
+                      'عند عدم الحضور المكرم الحفل يحجب من الجائزة وتودع في الامانات',
+                      'سيتم تكريم الحاصلين علي درجة نجاح 95% فأكثر، ويحظر الجمع بين أكثر من جائزة',
                     ].map((text, i) => (
-                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', paddingBottom: '4pt' }}>
-                        <div style={{ width: '20pt', height: '20pt', borderRadius: '50%', backgroundColor: '#003527', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2pt' }}>
+                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', paddingBottom: '6pt' }}>
+                        <div style={{ width: '20pt', height: '20pt', minWidth: '20pt', borderRadius: '50%', backgroundColor: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           <span style={{ fontSize: '11pt', fontWeight: 700, color: 'white', fontFamily: '"Cairo", sans-serif' }}>{i + 1}</span>
                         </div>
-                        <span style={{ marginRight: '8pt', fontSize: '13pt', fontWeight: 400, color: '#003527', lineHeight: 1.4, textAlign: 'right', flex: 1, fontFamily: '"Cairo", sans-serif' }}>{text}</span>
+                        <span style={{ marginRight: '6pt', fontSize: '13pt', fontWeight: 400, color: '#0f172a', lineHeight: 1.4, textAlign: 'right', flex: 1, fontFamily: '"Cairo", sans-serif' }}>{text}</span>
                       </div>
                     ))}
                   </div>
-                  {/* Badge Overlay */}
-                  <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '4pt 12pt', borderRadius: '16pt', border: '1.5pt solid #f59e0b', display: 'flex', alignItems: 'center' }}>
-                    <div style={{ padding: '3pt', backgroundColor: '#003527', borderRadius: '4pt', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 0 }}>
-                      <List size="10pt" color="white" />
+                </div>
+
+                <div style={{ height: '14pt' }} />
+
+                {/* ── SUPERVISOR + WARNING + QR CODE ── */}
+                <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                  {/* Left side: Supervisor + Warning */}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <p style={{ color: '#b45309', fontSize: '12pt', fontWeight: 700, margin: 0, fontFamily: '"Cairo", sans-serif' }}>{'المشرف العام علي المسابقة'}</p>
+                      <p style={{ color: '#0f172a', fontSize: '18pt', fontWeight: 700, marginTop: 2, fontFamily: '"Cairo", sans-serif' }}>{'أ/ مصطفى عبدالرحمن محمد سالم'}</p>
                     </div>
-                    <span style={{ marginRight: '6pt' }} />
-                    <span style={{ fontSize: '12pt', fontWeight: 700, color: '#b45309', fontFamily: "'Cairo', sans-serif" }}>ملاحظات هامة</span>
+                    <div style={{ height: '8pt' }} />
+                    {/* Warning Box */}
+                    <div style={{ padding: '6pt 10pt', border: '1.5pt solid #f59e0b', borderRadius: '8pt', backgroundColor: '#fffbeb', display: 'flex', alignItems: 'flex-start' }}>
+                      <AlertTriangle size="14pt" color="#b45309" style={{ flexShrink: 0, marginLeft: '6pt' }} />
+                      <span style={{ fontSize: '10pt', fontWeight: 700, color: '#92400e', fontFamily: '"Cairo", sans-serif', lineHeight: 1.4 }}>يجب طباعة هذه الاستمارة في ورقة واحدة وإحضارها معك في موعد الاختبار المحدد لك أعلاه.</span>
+                    </div>
                   </div>
-                </div>
-
-                <div style={{ height: '36pt' }} />
-
-                {/* ── SUPERVISOR ── */}
-                <div style={{ textAlign: 'center' }}>
-                  <p style={{ color: '#b45309', fontSize: '11pt', fontWeight: 700, margin: 0, fontFamily: "'Cairo', sans-serif" }}>المشرف العام علي المسابقة</p>
-                  <p style={{ color: '#003527', fontSize: '16pt', fontWeight: 700, margin: '2pt 0 0 0', fontFamily: "'Cairo', sans-serif" }}>أ/ مصطفى عبدالرحمن محمد سالم</p>
-                </div>
-
-                <div style={{ height: '24pt' }} />
-
-                {/* ── FOOTER WARNING ── */}
-                <div style={{ padding: '10pt 16pt', border: '2pt solid #f59e0b', borderRadius: '10pt', backgroundColor: '#fffbeb', display: 'flex', alignItems: 'center' }}>
-                  <span style={{ color: '#b45309', display: 'flex', marginLeft: '10pt' }}><AlertTriangle size="18pt" /></span>
-                  <span style={{ fontSize: '11pt', fontWeight: 700, color: '#92400e', marginLeft: '6pt', fontFamily: '"Cairo", sans-serif' }}>ملاحظة هامة:</span>
-                  <span style={{ fontSize: '8.5pt', fontWeight: 700, color: '#92400e', flex: 1, fontFamily: '"Cairo", sans-serif' }}>يجب طباعة هذه الاستمارة في ورقة واحدة وإحضارها معك في موعد الاختبار المحدد لك أعلاه.</span>
+                  {/* Right side: QR Code */}
+                  <div style={{ width: '12pt', flexShrink: 0 }} />
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                    <div style={{ width: '70pt', height: '70pt' }}>
+                      <img 
+                        src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://maps.app.goo.gl/F75xUpSbdsfzDmHn8" 
+                        alt="QR Code" 
+                        style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+                      />
+                    </div>
+                    <p style={{ color: '#0f172a', fontSize: '9pt', fontWeight: 700, margin: '3pt 0 0 0', textAlign: 'center', fontFamily: '"Cairo", sans-serif', lineHeight: 1.3 }}>
+                      امسح الباركود<br/>لمعرفة مقر اللجنة
+                    </p>
+                  </div>
                 </div>
 
               </div>
@@ -380,7 +415,7 @@ export default function Step5Success({
             <div className="w-full flex justify-center mb-8 print:mb-0">
               <div 
                 id="evaluation-form" 
-                className="bg-white border border-slate-200 shadow-lg rounded-3xl print:border-none print:rounded-none print:shadow-none" 
+                className="bg-white" 
                 style={{ width: '100%', maxWidth: '800px', fontFamily: '"Cairo", sans-serif', direction: 'rtl', pageBreakBefore: 'always' }}
               >
                 <div ref={evalRef} style={{ padding: '20pt 24pt 24pt 24pt' }}>
@@ -388,7 +423,7 @@ export default function Step5Success({
                   {/* Header */}
                   <div style={{ paddingBottom: '12pt', borderBottom: '2pt solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, paddingLeft: '16pt' }}>
-                      <h2 style={{ color: '#003527', fontSize: '20pt', fontWeight: 700, margin: 0, lineHeight: 1.2, fontFamily: '"Cairo", sans-serif' }}>مسابقة أهل القرآن الكبرى</h2>
+                      <h2 style={{ color: '#0f172a', fontSize: '22pt', fontWeight: 700, margin: 0, lineHeight: 1.2, fontFamily: '"Cairo", sans-serif' }}>مسابقة أهل القرآن الكبرى</h2>
                       <p style={{ color: '#b45309', fontSize: '14pt', fontWeight: 700, margin: '4pt 0 0 0', lineHeight: 1, fontFamily: '"Cairo", sans-serif' }}>استمارة تقييم المتسابق</p>
                     </div>
                     <div style={{ width: '70pt', height: '70pt', borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
@@ -399,11 +434,11 @@ export default function Step5Success({
                   <div style={{ paddingTop: '16pt' }}>
 
                     {/* Student Mini Info */}
-                    <div style={{ border: '1pt solid #e2e8f0', borderRadius: '8pt', padding: '12pt 16pt', backgroundColor: '#f5f3ef', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24pt' }}>
-                      <span style={{ fontSize: '12pt', fontWeight: 700, color: '#003527', fontFamily: '"Cairo", sans-serif' }}>
+                    <div style={{ border: '1pt solid #e2e8f0', borderRadius: '8pt', padding: '12pt 16pt', backgroundColor: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24pt' }}>
+                      <span style={{ fontSize: '13pt', fontWeight: 700, color: '#0f172a', fontFamily: '"Cairo", sans-serif' }}>
                         الاسم: {formData.name}
                       </span>
-                      <span style={{ fontSize: '12pt', fontWeight: 700, color: '#003527', fontFamily: '"Cairo", sans-serif', textAlign: 'left', flex: 1, marginRight: '16pt' }}>
+                      <span style={{ fontSize: '13pt', fontWeight: 700, color: '#0f172a', fontFamily: '"Cairo", sans-serif', textAlign: 'left', flex: 1, marginRight: '16pt' }}>
                         {formData.level}{selLevel?.content ? ` - ${selLevel.content}` : ''}
                         {formData.selectedRewaya ? ` - ${formData.selectedRewaya}` : ''}
                         {branchName && (
@@ -413,68 +448,68 @@ export default function Step5Success({
                     </div>
 
                     {/* Score Table */}
-                    <div style={{ border: '1.5pt solid #003527', borderRadius: '8pt', overflow: 'hidden' }}>
+                    <div style={{ border: '1.5pt solid #0f172a', borderRadius: '8pt', overflow: 'hidden' }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse', direction: 'rtl' }}>
                         <thead>
-                          <tr style={{ backgroundColor: '#003527' }}>
-                            <th style={{ width: '25%', padding: '8pt 10pt', textAlign: 'center', color: 'white', fontSize: '11pt', fontWeight: 700, fontFamily: '"Cairo", sans-serif', borderLeft: '1pt solid #334155' }}>الدرجة</th>
-                            <th style={{ width: '45%', padding: '8pt 10pt', textAlign: 'center', color: 'white', fontSize: '11pt', fontWeight: 700, fontFamily: '"Cairo", sans-serif', borderLeft: '1pt solid #334155' }}>ملاحظات</th>
-                            <th style={{ width: '30%', padding: '8pt 10pt', textAlign: 'center', color: 'white', fontSize: '11pt', fontWeight: 700, fontFamily: '"Cairo", sans-serif' }}>السؤال</th>
+                          <tr style={{ backgroundColor: '#0f172a' }}>
+                            <th style={{ width: '30%', padding: '8pt 10pt', textAlign: 'center', color: 'white', fontSize: '14pt', fontWeight: 700, fontFamily: '"Cairo", sans-serif', borderLeft: '1pt solid #0f172a' }}>السؤال</th>
+                            <th style={{ width: '45%', padding: '8pt 10pt', textAlign: 'center', color: 'white', fontSize: '14pt', fontWeight: 700, fontFamily: '"Cairo", sans-serif', borderLeft: '1pt solid #0f172a' }}>ملاحظات</th>
+                            <th style={{ width: '25%', padding: '8pt 10pt', textAlign: 'center', color: 'white', fontSize: '14pt', fontWeight: 700, fontFamily: '"Cairo", sans-serif' }}>الدرجة</th>
                           </tr>
                         </thead>
                         <tbody>
                           {questions.map((q, i) => (
-                            <tr key={i} style={{ backgroundColor: i % 2 !== 0 ? '#f5f3ef' : 'white', borderTop: '1pt solid #e2e8f0' }}>
-                              <td style={{ padding: '7pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '13pt', color: '#334155', fontFamily: 'monospace', paddingLeft: '20pt', borderLeft: '1pt solid #e2e8f0' }}>/ 10</td>
-                              <td style={{ padding: '7pt 10pt', borderLeft: '1pt solid #e2e8f0', minWidth: '120pt' }}></td>
-                              <td style={{ padding: '7pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '11pt', color: '#003527', fontFamily: '"Cairo", sans-serif', whiteSpace: 'nowrap' }}>{q}</td>
+                            <tr key={i} style={{ backgroundColor: i % 2 !== 0 ? '#f8fafc' : 'white', borderTop: '1pt solid #cbd5e1' }}>
+                              <td style={{ padding: '8pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '13pt', color: '#0f172a', fontFamily: '"Cairo", sans-serif', whiteSpace: 'nowrap', borderLeft: '1pt solid #cbd5e1' }}>{q}</td>
+                              <td style={{ padding: '8pt 10pt', borderLeft: '1pt solid #cbd5e1', minWidth: '120pt' }}></td>
+                              <td style={{ padding: '8pt 10pt 8pt 20pt', textAlign: 'left', fontWeight: 700, fontSize: '15pt', color: '#0f172a', fontFamily: 'monospace', paddingLeft: '20pt' }}>/ 10</td>
                             </tr>
                           ))}
                           {/* Questions subtotal */}
-                          <tr style={{ backgroundColor: '#f1f5f9', borderTop: '2pt solid #94a3b8' }}>
-                            <td style={{ padding: '8pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '13pt', color: '#003527', fontFamily: 'monospace', paddingLeft: '20pt', borderLeft: '1pt solid #e2e8f0' }}>/ 100</td>
-                            <td style={{ borderLeft: '1pt solid #e2e8f0' }}></td>
-                            <td style={{ padding: '8pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '11pt', color: '#003527', fontFamily: '"Cairo", sans-serif', whiteSpace: 'nowrap' }}>المجموع</td>
+                          <tr style={{ backgroundColor: '#f1f5f9' }}>
+                            <td style={{ padding: '8pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '13pt', color: '#0f172a', fontFamily: '"Cairo", sans-serif', whiteSpace: 'nowrap', borderLeft: '1pt solid #cbd5e1', borderTop: '2pt solid #0f172a' }}>المجموع</td>
+                            <td style={{ borderLeft: '1pt solid #cbd5e1', borderTop: '2pt solid #0f172a' }}></td>
+                            <td style={{ padding: '8pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '15pt', color: '#0f172a', fontFamily: 'monospace', paddingLeft: '20pt', borderTop: '2pt solid #0f172a' }}>/ 100</td>
                           </tr>
                           {/* Rewaya */}
                           {hasRewaya && (
-                            <tr style={{ backgroundColor: 'white', borderTop: '1pt solid #e2e8f0' }}>
-                              <td style={{ padding: '8pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '13pt', color: '#334155', fontFamily: 'monospace', paddingLeft: '24pt', borderLeft: '1pt solid #e2e8f0' }}>/ {rewayaScore}</td>
-                              <td style={{ borderLeft: '1pt solid #e2e8f0' }}></td>
-                              <td style={{ padding: '8pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '11pt', color: '#003527', fontFamily: '"Cairo", sans-serif' }}>
+                            <tr style={{ backgroundColor: 'white', borderTop: '1pt solid #cbd5e1' }}>
+                              <td style={{ padding: '8pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '13pt', color: '#0f172a', fontFamily: '"Cairo", sans-serif', borderLeft: '1pt solid #cbd5e1' }}>
                                 الرواية{formData.selectedRewaya ? ` (${formData.selectedRewaya})` : ''}
                               </td>
+                              <td style={{ borderLeft: '1pt solid #cbd5e1' }}></td>
+                              <td style={{ padding: '8pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '15pt', color: '#0f172a', fontFamily: 'monospace', paddingLeft: '24pt' }}>/ {rewayaScore}</td>
                             </tr>
                           )}
                           {/* Tajweed */}
                           {hasTajweed && (
-                            <tr style={{ backgroundColor: '#f5f3ef', borderTop: '1pt solid #e2e8f0' }}>
-                              <td style={{ padding: '8pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '13pt', color: '#334155', fontFamily: 'monospace', paddingLeft: '24pt', borderLeft: '1pt solid #e2e8f0' }}>/ {tajweedScore}</td>
-                              <td style={{ borderLeft: '1pt solid #e2e8f0' }}></td>
-                              <td style={{ padding: '8pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '11pt', color: '#003527', fontFamily: '"Cairo", sans-serif' }}>التجويد</td>
+                            <tr style={{ backgroundColor: '#f8fafc', borderTop: '1pt solid #cbd5e1' }}>
+                              <td style={{ padding: '8pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '13pt', color: '#0f172a', fontFamily: '"Cairo", sans-serif', borderLeft: '1pt solid #cbd5e1' }}>التجويد</td>
+                              <td style={{ borderLeft: '1pt solid #cbd5e1' }}></td>
+                              <td style={{ padding: '8pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '15pt', color: '#0f172a', fontFamily: 'monospace', paddingLeft: '24pt' }}>/ {tajweedScore}</td>
                             </tr>
                           )}
                           {/* Voice */}
                           {hasVoice && (
-                            <tr style={{ backgroundColor: 'white', borderTop: '1pt solid #e2e8f0' }}>
-                              <td style={{ padding: '8pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '13pt', color: '#334155', fontFamily: 'monospace', paddingLeft: '24pt', borderLeft: '1pt solid #e2e8f0' }}>/ {voiceScore}</td>
-                              <td style={{ borderLeft: '1pt solid #e2e8f0' }}></td>
-                              <td style={{ padding: '8pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '11pt', color: '#003527', fontFamily: '"Cairo", sans-serif' }}>حسن الصوت</td>
+                            <tr style={{ backgroundColor: 'white', borderTop: '1pt solid #cbd5e1' }}>
+                              <td style={{ padding: '8pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '13pt', color: '#0f172a', fontFamily: '"Cairo", sans-serif', borderLeft: '1pt solid #cbd5e1' }}>حسن الصوت</td>
+                              <td style={{ borderLeft: '1pt solid #cbd5e1' }}></td>
+                              <td style={{ padding: '8pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '15pt', color: '#0f172a', fontFamily: 'monospace', paddingLeft: '24pt' }}>/ {voiceScore}</td>
                             </tr>
                           )}
                           {/* Meaning */}
                           {hasMeaning && (
-                            <tr style={{ backgroundColor: '#f5f3ef', borderTop: '1pt solid #e2e8f0' }}>
-                              <td style={{ padding: '8pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '13pt', color: '#334155', fontFamily: 'monospace', paddingLeft: '24pt', borderLeft: '1pt solid #e2e8f0' }}>/ {meaningScore}</td>
-                              <td style={{ borderLeft: '1pt solid #e2e8f0' }}></td>
-                              <td style={{ padding: '8pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '11pt', color: '#003527', fontFamily: '"Cairo", sans-serif' }}>فهم المعاني والوقف</td>
+                            <tr style={{ backgroundColor: '#f8fafc', borderTop: '1pt solid #cbd5e1' }}>
+                              <td style={{ padding: '8pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '13pt', color: '#0f172a', fontFamily: '"Cairo", sans-serif', borderLeft: '1pt solid #cbd5e1' }}>فهم المعاني والوقف</td>
+                              <td style={{ borderLeft: '1pt solid #cbd5e1' }}></td>
+                              <td style={{ padding: '8pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '15pt', color: '#0f172a', fontFamily: 'monospace', paddingLeft: '24pt' }}>/ {meaningScore}</td>
                             </tr>
                           )}
                           {/* Grand Total */}
-                          <tr style={{ backgroundColor: '#fef3c7', borderTop: '2.5pt solid #003527' }}>
-                            <td style={{ padding: '10pt 10pt', textAlign: 'left', fontWeight: 900, fontSize: '14pt', color: '#dc2626', fontFamily: 'monospace', paddingLeft: '20pt', borderLeft: '1pt solid #003527' }}>/ {grandTotal}</td>
-                            <td style={{ borderLeft: '1pt solid #003527' }}></td>
-                            <td style={{ padding: '10pt 10pt', textAlign: 'center', fontWeight: 900, fontSize: '12pt', color: '#003527', fontFamily: '"Cairo", sans-serif' }}>المجموع الكلي للقسم</td>
+                          <tr style={{ backgroundColor: '#fef3c7' }}>
+                            <td style={{ padding: '8pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '14pt', color: '#0f172a', fontFamily: '"Cairo", sans-serif', borderLeft: '1pt solid #cbd5e1' }}>المجموع الكلي للقسم</td>
+                            <td style={{ borderLeft: '1pt solid #cbd5e1' }}></td>
+                            <td style={{ padding: '8pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '16pt', color: '#0f172a', fontFamily: 'monospace', paddingLeft: '24pt' }}>/ {grandTotal}</td>
                           </tr>
                         </tbody>
                       </table>

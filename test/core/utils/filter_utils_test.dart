@@ -74,7 +74,7 @@ void main() {
 
     test('filters by minimum age', () {
       final result = filterLevels(levels, minAge: 20);
-      expect(result.length, 1); // Only المستوى الأول (maxAge: 25 >= 20)
+      expect(result.length, 2); // المستوى الأول (maxAge: 25 >= 20) and المستوى الثاني (maxAge: null = unlimited)
     });
 
     test('filters by maximum age', () {

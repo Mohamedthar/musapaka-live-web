@@ -69,7 +69,7 @@ class _SplashScreenState extends State<SplashScreen> {
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تعذر الاتصال بالخادم: $e')),
+          const SnackBar(content: Text('تعذر الاتصال بالخادم. تحقق من اتصالك بالإنترنت وحاول مرة أخرى.')),
         );
       }
     }

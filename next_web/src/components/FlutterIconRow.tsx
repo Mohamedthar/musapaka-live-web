@@ -16,24 +16,25 @@ export function FlutterIconRow({
   return (
     <div style={{ display: 'flex', alignItems: 'center' }}>
       <div style={{
-        minWidth: '34px', height: '34px',
-        borderRadius: '8px',
+        minWidth: '18pt', width: '18pt', height: '18pt',
+        borderRadius: '5pt',
         display: 'flex',
         alignItems: 'center', justifyContent: 'center',
         backgroundColor: bgColor,
+        padding: '3pt',
       }}>
         {icon}
       </div>
-      <div style={{ marginRight: '8px' }}>
+      <div style={{ marginRight: '5pt' }}>
         <span style={{
-          fontSize: '14px', fontWeight: 600,
+          fontSize: '12pt', fontWeight: 400,
           color: '#0f172a',
           fontFamily: '"Cairo", sans-serif',
         }}>
           {label}:{' '}
         </span>
         <span style={{
-          fontSize: '16px', fontWeight: 700,
+          fontSize: '13pt', fontWeight: 700,
           color: valueColor,
           fontFamily: '"Cairo", sans-serif',
         }}>
@@ -59,34 +60,35 @@ export function FlutterGridCell({
 }) {
   return (
     <div style={{
-      padding: '6px 10px',
+      padding: '6pt 8pt',
       display: 'flex', alignItems: 'center',
-      gap: '6px',
+      gap: '6pt',
       background: bg,
-      borderTop: isTopRow ? 'none' : '1px solid #e2e8f0',
+      borderTop: isTopRow ? 'none' : '1pt solid #e2e8f0',
     }}>
       <div style={{
-        minWidth: '28px', height: '28px',
-        borderRadius: '6px',
+        minWidth: '20pt', width: '20pt', height: '20pt',
+        borderRadius: '4pt',
         display: 'flex',
         alignItems: 'center', justifyContent: 'center',
         backgroundColor: '#1e293b',
+        padding: '3pt',
       }}>
         {icon}
       </div>
       <div>
         <span style={{
-          fontSize: '11px', fontWeight: 600,
+          fontSize: '11pt', fontWeight: 400,
           color: '#0f172a',
           fontFamily: '"Cairo", sans-serif',
         }}>
           {label}:
         </span>
         <span style={{
-          fontSize: '12px', fontWeight: 700,
+          fontSize: '12pt', fontWeight: 700,
           color: '#0f172a',
           fontFamily: '"Cairo", sans-serif',
-          marginRight: '4px',
+          marginRight: '4pt',
         }}>
           {value || '-'}
         </span>

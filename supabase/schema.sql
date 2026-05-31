@@ -45,6 +45,12 @@ ALTER TABLE students ADD COLUMN IF NOT EXISTS branch_name TEXT;
 ALTER TABLE students ADD COLUMN IF NOT EXISTS memorization_amount INTEGER DEFAULT 0;
 ALTER TABLE students ADD COLUMN IF NOT EXISTS is_waitlisted BOOLEAN DEFAULT false;
 ALTER TABLE students ADD COLUMN IF NOT EXISTS ceremony_code TEXT;
+ALTER TABLE students ADD COLUMN IF NOT EXISTS level_id INTEGER;
+ALTER TABLE students ADD COLUMN IF NOT EXISTS exam_date DATE;
+ALTER TABLE students ADD COLUMN IF NOT EXISTS exam_hour INTEGER;
+ALTER TABLE students ADD COLUMN IF NOT EXISTS student_code TEXT;
+ALTER TABLE students ADD COLUMN IF NOT EXISTS notes TEXT;
+CREATE INDEX IF NOT EXISTS idx_students_level_id ON students(level_id);
 -- 2. Add/Update constraints safely
 DO $$ 
 BEGIN 
@@ -77,6 +83,17 @@ BEGIN
     END IF;
 END $$;
 
+-- FOREIGN KEY: level_id (INTEGER) - preferred, faster
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_students_level_id') THEN
+        ALTER TABLE students ADD CONSTRAINT fk_students_level_id
+            FOREIGN KEY (level_id) REFERENCES competition_levels(id)
+            ON DELETE RESTRICT;
+    END IF;
+END $$;
+
+-- FOREIGN KEY: level (TEXT) - backward compatibility
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_students_level') THEN
@@ -484,6 +501,29 @@ CREATE TRIGGER trg_generate_student_code
     FOR EACH ROW
     WHEN (NEW.student_code IS NULL)
     EXECUTE FUNCTION generate_student_code();
+
+-- 12.3b مزامنة level_id تلقائياً عند الإدراج أو تغيير level
+CREATE OR REPLACE FUNCTION sync_level_id()
+RETURNS TRIGGER AS $$
+BEGIN
+    SELECT id INTO NEW.level_id
+    FROM competition_levels
+    WHERE title = NEW.level
+    LIMIT 1;
+    
+    IF NEW.level_id IS NULL THEN
+        RAISE EXCEPTION 'المستوى "%" غير موجود في جدول competition_levels', NEW.level;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_sync_level_id ON students;
+CREATE TRIGGER trg_sync_level_id
+    BEFORE INSERT OR UPDATE OF level ON students
+    FOR EACH ROW
+    EXECUTE FUNCTION sync_level_id();
 
 -- 12.4 نظام التحقق من سعة المستوى (Max Capacity Check)
 CREATE OR REPLACE FUNCTION check_level_capacity()

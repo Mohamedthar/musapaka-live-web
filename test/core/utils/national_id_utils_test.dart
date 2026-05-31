@@ -65,7 +65,7 @@ void main() {
     });
 
     test('returns female for even 13th digit', () {
-      expect(NationalIdUtils.getGenderFromId('29801150101230'), 'أنثى');
+      expect(NationalIdUtils.getGenderFromId('29801150101244'), 'أنثى');
     });
   });
 }

@@ -1,62 +1,17 @@
--- =============================================
--- Migration: Ceremony Attendance Query & Codes
--- =============================================
+-- Fix: generate_all_ceremony_codes - إضافة WHERE لتجنب خطأ PostgREST
+-- المشكلة: PostgREST يرفض UPDATE بدون WHERE clause حتى داخل RPC functions
 
--- 1. إضافة عمود is_ceremony_query_open إلى جدول app_settings
-ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS is_ceremony_query_open BOOLEAN DEFAULT false;
-
--- 2. إضافة عمود ceremony_code إلى جدول students
-ALTER TABLE students ADD COLUMN IF NOT EXISTS ceremony_code TEXT;
-
--- 3. دالة الاستعلام عن حضور الحفل للواجهة الأمامية (تحتاج رقم قومي + رقم هاتف)
-CREATE OR REPLACE FUNCTION query_ceremony_attendance(p_national_id TEXT, p_phone TEXT)
-RETURNS TABLE (
-    student_id INTEGER,
-    student_name TEXT,
-    student_level TEXT,
-    student_image TEXT,
-    ceremony_code TEXT
-)
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-    v_is_open BOOLEAN;
-BEGIN
-    SELECT is_ceremony_query_open INTO v_is_open FROM app_settings WHERE id = 1;
-    
-    IF v_is_open IS NOT TRUE THEN
-        RAISE EXCEPTION 'الاستعلام عن حضور الحفل غير متاح حالياً.';
-    END IF;
-
-    RETURN QUERY
-    SELECT 
-        s.id AS student_id,
-        s.name AS student_name,
-        s.level AS student_level,
-        s.profile_image_url AS student_image,
-        s.ceremony_code AS ceremony_code
-    FROM students s
-    WHERE s.national_id = p_national_id 
-      AND s.phone = p_phone
-      AND s.ceremony_code IS NOT NULL;
-END;
-$$;
-
-GRANT EXECUTE ON FUNCTION query_ceremony_attendance(TEXT, TEXT) TO anon, authenticated;
-
--- 4. دالة توليد الأكواد وتحديث جدول الطلاب
 CREATE OR REPLACE FUNCTION generate_all_ceremony_codes()
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
-    -- منع التنفيذ المتزامن باستخدام advisory lock
     IF pg_try_advisory_xact_lock(987654324) = FALSE THEN
         RAISE EXCEPTION 'عملية توليد الأكواد جارية بالفعل، يرجى المحاولة لاحقاً.';
     END IF;
 
+    -- إضافة WHERE clause لتجنب خطأ PostgREST "UPDATE requires a WHERE clause"
     UPDATE students SET ceremony_code = NULL WHERE id IS NOT NULL;
 
     WITH honored_students AS (
@@ -68,14 +23,14 @@ BEGIN
             (
                 COALESCE(s.score, 0) + COALESCE(s.rewaya_score, 0) + COALESCE(s.tajweed_score, 0) + COALESCE(s.voice_score, 0) + COALESCE(s.meaning_score, 0)
             ) AS total_score,
-            DENSE_RANK() OVER (PARTITION BY s.level ORDER BY (
+            DENSE_RANK() OVER (PARTITION BY s.level_id ORDER BY (
                 COALESCE(s.score, 0) + COALESCE(s.rewaya_score, 0) + COALESCE(s.tajweed_score, 0) + COALESCE(s.voice_score, 0) + COALESCE(s.meaning_score, 0)
             ) DESC) as level_rank,
             ROW_NUMBER() OVER (ORDER BY COALESCE(ASCII(c.level_code), 88) ASC, (
                 COALESCE(s.score, 0) + COALESCE(s.rewaya_score, 0) + COALESCE(s.tajweed_score, 0) + COALESCE(s.voice_score, 0) + COALESCE(s.meaning_score, 0)
             ) DESC, s.name ASC) as global_seq
         FROM students s
-        JOIN competition_levels c ON c.title = s.level
+        JOIN competition_levels c ON c.id = s.level_id
         WHERE (
             c.total_points + 
             CASE WHEN c.has_rewaya THEN COALESCE(c.rewaya_max_score, 0) ELSE 0 END +

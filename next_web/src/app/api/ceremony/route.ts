@@ -1,5 +1,5 @@
 import { getPublicClient } from '@/lib/supabase-public';
-import { getCorsHeaders, jsonResponse, optionsResponse, checkRateLimit, getClientIp } from '@/lib/api-utils';
+import { jsonResponse, optionsResponse, checkRateLimit, getClientIp, validateCsrf } from '@/lib/api-utils';
 
 export { optionsResponse as OPTIONS };
 
@@ -31,6 +31,10 @@ export async function POST(request: Request) {
   const origin = request.headers.get('origin');
 
   try {
+    if (!validateCsrf(request)) {
+      return jsonResponse({ error: 'طلب غير مصرح به' }, 403, origin);
+    }
+
     const ip = getClientIp(request);
     if (!checkRateLimit(ip, 10)) {
       return jsonResponse({ error: 'طلبات كثيرة جداً. حاول بعد دقيقة.' }, 429, origin);
@@ -49,7 +53,6 @@ export async function POST(request: Request) {
     });
 
     if (error) {
-      console.error('Ceremony lookup error:', error);
       return jsonResponse({ error: 'حدث خطأ في قاعدة البيانات أثناء البحث' }, 500, origin);
     }
 
@@ -64,7 +67,6 @@ export async function POST(request: Request) {
 
     return jsonResponse({ success: true, student: result }, 200, origin);
   } catch (error: unknown) {
-    console.error('Ceremony API Error:', error);
     const message = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';
     return jsonResponse({ error: message }, 500, origin);
   }

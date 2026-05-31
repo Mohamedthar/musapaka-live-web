@@ -158,7 +158,7 @@ class Student {
   }
 
   // Sentinel object used in copyWith to distinguish "not passed" from explicit null
-  static const _unset = Object();
+  static const _unset = _Unset();
 
   Student copyWith({
     int? id,
@@ -233,4 +233,8 @@ class Student {
     if (meaningScore != null) total += meaningScore!;
     return total;
   }
+}
+
+class _Unset {
+  const _Unset();
 }

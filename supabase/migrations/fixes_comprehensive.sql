@@ -287,7 +287,7 @@ BEGIN
         RAISE EXCEPTION 'عملية توليد الأكواد جارية بالفعل، يرجى المحاولة لاحقاً.';
     END IF;
 
-    UPDATE students SET ceremony_code = NULL;
+    UPDATE students SET ceremony_code = NULL WHERE id IS NOT NULL;
 
     WITH honored_students AS (
         SELECT 
