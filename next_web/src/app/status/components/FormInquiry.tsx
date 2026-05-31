@@ -70,32 +70,28 @@ export default function FormInquiry() {
     const el = document.getElementById(id);
     if (!el) return null;
 
-    const clone = el.cloneNode(true) as HTMLElement;
-    clone.id = `${id}-clone`;
-    clone.style.position = 'fixed';
-    clone.style.left = '0';
-    clone.style.top = '0';
-    clone.style.zIndex = '-1';
-    clone.style.transform = 'none';
-    clone.style.transformOrigin = 'top center';
-    clone.style.width = '800px';
-    clone.style.height = 'auto';
-    document.body.appendChild(clone);
-
-    await new Promise(r => setTimeout(r, 100));
-
     const html2canvas = (await import('html2canvas-pro')).default;
-    const canvas = await html2canvas(clone, {
+    return html2canvas(el, {
       scale: 2,
       useCORS: true,
       backgroundColor: '#ffffff',
       logging: false,
       windowWidth: 850,
-      windowHeight: clone.scrollHeight + 150,
+      windowHeight: el.scrollHeight + 150,
+      onclone: (clonedDoc) => {
+        const clonedEl = clonedDoc.getElementById(id);
+        if (!clonedEl) return;
+        clonedEl.style.width = '800px';
+        clonedEl.style.height = 'auto';
+        let parent: HTMLElement | null = clonedEl.parentElement;
+        while (parent && parent !== clonedDoc.body) {
+          parent.style.display = 'block';
+          parent.style.height = 'auto';
+          parent.style.overflow = 'visible';
+          parent = parent.parentElement;
+        }
+      },
     });
-
-    document.body.removeChild(clone);
-    return canvas;
   };
 
   const handleDownloadImage = async () => {
