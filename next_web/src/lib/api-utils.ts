@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 function getAllowedOrigins(): string[] {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/+$/, '');
   return [siteUrl].filter(Boolean) as string[];
 }
 
