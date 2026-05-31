@@ -305,10 +305,8 @@ export default function RegisterPage() {
       if (!profileImage) errs.profile = 'الصورة الشخصية مطلوبة';
       if (!extractedInfo.isValid) errs.nationalId = 'الرقم القومي غير صحيح';
       if (parseInt(formData.age) !== extractedInfo.age) errs.age = 'العمر غير صحيح';
-      if (!formData.gender) errs.gender = 'حقل النوع مطلوب';
-      else if (extractedInfo.isMale !== null) {
-        const expected = extractedInfo.isMale ? 'ذكر' : 'أنثى';
-        if (formData.gender !== expected) errs.gender = 'النوع غير صحيح';
+      if (!formData.gender || (extractedInfo.isMale !== null && formData.gender !== (extractedInfo.isMale ? 'ذكر' : 'أنثى'))) {
+        errs.gender = 'النوع غير صحيح';
       }
       if (!birthCertImage) errs.birthCert = 'شهادة الميلاد مطلوبة';
       setFieldErrors(errs);
