@@ -1,6 +1,6 @@
 'use client';
 /* Deployment trigger: 2026-05-19T23:36:27Z */
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { getSupabase } from '@/lib/supabase';
 import { CheckCircle2, ChevronLeft, ChevronRight, ShieldCheck, ArrowLeft, Send, CalendarX, Download, Printer, FileText } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -75,7 +75,6 @@ export default function RegisterPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [levelCounts, setLevelCounts] = useState<Record<string, number>>({});
   const [isCapturing, setIsCapturing] = useState(false);
-  const hiddenFormRef = useRef<HTMLDivElement>(null);
   const clearErr = (key: string) => setFieldErrors(p => { if (!p[key]) return p; const n = { ...p }; delete n[key]; return n; });
 
   const steps = [
@@ -457,71 +456,6 @@ export default function RegisterPage() {
   };
 
   // -- CAPTURE / DOWNLOAD HANDLERS -------------------------------------
-  const showFormTemporarily = async (): Promise<boolean> => {
-    const container = hiddenFormRef.current;
-    if (!container) return false;
-    container.style.display = 'block';
-    container.style.position = 'absolute';
-    container.style.left = '-9999px';
-    container.style.top = '0';
-    container.style.zIndex = '9999';
-    document.body.style.overflowX = 'hidden';
-    await new Promise(r => requestAnimationFrame(() => setTimeout(r, 100)));
-    return true;
-  };
-
-  const hideForm = () => {
-    const container = hiddenFormRef.current;
-    if (!container) return;
-    container.style.display = '';
-    container.style.position = '';
-    container.style.left = '';
-    container.style.top = '';
-    container.style.zIndex = '';
-    document.body.style.overflowX = '';
-  };
-
-  const yieldToUi = () => new Promise(r => setTimeout(r, 0));
-
-  const handleDownloadImage = async () => {
-    setIsCapturing(true);
-    await yieldToUi();
-    const toastId = toast.loading('جاري تجهيز الاستمارة...');
-    try {
-      await showFormTemporarily();
-
-      const receiptCanvas = await captureElement('receipt');
-      if (!receiptCanvas) throw new Error('الاستمارة غير موجودة');
-      await yieldToUi();
-
-      const link = document.createElement('a');
-      link.href = receiptCanvas.toDataURL('image/png');
-      link.download = `استمارة_${formData.name.replace(/\s+/g, '_')}.png`;
-      link.click();
-
-      const evalCanvas = await captureElement('evaluation-form');
-      await yieldToUi();
-      if (evalCanvas) {
-        const link2 = document.createElement('a');
-        link2.href = evalCanvas.toDataURL('image/png');
-        link2.download = `استمارة_تقييم_${formData.name.replace(/\s+/g, '_')}.png`;
-        link2.click();
-      }
-
-      toast.success('تم تحميل الاستمارة بنجاح!', { id: toastId });
-    } catch (err) {
-      console.error(err);
-      toast.error('فشل تحميل الصورة', { id: toastId });
-    } finally {
-      hideForm();
-      setIsCapturing(false);
-    }
-  };
-
-  const handlePrint = () => {
-    window.print();
-  };
-
   const captureElement = async (id: string): Promise<HTMLCanvasElement | null> => {
     const el = document.getElementById(id);
     if (!el) return null;
@@ -536,36 +470,62 @@ export default function RegisterPage() {
       windowHeight: el.scrollHeight + 150,
       onclone: (clonedDoc) => {
         const clonedEl = clonedDoc.getElementById(id);
-        if (clonedEl) {
-          clonedEl.style.transform = 'none';
-          clonedEl.style.transformOrigin = 'top center';
-          clonedEl.style.width = '800px';
-          clonedEl.style.height = 'auto';
-
-          const clonedParent = clonedEl.parentElement;
-          if (clonedParent) {
-            clonedParent.style.height = 'auto';
-            clonedParent.style.overflow = 'visible';
-            clonedParent.style.transform = 'none';
-          }
+        if (!clonedEl) return;
+        clonedEl.style.width = '800px';
+        clonedEl.style.height = 'auto';
+        let parent: HTMLElement | null = clonedEl.parentElement;
+        while (parent && parent !== clonedDoc.body) {
+          parent.style.display = 'block';
+          parent.style.height = 'auto';
+          parent.style.overflow = 'visible';
+          parent = parent.parentElement;
         }
       },
     });
   };
 
+  const handleDownloadImage = async () => {
+    setIsCapturing(true);
+    const toastId = toast.loading('جاري تجهيز الاستمارة...');
+    try {
+      const receiptCanvas = await captureElement('receipt');
+      if (!receiptCanvas) throw new Error('الاستمارة غير موجودة');
+
+      const link = document.createElement('a');
+      link.href = receiptCanvas.toDataURL('image/png');
+      link.download = `استمارة_${formData.name.replace(/\s+/g, '_')}.png`;
+      link.click();
+
+      const evalCanvas = await captureElement('evaluation-form');
+      if (evalCanvas) {
+        const link2 = document.createElement('a');
+        link2.href = evalCanvas.toDataURL('image/png');
+        link2.download = `استمارة_تقييم_${formData.name.replace(/\s+/g, '_')}.png`;
+        link2.click();
+      }
+
+      toast.success('تم تحميل الاستمارة بنجاح!', { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error('فشل تحميل الصورة', { id: toastId });
+    } finally {
+      setIsCapturing(false);
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
   const handleDownloadPdf = async () => {
     setIsCapturing(true);
-    await yieldToUi();
     const toastId = toast.loading('جاري تجهيز ملف PDF...');
     try {
-      await showFormTemporarily();
-
       const jsPdfModule = await import('jspdf');
       const jsPDF = jsPdfModule.default;
 
       const receiptCanvas = await captureElement('receipt');
       if (!receiptCanvas) throw new Error('الاستمارة غير موجودة');
-      await yieldToUi();
 
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -574,7 +534,6 @@ export default function RegisterPage() {
       pdf.addImage(receiptCanvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, receiptHeight);
 
       const evalCanvas = await captureElement('evaluation-form');
-      await yieldToUi();
       if (evalCanvas) {
         const evalHeight = (evalCanvas.height * pdfWidth) / evalCanvas.width;
         pdf.addPage();
@@ -588,7 +547,6 @@ export default function RegisterPage() {
       console.error(err);
       toast.error('فشل حفظ PDF', { id: toastId });
     } finally {
-      hideForm();
       setIsCapturing(false);
     }
   };
@@ -702,7 +660,7 @@ export default function RegisterPage() {
           <Footer />
         </div>
 
-        <div ref={hiddenFormRef} className="hidden print:block">
+        <div className="hidden print:block">
           <Step4Success
             formData={formData}
             levels={levels}
