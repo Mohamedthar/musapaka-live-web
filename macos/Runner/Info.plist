@@ -31,7 +31,20 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<false/>
 		<key>NSPinnedDomains</key>
-		<dict/>
+		<dict>
+			<key>supabase.co</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSPinnedLeafIdentities</key>
+				<array>
+					<dict>
+						<key>SPKI-SHA256-BASE64</key>
+						<string>osBEuy3eNf4OoLe3tPQsaocoTmiJnwvFFwUHtCkjqto=</string>
+					</dict>
+				</array>
+			</dict>
+		</dict>
 	</dict>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
