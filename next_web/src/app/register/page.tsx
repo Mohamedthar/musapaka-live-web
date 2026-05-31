@@ -308,7 +308,7 @@ export default function RegisterPage() {
       if (!formData.gender) errs.gender = 'حقل النوع مطلوب';
       else if (extractedInfo.isMale !== null) {
         const expected = extractedInfo.isMale ? 'ذكر' : 'أنثى';
-        if (formData.gender !== expected) errs.gender = 'النوع لا يتطابق مع الرقم القومي';
+        if (formData.gender !== expected) errs.gender = 'النوع غير صحيح';
       }
       if (!birthCertImage) errs.birthCert = 'شهادة الميلاد مطلوبة';
       setFieldErrors(errs);
