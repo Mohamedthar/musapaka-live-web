@@ -2,11 +2,13 @@ import { NextResponse } from 'next/server';
 
 const _KNOWN_ORIGINS = [
   'https://musapaka.vercel.app',
+  'https://quran-contest-2026.vercel.app',
 ];
 
 function getAllowedOrigins(): string[] {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-  return [siteUrl, ..._KNOWN_ORIGINS].filter(Boolean);
+  const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
+  return [siteUrl, vercelUrl, ..._KNOWN_ORIGINS].filter(Boolean) as string[];
 }
 
 export function getCorsHeaders(origin: string | null) {
