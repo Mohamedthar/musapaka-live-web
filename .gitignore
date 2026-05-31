@@ -56,4 +56,6 @@ supabase/test_ip.sql
 .env*.local
 .env*.local.*
 
+node_modules/
+
 .env
