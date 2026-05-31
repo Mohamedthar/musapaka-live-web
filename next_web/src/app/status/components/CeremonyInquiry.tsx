@@ -75,22 +75,24 @@ export default function CeremonyInquiry() {
   const captureTicket = async () => {
     const el = document.getElementById('ceremony-ticket');
     if (!el) return null;
-    const clone = el.cloneNode(true) as HTMLElement;
-    clone.id = 'ceremony-ticket-clone';
-    clone.style.maxWidth = '520pt';
-    clone.style.background = 'white';
-    clone.style.position = 'fixed';
-    clone.style.left = '0';
-    clone.style.top = '0';
-    clone.style.zIndex = '-1';
-    document.body.appendChild(clone);
-    await new Promise(r => setTimeout(r, 100));
     const html2canvas = (await import('html2canvas-pro')).default;
-    const canvas = await html2canvas(clone, {
+    const canvas = await html2canvas(el, {
       scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false,
-      windowWidth: 850, windowHeight: clone.scrollHeight + 100,
+      windowWidth: 850, windowHeight: el.scrollHeight + 100,
+      onclone: (clonedDoc) => {
+        const clonedEl = clonedDoc.getElementById('ceremony-ticket');
+        if (!clonedEl) return;
+        clonedEl.style.maxWidth = '520pt';
+        clonedEl.style.background = 'white';
+        let parent: HTMLElement | null = clonedEl.parentElement;
+        while (parent && parent !== clonedDoc.body) {
+          parent.style.display = 'block';
+          parent.style.height = 'auto';
+          parent.style.overflow = 'visible';
+          parent = parent.parentElement;
+        }
+      },
     });
-    document.body.removeChild(clone);
     return canvas;
   };
 
