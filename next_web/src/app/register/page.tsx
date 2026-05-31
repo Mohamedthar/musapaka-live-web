@@ -724,7 +724,7 @@ export default function RegisterPage() {
       <Header />
 
       {/* ─── Hero Header ─── */}
-      <section className="relative min-h-[40vh] md:min-h-[45vh] flex items-center overflow-hidden bg-primary-container">
+      <section className="relative min-h-[40vh] md:min-h-[45vh] flex items-center overflow-hidden bg-primary" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 30px), 0 100%)' }}>
         <div className="absolute inset-0 islamic-pattern z-0 opacity-[0.5]" />
 
         <motion.div
@@ -740,7 +740,7 @@ export default function RegisterPage() {
               backgroundPosition: 'center 40%',
             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-primary-container/50" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-primary/60" />
         </motion.div>
 
         <motion.div
@@ -756,16 +756,8 @@ export default function RegisterPage() {
           transition={{ duration: 1.5, ease: 'easeOut', delay: 0.2 }}
           className="absolute -bottom-48 -right-48 w-[600px] h-[600px] bg-secondary-fixed/6 rounded-full blur-[150px] pointer-events-none z-[2]"
         />
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1.5, ease: 'easeOut', delay: 0.4 }}
-          className="absolute -top-48 -left-48 w-[500px] h-[500px] bg-white/4 rounded-full blur-[150px] pointer-events-none z-[2]"
-        />
 
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-primary-container/60 z-[3]" />
-
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-surface to-transparent z-[4] pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/0 via-primary/15 via-50% to-primary/85 to-95% z-[3]" />
 
         <div className="max-w-7xl mx-auto px-6 relative z-10 text-center w-full py-20">
           <motion.div
@@ -781,10 +773,10 @@ export default function RegisterPage() {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="text-[32px] sm:text-[44px] md:text-[56px] font-black text-secondary-fixed leading-[1.2] mb-3"
+            className="text-[32px] sm:text-[44px] md:text-[56px] font-black text-white leading-[1.2] mb-3"
             style={{
               fontFamily: "'Noto Serif', serif",
-              textShadow: '0 0 40px rgba(255,224,136,0.4), 0 4px 8px rgba(0,0,0,0.5)',
+              textShadow: '0 0 60px rgba(255,224,136,0.3), 0 0 20px rgba(255,224,136,0.2), 0 4px 12px rgba(0,0,0,0.6)',
             }}
           >
             سجل في مسابقة القرآن
@@ -821,23 +813,23 @@ export default function RegisterPage() {
                   onClick={() => { if (s.num < step) { setStep(s.num); window.scrollTo({ top: 0, behavior: 'smooth' }); } }}
                   className={`flex flex-col items-center gap-1.5 transition-all duration-300 ${s.num <= step ? 'cursor-pointer' : 'cursor-default'}`}
                 >
-                  <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-black border-2 transition-all duration-300 ${
+                  <div className={`w-9 h-9 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs sm:text-xs font-black border-2 transition-all duration-300 ${
                     step > s.num
                       ? 'bg-secondary border-secondary text-white shadow-sm'
                     : step === s.num
                       ? 'bg-primary border-primary text-white shadow-md scale-110'
                       : 'bg-white border-primary/15 text-primary/50'
                   }`}>
-                    {step > s.num ? <CheckCircle2 size={11} className="sm:size-[14px]" /> : s.num}
+                    {step > s.num ? <CheckCircle2 size={14} className="sm:size-[14px]" /> : s.num}
                   </div>
-                  <span className={`text-[10px] sm:text-xs font-bold transition-colors duration-300 whitespace-nowrap ${
+                  <span className={`text-xs sm:text-xs font-bold transition-colors duration-300 whitespace-nowrap ${
                     step === s.num ? 'text-primary' : step > s.num ? 'text-primary/70' : 'text-primary/40'
                   }`}>
                     {s.label}
                   </span>
                 </button>
                 {i < steps.length - 1 && (
-                  <div className={`h-0.5 w-6 sm:w-12 mx-1 sm:mx-2 mb-5 rounded-full transition-all duration-300 ${
+                  <div className={`h-0.5 w-8 sm:w-12 mx-1.5 sm:mx-2 mb-6 rounded-full transition-all duration-300 ${
                     step > i + 1 ? 'bg-secondary' : 'bg-primary/10'
                   }`} />
                 )}

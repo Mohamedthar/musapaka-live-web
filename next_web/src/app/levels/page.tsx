@@ -36,7 +36,7 @@ export default function LevelsPage() {
 
       <div className="flex-1">
         {/* ─── HERO ─── */}
-        <section className="relative min-h-[40vh] md:min-h-[45vh] flex items-center overflow-hidden bg-primary-container">
+        <section className="relative min-h-[50vh] md:min-h-[55vh] flex items-center overflow-hidden bg-primary" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 30px), 0 100%)' }}>
           <div className="absolute inset-0 islamic-pattern z-0 opacity-[0.5]" />
 
           <motion.div
@@ -52,7 +52,7 @@ export default function LevelsPage() {
                 backgroundPosition: 'center 40%',
               }}
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-primary-container/50" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-primary/60" />
           </motion.div>
 
           <motion.div
@@ -68,16 +68,8 @@ export default function LevelsPage() {
             transition={{ duration: 1.5, ease: 'easeOut', delay: 0.2 }}
             className="absolute -bottom-48 -right-48 w-[600px] h-[600px] bg-secondary-fixed/6 rounded-full blur-[150px] pointer-events-none z-[2]"
           />
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1.5, ease: 'easeOut', delay: 0.4 }}
-            className="absolute -top-48 -left-48 w-[500px] h-[500px] bg-white/4 rounded-full blur-[150px] pointer-events-none z-[2]"
-          />
 
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-primary-container/60 z-[3]" />
-
-          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-surface to-transparent z-[4] pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/0 via-primary/15 via-50% to-primary/85 to-95% z-[3]" />
 
           <div className="max-w-7xl mx-auto px-6 relative z-10 text-center w-full py-20">
             <motion.div
@@ -93,10 +85,10 @@ export default function LevelsPage() {
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="text-[32px] sm:text-[44px] md:text-[56px] font-black text-secondary-fixed leading-[1.2] mb-3"
+              className="text-[32px] sm:text-[44px] md:text-[56px] font-black text-white leading-[1.2] mb-3"
               style={{
                 fontFamily: "'Noto Serif', serif",
-                textShadow: '0 0 40px rgba(255,224,136,0.4), 0 4px 8px rgba(0,0,0,0.5)',
+                textShadow: '0 0 60px rgba(255,224,136,0.3), 0 0 20px rgba(255,224,136,0.2), 0 4px 12px rgba(0,0,0,0.6)',
               }}
             >
               المستويات وشروطها
@@ -145,7 +137,7 @@ export default function LevelsPage() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 lg:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
                 {levels.map((level, i) => {
                   const individualPrizes = [level.first_prize, level.second_prize, level.third_prize];
                   const hasIndividualPrizes = individualPrizes.some(Boolean);
@@ -159,18 +151,18 @@ export default function LevelsPage() {
                       viewport={{ once: true }}
                       transition={{ duration: 0.5, delay: i * 0.08, ease: 'easeOut' }}
                       whileHover={{ y: -4 }}
-                      className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col overflow-hidden border border-outline-variant/10"
+                      className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden border border-outline-variant/10"
                     >
                       {/* Header */}
-                      <div className="bg-primary px-3 lg:px-4 py-2.5 lg:py-3 flex items-center gap-2 lg:gap-2.5">
-                        <span className="w-8 lg:w-10 h-8 lg:h-10 rounded-xl bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center font-black text-xs lg:text-sm shrink-0 shadow-sm">
+                      <div className="bg-primary px-4 py-3 flex items-center gap-2.5">
+                        <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-secondary-fixed to-[#fed65b] text-on-secondary-fixed flex items-center justify-center font-black text-sm shrink-0 shadow-sm">
                           {codeNum || level.level_code}
                         </span>
                         <div className="flex-1 min-w-0 flex items-baseline gap-2">
-                          <h3 className="text-white font-black text-xs lg:text-sm leading-tight">{level.title}</h3>
+                          <h3 className="text-white font-black text-sm leading-tight">{level.title}</h3>
                         </div>
                         {(level.min_age || level.max_age) && (
-                          <span className="text-[10px] lg:text-xs font-black text-secondary-fixed bg-white/10 px-2 lg:px-2.5 py-0.5 rounded-lg shrink-0">
+                          <span className="text-[10px] font-black text-secondary-fixed bg-white/10 px-2 py-0.5 rounded-lg shrink-0">
                             {level.min_age ? `فوق ${level.min_age}` : ''}
                             {level.min_age && level.max_age ? ' - ' : ''}
                             {level.max_age ? `${level.max_age} فأقل` : ''}
@@ -178,42 +170,42 @@ export default function LevelsPage() {
                           </span>
                         )}
                         {level.max_capacity && (
-                          <span className="text-[9px] lg:text-[10px] font-bold text-secondary-fixed/70 bg-white/8 px-2 lg:px-2.5 py-0.5 rounded shrink-0">
+                          <span className="text-[9px] font-bold text-secondary-fixed/70 bg-white/8 px-2 py-0.5 rounded shrink-0">
                             {level.max_capacity}
                           </span>
                         )}
                       </div>
 
                       {/* Content */}
-                      <div className="p-4 lg:p-5 flex-1 flex flex-col gap-3 lg:gap-4">
-                        <p className="text-xs lg:text-sm font-bold text-primary leading-relaxed">
+                      <div className="p-4 flex-1 flex flex-col gap-3">
+                        <p className="text-sm font-bold text-primary leading-relaxed">
                           {level.content}
                         </p>
 
                         {level.prizes && (
-                          <div className="bg-gradient-to-br from-secondary-fixed/[0.04] to-transparent rounded-lg lg:rounded-xl p-3 lg:p-4 border border-secondary-fixed/10">
-                            <div className="flex items-center gap-1.5 lg:gap-2 text-[11px] lg:text-xs font-black text-secondary mb-1.5">
-                              <Trophy size={11} className="lg:w-3.5 lg:h-3.5" />
+                          <div className="bg-gradient-to-br from-secondary-fixed/[0.06] to-transparent rounded-xl p-3.5 border border-secondary-fixed/10">
+                            <div className="flex items-center gap-1.5 text-xs font-black text-secondary mb-1">
+                              <Trophy size={13} />
                               <span>الجوائز</span>
                             </div>
-                            <p className="text-[11px] lg:text-xs font-bold text-on-surface leading-relaxed">{level.prizes}</p>
+                            <p className="text-xs font-bold text-on-surface leading-relaxed">{level.prizes}</p>
                           </div>
                         )}
 
                         {!level.prizes && hasIndividualPrizes && (
-                          <div className="space-y-1 lg:space-y-1.5">
-                            <div className="flex items-center gap-1.5 lg:gap-2 text-[11px] lg:text-xs font-black text-secondary">
-                              <Trophy size={11} className="lg:w-3.5 lg:h-3.5" />
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-1.5 text-xs font-black text-secondary">
+                              <Trophy size={13} />
                               <span>الجوائز</span>
                             </div>
                             {individualPrizes.map((prize, pi) => {
                               if (!prize) return null;
                               return (
-                                <div key={pi} className="flex items-center gap-2.5 bg-surface-container-low rounded-lg lg:rounded-xl px-3 lg:px-4 py-2 lg:py-2.5">
-                                  <span className={`w-5 lg:w-6 h-5 lg:h-6 rounded-full flex items-center justify-center text-[9px] lg:text-[10px] font-black text-white shrink-0 ${pi === 0 ? 'bg-[#D4AF37]' : pi === 1 ? 'bg-[#A0A0A0]' : 'bg-[#CD7F32]'}`}>
+                                <div key={pi} className="flex items-center gap-2.5 bg-surface-container-low rounded-xl px-3.5 py-2.5">
+                                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-black text-white shrink-0 shadow-sm ${pi === 0 ? 'bg-gradient-to-br from-[#D4AF37] to-[#B8942E]' : pi === 1 ? 'bg-gradient-to-br from-[#A0A0A0] to-[#808080]' : 'bg-gradient-to-br from-[#CD7F32] to-[#B06A28]'}`}>
                                     {pi + 1}
                                   </span>
-                                  <span className="text-[11px] lg:text-xs font-bold text-on-surface">{prize}</span>
+                                  <span className="text-xs font-bold text-on-surface">{prize}</span>
                                 </div>
                               );
                             })}
@@ -221,12 +213,12 @@ export default function LevelsPage() {
                         )}
 
                         {level.notes && (
-                          <div className="mt-auto bg-primary/[0.04] border border-primary/[0.08] rounded-lg lg:rounded-xl px-3 lg:px-4 py-2.5 lg:py-3">
+                          <div className="mt-auto bg-primary/[0.04] border border-primary/[0.08] rounded-xl px-3.5 py-2.5">
                             <div className="flex items-center gap-1.5 mb-1">
                               <span className="w-1 h-1 rounded-full bg-primary/40" />
-                              <span className="text-[10px] lg:text-[11px] font-black text-primary">ملاحظات</span>
+                              <span className="text-[10px] font-black text-primary">ملاحظات</span>
                             </div>
-                            <p className="text-[11px] lg:text-xs font-bold text-on-surface-variant leading-relaxed">
+                            <p className="text-xs font-bold text-on-surface-variant leading-relaxed">
                               {level.notes}
                             </p>
                           </div>

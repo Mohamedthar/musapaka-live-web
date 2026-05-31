@@ -32,7 +32,7 @@ export default function HomePage() {
         setTitleDone(true);
         setTimeout(() => setShowCursor(false), 800);
       }
-    }, 40);
+    }, 20);
     return () => clearInterval(interval);
   }, []);
 
@@ -49,17 +49,14 @@ export default function HomePage() {
   }, []);
 
   const animateYear = useCallback(() => {
-    const period = 3600;
     const range = currentYear - 2000;
     const start = performance.now();
     const loop = () => {
       const elapsed = performance.now() - start;
-      const t = elapsed % period;
-      const half = period / 2;
-      const progress = t <= half ? t / half : (period - t) / half;
+      const progress = Math.min(elapsed / 3000, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      setYearCount(Math.round(2000 + (1 - eased) * range));
-      yearRaf.current = requestAnimationFrame(loop);
+      setYearCount(Math.round(currentYear - eased * range));
+      if (progress < 1) yearRaf.current = requestAnimationFrame(loop);
     };
     yearRaf.current = requestAnimationFrame(loop);
   }, [currentYear]);
@@ -85,7 +82,7 @@ export default function HomePage() {
 
       <div className="flex-1">
         {/* ─── HERO ─── */}
-      <section className="relative min-h-[75vh] md:min-h-[85vh] flex items-center overflow-hidden bg-primary-container">
+      <section className="relative min-h-[60vh] md:min-h-[70vh] flex items-center overflow-hidden bg-primary" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 30px), 0 100%)' }}>
         {/* Islamic pattern — very subtle */}
         <div className="absolute inset-0 islamic-pattern z-0 opacity-[0.5]" />
 
@@ -103,7 +100,7 @@ export default function HomePage() {
               backgroundPosition: 'center 40%',
             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-primary-container/50" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-primary/60" />
         </motion.div>
 
         {/* Soft gold glow from behind */}
@@ -121,37 +118,36 @@ export default function HomePage() {
           transition={{ duration: 1.5, ease: 'easeOut', delay: 0.2 }}
           className="absolute -bottom-48 -right-48 w-[600px] h-[600px] bg-secondary-fixed/6 rounded-full blur-[150px] pointer-events-none z-[2]"
         />
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1.5, ease: 'easeOut', delay: 0.4 }}
-          className="absolute -top-48 -left-48 w-[500px] h-[500px] bg-white/4 rounded-full blur-[150px] pointer-events-none z-[2]"
-        />
 
         {/* Subtle dark overlay for depth */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-primary-container/60 z-[3]" />
-
-        {/* Smooth transition to next section */}
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-surface to-transparent z-[4] pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/0 via-primary/15 via-50% to-primary/85 to-95% z-[3]" />
 
         <div className="max-w-7xl mx-auto px-6 relative z-10 text-center w-full py-24">
           <motion.h1
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="text-[36px] sm:text-[48px] md:text-[60px] font-black text-secondary-fixed leading-[1.2] mb-5 min-h-[1.2em]"
+            className="text-[36px] sm:text-[48px] md:text-[60px] font-black text-white leading-[1.2] mb-5 min-h-[1.2em]"
             style={{
               fontFamily: "'Noto Serif', serif",
               textShadow: titleDone
-                ? '0 0 40px rgba(255,224,136,0.4), 0 4px 8px rgba(0,0,0,0.5)'
-                : '0 4px 8px rgba(0,0,0,0.5)',
+                ? '0 0 60px rgba(255,224,136,0.3), 0 0 20px rgba(255,224,136,0.2), 0 4px 12px rgba(0,0,0,0.6)'
+                : '0 4px 12px rgba(0,0,0,0.6)',
             }}
           >
             <span className={titleDone ? '' : 'animate-title-glow'}>
-              {displayedTitle}
+              {titleDone ? (
+                <>
+                  <span>مسابقة أهل </span>
+                  <span className="text-secondary-fixed">القرآن</span>
+                  <span> الكبرى</span>
+                </>
+              ) : (
+                displayedTitle
+              )}
             </span>
             {showCursor && displayedTitle.length < fullTitle.length && (
-              <span className="inline-block w-[3px] h-[0.9em] bg-secondary-fixed mr-1 animate-pulse align-middle" />
+              <span className="inline-block w-[3px] h-[0.9em] bg-white mr-1 animate-pulse align-middle" />
             )}
           </motion.h1>
 
@@ -229,7 +225,7 @@ export default function HomePage() {
               transition={{ type: 'spring', stiffness: 200, damping: 14 }}
               className="w-full sm:w-auto"
             >
-              <Link href="/register" className="inline-flex w-full sm:w-auto bg-secondary-fixed text-on-secondary-fixed px-5 sm:px-6 py-3 sm:py-2.5 rounded-xl font-bold text-sm shadow-xl hover:bg-secondary-container active:scale-95 transition-all duration-300 items-center justify-center gap-2 whitespace-nowrap">
+              <Link href="/register" className="inline-flex w-full sm:w-auto bg-gradient-to-l from-[#ffe088] to-[#fed65b] text-[#241a00] px-5 sm:px-6 py-3 sm:py-2.5 rounded-xl font-bold text-sm shadow-2xl shadow-[#ffe088]/30 hover:shadow-[#ffe088]/50 hover:brightness-105 active:scale-95 transition-all duration-300 items-center justify-center gap-2 whitespace-nowrap">
                 <UserPlus className="text-base sm:text-lg" />
                 سجل الآن
               </Link>
@@ -242,7 +238,7 @@ export default function HomePage() {
               transition={{ type: 'spring', stiffness: 200, damping: 14 }}
               className="w-full sm:w-auto"
             >
-              <Link href="/status?tab=ceremony" className="inline-flex w-full sm:w-auto bg-transparent border-2 border-primary-fixed text-primary-fixed px-5 sm:px-6 py-3 sm:py-2.5 rounded-xl font-bold text-sm hover:bg-primary-fixed/10 active:scale-95 transition-all duration-300 items-center justify-center gap-2 whitespace-nowrap">
+              <Link href="/status?tab=ceremony" className="inline-flex w-full sm:w-auto bg-white/5 border-2 border-white/30 text-white/90 px-5 sm:px-6 py-3 sm:py-2.5 rounded-xl font-bold text-sm backdrop-blur-sm hover:bg-white/15 hover:border-white/50 active:scale-95 transition-all duration-300 items-center justify-center gap-2 whitespace-nowrap">
                 <CalendarCheck className="text-lg" />
                 الاستعلام عن حضور الحفل
               </Link>

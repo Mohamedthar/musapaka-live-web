@@ -135,7 +135,7 @@ export default function CeremonyInquiry() {
               <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center mx-auto mb-3">
                 <CalendarCheck size={22} className="text-emerald-500" />
               </div>
-              <h2 className="text-lg font-black text-primary" style={{ fontFamily: "'Noto Serif', serif" }}>
+              <h2 className="text-lg font-black text-primary">
                 بطاقة دعوة حفل التكريم
               </h2>
               <p className="text-xs text-on-surface-variant/50 mt-1">مسابقة أهل القرآن الكبرى</p>
@@ -215,7 +215,7 @@ export default function CeremonyInquiry() {
         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center mx-auto mb-4 shadow-sm border border-primary/10">
           <CalendarCheck size={22} className="text-primary" />
         </div>
-        <h1 className="text-xl sm:text-2xl font-black text-primary" style={{ fontFamily: "'Noto Serif', serif" }}>
+        <h1 className="text-xl sm:text-2xl font-black text-primary">
           استعلام حضور الحفل الختامي
         </h1>
         <p className="text-sm sm:text-base text-on-surface-variant/70 mt-2 font-semibold">

@@ -66,7 +66,7 @@ export default function Header() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <span
-            className="font-black text-primary tracking-tight text-2xl md:text-3xl"
+            className="font-black tracking-tight text-2xl md:text-3xl bg-gradient-to-l from-primary to-[#735c00] bg-clip-text text-transparent"
             style={{ fontFamily: "'Noto Serif', serif" }}
           >
             مسابقة أهل القرآن الكبرى

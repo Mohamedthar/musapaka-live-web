@@ -111,7 +111,7 @@ export default function StatusPage() {
       <Header />
       <div className="flex-1">
         {/* Hero */}
-        <section className="relative min-h-[32vh] md:min-h-[36vh] flex items-center overflow-hidden bg-primary">
+        <section className="relative min-h-[32vh] md:min-h-[36vh] flex items-center overflow-hidden bg-primary" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 30px), 0 100%)' }}>
           <div className="absolute inset-0 islamic-pattern z-0 opacity-[0.3]" />
 
           <motion.div
@@ -133,8 +133,7 @@ export default function StatusPage() {
           {/* Glow */}
           <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-secondary-fixed/10 rounded-full blur-[120px] pointer-events-none z-[2]" />
 
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-primary/40 z-[3]" />
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-surface to-transparent z-[4] pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/0 via-primary/15 via-50% to-primary/85 to-95% z-[3]" />
 
           <div className="max-w-7xl mx-auto px-6 relative z-10 text-center w-full py-14">
             <motion.div
@@ -150,8 +149,11 @@ export default function StatusPage() {
               initial={{ opacity: 0, y: 16, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-              className="text-3xl sm:text-4xl md:text-5xl font-black text-secondary-fixed leading-[1.15]"
-              style={{ fontFamily: "'Noto Serif', serif" }}
+              className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-[1.15]"
+              style={{
+                fontFamily: "'Noto Serif', serif",
+                textShadow: '0 0 60px rgba(255,224,136,0.3), 0 0 20px rgba(255,224,136,0.2), 0 4px 12px rgba(0,0,0,0.6)',
+              }}
             >
               استعلامات المسابقة
             </motion.h1>

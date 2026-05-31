@@ -42,10 +42,10 @@ export default function ClosedState({ type, timing }: { type: 'form' | 'result' 
   const hasTiming = !!openDateStr || !!closeDateStr;
 
   return (
-    <div className="w-full max-w-sm mx-auto" dir="rtl">
-      <div className="text-center">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center mx-auto mb-4 shadow-sm border border-primary/10">
-          <Icon size={26} className="text-primary" />
+    <div className="w-full max-w-lg mx-auto" dir="rtl">
+      <div className="text-center mb-8">
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center mx-auto mb-4 shadow-sm border border-primary/10">
+          <Icon size={22} className="text-primary" />
         </div>
 
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50/80 border border-amber-200/60 mb-4 shadow-sm">
@@ -53,8 +53,8 @@ export default function ClosedState({ type, timing }: { type: 'form' | 'result' 
           <span className="text-xs font-bold text-amber-700">مغلق</span>
         </div>
 
-        <h3 className="text-base font-black text-primary mb-2">{c.title}</h3>
-        <p className="text-sm text-on-surface-variant/70 leading-relaxed font-semibold">{c.desc}</p>
+        <h3 className="text-xl sm:text-2xl font-black text-primary mb-2">{c.title}</h3>
+        <p className="text-sm sm:text-base text-on-surface-variant/70 leading-relaxed font-semibold">{c.desc}</p>
 
         {hasTiming && (
           <div className="mt-5 bg-surface rounded-xl border border-outline-variant/10 shadow-sm p-4 text-right">
