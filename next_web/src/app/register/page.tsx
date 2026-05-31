@@ -306,6 +306,10 @@ export default function RegisterPage() {
       if (!extractedInfo.isValid) errs.nationalId = 'الرقم القومي غير صحيح';
       if (parseInt(formData.age) !== extractedInfo.age) errs.age = 'العمر غير صحيح';
       if (!formData.gender) errs.gender = 'حقل النوع مطلوب';
+      else if (extractedInfo.isMale !== null) {
+        const expected = extractedInfo.isMale ? 'ذكر' : 'أنثى';
+        if (formData.gender !== expected) errs.gender = 'النوع لا يتطابق مع الرقم القومي';
+      }
       if (!birthCertImage) errs.birthCert = 'شهادة الميلاد مطلوبة';
       setFieldErrors(errs);
       if (Object.keys(errs).length) return toast.error(Object.values(errs)[0]);
