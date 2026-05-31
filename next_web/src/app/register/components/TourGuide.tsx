@@ -3,41 +3,37 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 
-const Joyride = dynamic(() => import('react-joyride').then(mod => mod.Joyride), { ssr: false }) as any;
+const Joyride = dynamic(() => import('react-joyride').then(mod => mod.Joyride), { ssr: false });
 
-const CustomTooltip = ({
-  continuous,
-  index,
-  step,
-  backProps,
-  closeProps,
-  skipProps,
-  primaryProps,
-  tooltipProps,
-  isLastStep,
-}: any) => (
-  <div {...tooltipProps} className="bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-slate-100 p-6 w-[320px] sm:w-[380px]" dir="rtl" style={{ fontFamily: 'var(--font-cairo), Cairo, sans-serif' }}>
-    {step.title && <h3 className="text-xl font-black text-slate-900 mb-3">{step.title}</h3>}
-    <div className="text-[15px] font-bold text-slate-600 mb-8 leading-relaxed">
-      {step.content}
-    </div>
-    <div className="flex items-center justify-between border-t border-slate-100 pt-5">
-      {index > 0 ? (
-        <button {...backProps} className="text-slate-500 font-bold text-sm px-4 py-2.5 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-colors">
-          السابق
-        </button>
-      ) : <div />}
-      <div className="flex items-center gap-2">
-        <button {...skipProps} className="text-slate-400 hover:text-red-500 font-bold text-sm px-3 py-2.5 hover:bg-red-50 rounded-xl transition-colors">
-          تخطي
-        </button>
-        <button {...primaryProps} className="bg-slate-900 text-white font-bold text-sm px-6 py-2.5 rounded-xl hover:bg-slate-800 transition-colors shadow-lg">
-          {continuous ? (isLastStep ? 'إنهاء' : 'التالي') : 'إغلاق'}
-        </button>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- third-party Joyride render props
+const CustomTooltip = (props: any) => {
+  const {
+    continuous, index, step, backProps, skipProps, primaryProps, tooltipProps, isLastStep,
+  } = props;
+  return (
+    <div {...tooltipProps} className="bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-slate-100 p-6 w-[320px] sm:w-[380px]" dir="rtl" style={{ fontFamily: 'var(--font-cairo), Cairo, sans-serif' }}>
+      {step.title && <h3 className="text-xl font-black text-slate-900 mb-3">{step.title}</h3>}
+      <div className="text-[15px] font-bold text-slate-600 mb-8 leading-relaxed">
+        {step.content}
+      </div>
+      <div className="flex items-center justify-between border-t border-slate-100 pt-5">
+        {index > 0 ? (
+          <button {...backProps} className="text-slate-500 font-bold text-sm px-4 py-2.5 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-colors">
+            السابق
+          </button>
+        ) : <div />}
+        <div className="flex items-center gap-2">
+          <button {...skipProps} className="text-slate-400 hover:text-red-500 font-bold text-sm px-3 py-2.5 hover:bg-red-50 rounded-xl transition-colors">
+            تخطي
+          </button>
+          <button {...primaryProps} className="bg-slate-900 text-white font-bold text-sm px-6 py-2.5 rounded-xl hover:bg-slate-800 transition-colors shadow-lg">
+            {continuous ? (isLastStep ? 'إنهاء' : 'التالي') : 'إغلاق'}
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 interface TourGuideProps {
   tourKey: number;
@@ -53,7 +49,7 @@ export default function TourGuide({
   step
 }: TourGuideProps) {
   const steps = (() => {
-    let s: any[] = [];
+    let s: { target: string; content: string; placement: 'center' | 'left' | 'bottom' | 'top' }[] = [];
     switch (step) {
       case 1:
         s = [
@@ -95,17 +91,13 @@ export default function TourGuide({
       steps={steps}
       run={runTour}
       continuous
-      showSkipButton
-      showProgress
       locale={{ back: 'السابق', close: 'إغلاق', last: 'إنهاء', next: 'التالي', skip: 'تخطي' }}
       tooltipComponent={CustomTooltip}
-      styles={{
-        options: {
-          primaryColor: '#0f172a',
-          zIndex: 1000,
-        }
-      } as any}
-      callback={(data: any) => {
+      options={{
+        primaryColor: '#0f172a',
+        zIndex: 1000,
+      }}
+      onEvent={(data: { status: string; type: string; action: string }) => {
         const { status, type, action } = data;
         if (
           status === 'finished' || 

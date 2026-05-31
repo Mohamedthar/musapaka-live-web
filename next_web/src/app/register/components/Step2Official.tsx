@@ -1,5 +1,6 @@
 import React from 'react';
 import { CreditCard, UserCircle, ChevronDown, FileImage } from 'lucide-react';
+import type { RegistrationFormData } from '@/lib/database.types';
 import Field from './Field';
 
 interface Step2OfficialProps {
@@ -8,7 +9,7 @@ interface Step2OfficialProps {
     age: string;
     gender: string;
   };
-  setFormData: React.Dispatch<React.SetStateAction<any>>;
+  setFormData: React.Dispatch<React.SetStateAction<RegistrationFormData>>;
   fieldErrors: Record<string, string>;
   clearErr: (key: string) => void;
   isCheckingId: boolean;
@@ -41,7 +42,7 @@ export default function Step2Official({
             icon={<CreditCard size={17} />}
             value={formData.nationalId}
             onChange={v => {
-              setFormData((p: any) => {
+              setFormData((p) => {
                 const n = { ...p, nationalId: v };
                 if (v.trim().length === 14 && /^\d+$/.test(v.trim())) {
                   const c = parseInt(v.trim()[0]);
@@ -76,7 +77,7 @@ export default function Step2Official({
               icon={<UserCircle size={17} />}
               value={formData.age}
               onChange={v => {
-                setFormData((p: any) => ({ ...p, age: v }));
+                setFormData((p) => ({ ...p, age: v }));
                 clearErr('age');
               }}
               placeholder="مثال: 18"
@@ -91,7 +92,7 @@ export default function Step2Official({
               <select
                 value={formData.gender}
                 onChange={e => {
-                  setFormData((p: any) => ({ ...p, gender: e.target.value }));
+                  setFormData((p) => ({ ...p, gender: e.target.value }));
                   clearErr('gender');
                 }}
                 className={`w-full bg-slate-50 border ${fieldErrors.gender ? 'border-amber-400' : 'border-slate-200'} rounded-xl py-3 px-4 text-slate-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900 appearance-none`}

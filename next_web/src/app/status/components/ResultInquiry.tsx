@@ -85,7 +85,6 @@ export default function ResultInquiry() {
     ].filter(s => s.show);
 
     const gradeBg = pct >= 90 ? '#fef3c7' : pct >= 70 ? '#f8fafc' : '#fef2f2';
-    const gradeBorder = pct >= 90 ? '#f59e0b' : pct >= 70 ? '#cbd5e1' : '#fca5a5';
     const gradeText = pct >= 50 ? '#b45309' : '#dc2626';
 
     return (

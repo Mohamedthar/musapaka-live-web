@@ -1,14 +1,14 @@
 import React, { useMemo } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import type { CompetitionLevel } from '@/lib/database.types';
+import type { CompetitionLevel, RegistrationFormData } from '@/lib/database.types';
 
 interface Step3LevelProps {
   formData: {
     level: string;
     selectedRewaya: string;
   };
-  setFormData: React.Dispatch<React.SetStateAction<any>>;
+  setFormData: React.Dispatch<React.SetStateAction<RegistrationFormData>>;
   fieldErrors: Record<string, string>;
   clearErr: (key: string) => void;
   levels: CompetitionLevel[];
@@ -70,7 +70,7 @@ export default function Step3Level({
                 }
               }
               const defaultRewaya = selLevel?.has_rewaya && selLevel?.available_rewayas?.length ? selLevel.available_rewayas[0] : '';
-              setFormData((p: any) => ({ ...p, level: e.target.value, selectedRewaya: defaultRewaya }));
+              setFormData((p) => ({ ...p, level: e.target.value, selectedRewaya: defaultRewaya }));
               setBranchName('');
               setMemorizationAmount(null);
               clearErr('level');
@@ -131,7 +131,7 @@ export default function Step3Level({
               <div className="relative">
                 <select
                   value={formData.selectedRewaya}
-                  onChange={e => setFormData((p: any) => ({ ...p, selectedRewaya: e.target.value }))}
+                  onChange={e => setFormData((p) => ({ ...p, selectedRewaya: e.target.value }))}
                   className="w-full bg-white border-2 border-primary/15 rounded-xl py-[14px] px-3 sm:px-4 text-primary text-sm font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/8 transition-all appearance-none shadow-sm"
                 >
                   <option value="">-- اختر الرواية أو القراءة --</option>

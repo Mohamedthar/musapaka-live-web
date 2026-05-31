@@ -17,11 +17,11 @@ export async function GET(request: Request) {
     return jsonResponse(
       {
         success: true,
-        is_result_query_open: !!(st as any)?.is_result_query_open,
-        registration_start_date: (st as any)?.registration_start_date ?? null,
-        registration_end_date: (st as any)?.registration_end_date ?? null,
-        result_query_open_date: (st as any)?.result_query_open_date ?? null,
-        result_query_close_date: (st as any)?.result_query_close_date ?? null,
+        is_result_query_open: !!(st as Record<string, unknown> | null)?.is_result_query_open,
+        registration_start_date: (st as Record<string, unknown> | null)?.registration_start_date ?? null,
+        registration_end_date: (st as Record<string, unknown> | null)?.registration_end_date ?? null,
+        result_query_open_date: (st as Record<string, unknown> | null)?.result_query_open_date ?? null,
+        result_query_close_date: (st as Record<string, unknown> | null)?.result_query_close_date ?? null,
       },
       200,
       origin,
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
     }
 
     if (result.error) {
-      return jsonResponse(result, (result as any).closed ? 403 : 400, origin);
+      return jsonResponse(result, !!(result as Record<string, unknown>).closed ? 403 : 400, origin);
     }
 
     // RPC returns flat object: extract level_info and restructure

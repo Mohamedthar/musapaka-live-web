@@ -28,6 +28,13 @@ export interface CompetitionLevel {
 
 export interface StudentStatus {
   name: string;
+  phone?: string;
+  national_id?: string;
+  age?: number;
+  gender?: string;
+  memorizer_name?: string;
+  memorizer_phone?: string;
+  memorizer_address?: string;
   level: string;
   level_id?: number;
   level_content?: string;
@@ -38,6 +45,9 @@ export interface StudentStatus {
   exam_hour?: number;
   selected_rewaya?: string | null;
   branch_name?: string | null;
+  memorization_amount?: number | null;
+  registration_ip?: string;
+  created_at?: string;
   level_has_rewaya?: boolean;
   level_rewaya_max_score?: number;
   level_has_tajweed?: boolean;
@@ -62,4 +72,18 @@ export interface AppSettings {
   registration_end_date: string | null;
   exam_schedule: ExamScheduleSlot[] | null;
   faqs: { q: string; a: string }[] | null;
+}
+
+export interface RegistrationFormData {
+  name: string;
+  phone: string;
+  nationalId: string;
+  age: string;
+  memorizerName: string;
+  memorizerPhone: string;
+  memorizerAddress: string;
+  location: string;
+  gender: string;
+  level: string;
+  selectedRewaya: string;
 }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { UserCircle, Phone, MapPin } from 'lucide-react';
 import { Turnstile } from '@marsidev/react-turnstile';
+import type { RegistrationFormData } from '@/lib/database.types';
 import Field from './Field';
 
 interface Step4ReviewProps {
@@ -9,7 +10,7 @@ interface Step4ReviewProps {
     memorizerPhone: string;
     memorizerAddress: string;
   };
-  setFormData: React.Dispatch<React.SetStateAction<any>>;
+  setFormData: React.Dispatch<React.SetStateAction<RegistrationFormData>>;
   isConfirmed: boolean;
   setIsConfirmed: (c: boolean) => void;
   setTurnstileToken: (t: string | null) => void;
@@ -38,7 +39,7 @@ export default function Step4Review({
               label="اسم المحفِّظ / الشيخ"
               icon={<UserCircle size={17} />}
               value={formData.memorizerName}
-              onChange={v => setFormData((p: any) => ({ ...p, memorizerName: v }))}
+              onChange={v => setFormData((p) => ({ ...p, memorizerName: v }))}
               placeholder="اسم الشيخ أو المحفِّظ"
               required
             />
@@ -47,7 +48,7 @@ export default function Step4Review({
             label="رقم هاتف المحفِّظ"
             icon={<Phone size={17} />}
             value={formData.memorizerPhone}
-            onChange={v => setFormData((p: any) => ({ ...p, memorizerPhone: v }))}
+            onChange={v => setFormData((p) => ({ ...p, memorizerPhone: v }))}
             placeholder="01xxxxxxxxx"
             type="tel"
           />
@@ -55,7 +56,7 @@ export default function Step4Review({
             label="عنوان المحفِّظ"
             icon={<MapPin size={17} />}
             value={formData.memorizerAddress}
-            onChange={v => setFormData((p: any) => ({ ...p, memorizerAddress: v }))}
+            onChange={v => setFormData((p) => ({ ...p, memorizerAddress: v }))}
             placeholder="المحافظة - المركز - القرية"
           />
           

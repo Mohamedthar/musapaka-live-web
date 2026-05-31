@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Search, Printer, User, Layers, Calendar, CreditCard, Phone, MapPin, AlertTriangle, BookOpen, List, Download } from 'lucide-react';
+import { ArrowLeft, Printer, User, Layers, Calendar, CreditCard, Phone, MapPin, AlertTriangle, BookOpen, List, Download } from 'lucide-react';
 import type { CompetitionLevel } from '@/lib/database.types';
 import toast from 'react-hot-toast';
 import { FlutterIconRow, FlutterGridCell } from '@/components/FlutterIconRow';
@@ -42,14 +42,13 @@ export default function Step5Success({
   studentCode,
   isWaitlistMode,
   branchName,
-  memorizationAmount,
   onNewSearch
 }: Step5SuccessProps) {
   const receiptRef = useRef<HTMLDivElement>(null);
   const evalRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
-  const [receiptHeight, setReceiptHeight] = useState(0);
-  const [evalHeight, setEvalHeight] = useState(0);
+  const [, setScale] = useState(1);
+  const [, setReceiptHeight] = useState(0);
+  const [, setEvalHeight] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
 
   const downloadAsImages = async () => {

@@ -23,7 +23,7 @@ export async function GET() {
       .maybeSingle();
 
     const result = await Promise.race([query, timeout]);
-    const { data, error } = result as { data: { faqs: { q: string; a: string }[] } | null; error: any };
+    const { data, error } = result as { data: { faqs: { q: string; a: string }[] } | null; error: Error | null };
 
     if (error) {
       return NextResponse.json({ data: DEFAULT_FAQS }, {

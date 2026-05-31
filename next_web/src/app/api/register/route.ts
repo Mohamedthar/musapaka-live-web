@@ -1,6 +1,5 @@
-import { NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { getCorsHeaders, jsonResponse, optionsResponse, checkRateLimit, getClientIp, validateCsrf } from '@/lib/api-utils';
+import { jsonResponse, optionsResponse, checkRateLimit, getClientIp, validateCsrf } from '@/lib/api-utils';
 import { parseNationalId, calculateAgeFromNationalId } from '@/lib/national-id';
 
 export { optionsResponse as OPTIONS };

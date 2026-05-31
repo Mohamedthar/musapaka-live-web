@@ -1,6 +1,5 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
-// Deployment trigger: 2026-05-19T23:36:27Z
+/* Deployment trigger: 2026-05-19T23:36:27Z */
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { getSupabase } from '@/lib/supabase';
 import { CheckCircle2, ChevronLeft, ChevronRight, ShieldCheck, ArrowLeft, Send, CalendarX, Download, Printer, FileText } from 'lucide-react';
@@ -194,7 +193,7 @@ export default function RegisterPage() {
       }
     };
     load();
-  }, []);
+  }, [searchParams]);
 
   const extractedInfo = useMemo(() => {
     const id = formData.nationalId.trim();

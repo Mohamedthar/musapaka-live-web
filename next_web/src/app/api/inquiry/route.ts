@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     ]);
 
     const { data: studentData, error: studentError } = studentRes;
-    const { data: levels, error: levelsError } = levelsRes;
+    const { data: levels } = levelsRes;
 
     if (studentError) {
       return jsonResponse({ error: 'حدث خطأ في قاعدة البيانات أثناء البحث' }, 500, origin);

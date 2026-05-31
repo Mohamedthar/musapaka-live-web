@@ -1,12 +1,17 @@
 import { NextResponse } from 'next/server';
 
-const ALLOWED_ORIGINS = [
-  process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+const _KNOWN_ORIGINS = [
   'https://musapaka.vercel.app',
-].filter(Boolean);
+];
+
+function getAllowedOrigins(): string[] {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  return [siteUrl, ..._KNOWN_ORIGINS].filter(Boolean);
+}
 
 export function getCorsHeaders(origin: string | null) {
-  const allowedOrigin = (origin && ALLOWED_ORIGINS.includes(origin)) ? origin : (ALLOWED_ORIGINS[0] || '');
+  const allowed = getAllowedOrigins();
+  const allowedOrigin = (origin && allowed.includes(origin)) ? origin : (allowed[0] || '');
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -66,11 +71,11 @@ export function validateCsrf(request: Request): boolean {
   if (!origin && !referer) return false;
 
   if (origin) {
-    return ALLOWED_ORIGINS.some((allowed) => origin.startsWith(allowed));
+    return getAllowedOrigins().some((allowed) => origin.startsWith(allowed));
   }
 
   if (referer) {
-    return ALLOWED_ORIGINS.some((allowed) => referer.startsWith(allowed));
+    return getAllowedOrigins().some((allowed) => referer.startsWith(allowed));
   }
 
   return false;

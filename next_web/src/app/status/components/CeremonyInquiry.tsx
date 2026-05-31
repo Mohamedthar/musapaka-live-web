@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  CreditCard, CalendarCheck, User, Search, AlertTriangle, Printer, Download, CheckCircle2, X, Layers, FileText, Hash, Sparkles
+  CreditCard, CalendarCheck, User, Search, AlertTriangle, Download, X, Layers, FileText, Hash, Sparkles
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ClosedState from '@/components/ClosedState';
@@ -71,7 +71,6 @@ export default function CeremonyInquiry() {
 
   const handleReset = () => { setData(null); setSearched(false); setError(''); setNotFound(false); setNationalId(''); };
 
-  const handlePrint = () => { window.print(); };
 
   const captureTicket = async () => {
     const el = document.getElementById('ceremony-ticket');
@@ -128,6 +127,34 @@ export default function CeremonyInquiry() {
     finally { setIsCapturing(false); }
   };
 
+  const decorations = useMemo(() => {
+    let seed = 42;
+    const rand = () => {
+      seed = (seed * 16807) % 2147483647;
+      return (seed - 1) / 2147483646;
+    };
+
+    const groups: { key: string; emoji: string; count: number; baseDur: number; baseSize: number; sizeRange: number }[] = [
+      { key: 'a', emoji: '✨', count: 20, baseDur: 1.5, baseSize: 14, sizeRange: 16 },
+      { key: 'b', emoji: '🎉', count: 12, baseDur: 1.8, baseSize: 18, sizeRange: 20 },
+      { key: 'c', emoji: '⭐', count: 12, baseDur: 2.0, baseSize: 16, sizeRange: 18 },
+      { key: 'd', emoji: '🎊', count: 10, baseDur: 1.5, baseSize: 15, sizeRange: 18 },
+      { key: 'e', emoji: '💫', count: 8,  baseDur: 1.8, baseSize: 12, sizeRange: 14 },
+    ];
+
+    return groups.flatMap((g, gi) =>
+      Array.from({ length: g.count }, (_, i) => ({
+        key: `${g.key}-${i}`,
+        emoji: g.emoji,
+        left: rand() * 100,
+        top: -10 - rand() * 20,
+        delay: i * (0.15 + gi * 0.02),
+        duration: g.baseDur + rand() * 1.5,
+        fontSize: g.baseSize + rand() * g.sizeRange,
+      }))
+    );
+  }, []);
+
   if (checkingStatus) {
     return <div className="flex items-center justify-center py-20"><div className="w-8 h-8 border-3 border-primary/25 border-t-primary rounded-full animate-spin" /></div>;
   }
@@ -158,50 +185,14 @@ export default function CeremonyInquiry() {
         {isEligible && (
           /* Falling decorations — full page */
           <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-            {[...Array(20)].map((_, i) => (
-              <div key={i} className="absolute text-lg animate-fall" style={{
-                left: `${Math.random() * 100}%`,
-                top: `${-10 - Math.random() * 20}%`,
-                animationDelay: `${i * 0.15}s`,
-                animationDuration: `${1.5 + Math.random() * 1.5}s`,
-                fontSize: `${14 + Math.random() * 16}px`,
-              }}>✨</div>
-            ))}
-            {[...Array(12)].map((_, i) => (
-              <div key={i + 20} className="absolute text-2xl animate-fall" style={{
-                left: `${Math.random() * 100}%`,
-                top: `${-10 - Math.random() * 20}%`,
-                animationDelay: `${i * 0.2}s`,
-                animationDuration: `${1.8 + Math.random() * 1.5}s`,
-                fontSize: `${18 + Math.random() * 20}px`,
-              }}>🎉</div>
-            ))}
-            {[...Array(12)].map((_, i) => (
-              <div key={i + 32} className="absolute text-2xl animate-fall" style={{
-                left: `${Math.random() * 100}%`,
-                top: `${-10 - Math.random() * 20}%`,
-                animationDelay: `${i * 0.18}s`,
-                animationDuration: `${2 + Math.random() * 1.5}s`,
-                fontSize: `${16 + Math.random() * 18}px`,
-              }}>⭐</div>
-            ))}
-            {[...Array(10)].map((_, i) => (
-              <div key={i + 44} className="absolute text-xl animate-fall" style={{
-                left: `${Math.random() * 100}%`,
-                top: `${-10 - Math.random() * 20}%`,
-                animationDelay: `${i * 0.22}s`,
-                animationDuration: `${1.5 + Math.random() * 1.5}s`,
-                fontSize: `${15 + Math.random() * 18}px`,
-              }}>🎊</div>
-            ))}
-            {[...Array(8)].map((_, i) => (
-              <div key={i + 54} className="absolute animate-fall" style={{
-                left: `${Math.random() * 100}%`,
-                top: `${-10 - Math.random() * 20}%`,
-                animationDelay: `${i * 0.25}s`,
-                animationDuration: `${1.8 + Math.random() * 1.5}s`,
-                fontSize: `${12 + Math.random() * 14}px`,
-              }}>💫</div>
+            {decorations.map((d) => (
+              <div key={d.key} className="absolute text-lg animate-fall" style={{
+                left: `${d.left}%`,
+                top: `${d.top}%`,
+                animationDelay: `${d.delay}s`,
+                animationDuration: `${d.duration}s`,
+                fontSize: `${d.fontSize}px`,
+              }}>{d.emoji}</div>
             ))}
           </div>
         )}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Camera, UserCircle, Phone, MapPin, CreditCard, ChevronDown, FileImage } from 'lucide-react';
+import type { RegistrationFormData } from '@/lib/database.types';
 import Field from './Field';
 
 interface Step1PersonalProps {
@@ -11,7 +12,7 @@ interface Step1PersonalProps {
     age: string;
     gender: string;
   };
-  setFormData: React.Dispatch<React.SetStateAction<any>>;
+  setFormData: React.Dispatch<React.SetStateAction<RegistrationFormData>>;
   fieldErrors: Record<string, string>;
   clearErr: (key: string) => void;
   isCheckingName: boolean;
@@ -53,7 +54,7 @@ export default function Step1Personal({
               icon={<UserCircle size={17} />}
               value={formData.name}
               onChange={v => {
-                setFormData((p: any) => ({ ...p, name: v }));
+                setFormData((p) => ({ ...p, name: v }));
                 clearErr('name');
               }}
               placeholder="محمد أحمد محمود علي"
@@ -68,7 +69,7 @@ export default function Step1Personal({
               icon={<MapPin size={17} />}
               value={formData.location}
               onChange={v => {
-                setFormData((p: any) => ({ ...p, location: v }));
+                setFormData((p) => ({ ...p, location: v }));
                 clearErr('location');
               }}
               placeholder="المحافظة - المركز - القرية"
@@ -83,7 +84,7 @@ export default function Step1Personal({
             icon={<Phone size={17} />}
             value={formData.phone}
             onChange={v => {
-              setFormData((p: any) => ({ ...p, phone: v }));
+              setFormData((p) => ({ ...p, phone: v }));
               clearErr('phone');
             }}
             placeholder="01xxxxxxxxx"
@@ -98,7 +99,7 @@ export default function Step1Personal({
             icon={<CreditCard size={17} />}
             value={formData.nationalId}
             onChange={v => {
-              setFormData((p: any) => ({ ...p, nationalId: v }));
+              setFormData((p) => ({ ...p, nationalId: v }));
               clearErr('nationalId');
             }}
             placeholder="أدخل الـ 14 رقماً"
@@ -116,7 +117,7 @@ export default function Step1Personal({
               icon={<UserCircle size={17} />}
               value={formData.age}
               onChange={v => {
-                setFormData((p: any) => ({ ...p, age: v }));
+                setFormData((p) => ({ ...p, age: v }));
                 clearErr('age');
               }}
               placeholder="مثال: 18"
@@ -131,7 +132,7 @@ export default function Step1Personal({
               <select
                 value={formData.gender}
                 onChange={e => {
-                  setFormData((p: any) => ({ ...p, gender: e.target.value }));
+                  setFormData((p) => ({ ...p, gender: e.target.value }));
                   clearErr('gender');
                 }}
                 className={`w-full bg-white border-2 ${fieldErrors.gender ? 'border-amber-400' : 'border-primary/20'} rounded-xl py-[14px] px-3 sm:px-4 text-primary text-sm font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/8 transition-all appearance-none shadow-sm`}

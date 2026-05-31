@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CreditCard, Search, ShieldCheck, AlertTriangle, Download, Printer, FileText, CheckCircle2, ArrowLeft } from 'lucide-react';
-import type { CompetitionLevel } from '@/lib/database.types';
+import type { CompetitionLevel, StudentStatus } from '@/lib/database.types';
 import toast from 'react-hot-toast';
 
 const Step5Success = dynamic(() => import('@/app/register/components/Step5Success'));
@@ -17,12 +17,12 @@ export default function FormInquiry() {
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState('');
   const [notFound, setNotFound] = useState(false);
-  const [studentData, setStudentData] = useState<any>(null);
+  const [studentData, setStudentData] = useState<StudentStatus | null>(null);
   const [levels, setLevels] = useState<CompetitionLevel[]>([]);
   const [isCapturing, setIsCapturing] = useState(false);
   const hiddenFormRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => { queueMicrotask(() => setMounted(true)); }, []);
 
   const idValid = nationalId.length === 14;
   const canSubmit = idValid && !loading;
@@ -206,10 +206,10 @@ export default function FormInquiry() {
   if (studentData) {
     const formData = {
       name: studentData.name,
-      phone: studentData.phone,
-      nationalId: studentData.national_id,
-      age: studentData.age.toString(),
-      gender: studentData.gender,
+      phone: studentData.phone || '',
+      nationalId: studentData.national_id || '',
+      age: (studentData.age ?? '').toString(),
+      gender: studentData.gender || '',
       memorizerName: studentData.memorizer_name || '',
       memorizerPhone: studentData.memorizer_phone || '',
       memorizerAddress: studentData.memorizer_address || '',

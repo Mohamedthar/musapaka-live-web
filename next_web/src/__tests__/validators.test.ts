@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PHONE_REGEX, NATIONAL_ID_REGEX, validatePhone, validateNationalId } from '@/lib/validators';
+import { validatePhone, validateNationalId } from '@/lib/validators';
 
 describe('validators', () => {
   describe('validatePhone', () => {

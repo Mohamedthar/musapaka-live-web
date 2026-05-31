@@ -32,7 +32,7 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  useEffect(() => { setMobileOpen(false); setMobileInquiryOpen(false); }, [pathname]);
+  useEffect(() => { queueMicrotask(() => { setMobileOpen(false); setMobileInquiryOpen(false); }); }, [pathname]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {

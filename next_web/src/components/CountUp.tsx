@@ -13,7 +13,7 @@ export default function CountUp({ end, duration = 2, className = '' }: CountUpPr
   const startRef = useRef<number>(0);
 
   useEffect(() => {
-    if (end === 0) { setCount(0); return; }
+    if (end === 0) { queueMicrotask(() => setCount(0)); return; }
 
     startRef.current = 0;
     function animate(now: number) {
