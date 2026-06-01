@@ -277,11 +277,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(width: 10),
           if (_activeSection == 'backup') ...[
-            _tb(Icons.add_circle_outline, 'نسخة', const Color(0xFF03121C), () => _backupKey.currentState?._create()),
+            _tb(Icons.add_circle_outline, 'نسخة', const Color(0xFF03121C), () => _backupKey.currentState?.createBackup()),
             const SizedBox(width: 6),
-            _tb(Icons.folder_open, 'مجلد', const Color(0xFF2563EB), () => _backupKey.currentState?._openFolder()),
+            _tb(Icons.folder_open, 'مجلد', const Color(0xFF2563EB), () => _backupKey.currentState?.openFolder()),
             const SizedBox(width: 6),
-            _tb(Icons.history, 'استعادة', const Color(0xFFC2410C), () => _backupKey.currentState?._restore()),
+            _tb(Icons.history, 'استعادة', const Color(0xFFC2410C), () => _backupKey.currentState?.restoreBackup()),
             const SizedBox(width: 10),
           ],
           ElevatedButton.icon(

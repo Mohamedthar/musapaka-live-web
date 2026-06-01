@@ -8,7 +8,7 @@ import '../../services/backup_service.dart';
 class BackupTab extends StatefulWidget {
   final Color primary;
   final VoidCallback onRestored;
-  const BackupTab({required this.primary, required this.onRestored});
+  const BackupTab({super.key, required this.primary, required this.onRestored});
   @override BackupTabState createState() => BackupTabState();
 }
 
@@ -24,7 +24,7 @@ class BackupTabState extends State<BackupTab> {
     if (mounted) setState(() => _loading = false);
   }
 
-  Future<void> _create() async {
+  Future<void> createBackup() async {
     setState(() => _working = true);
     try {
       await _b.createBackup(includeImages: true);
@@ -33,12 +33,12 @@ class BackupTabState extends State<BackupTab> {
     finally { if (mounted) setState(() => _working = false); }
   }
 
-  Future<void> _openFolder() async {
+  Future<void> openFolder() async {
     await _b.saveToCustomLocation();
     if (mounted) { AppTheme.showSnack(context, 'تم فتح مجلد النسخ'); _load(); }
   }
 
-  Future<void> _restore() async {
+  Future<void> restoreBackup() async {
     if (_backups.isEmpty) { AppTheme.showSnack(context, 'لا توجد نسخ'); return; }
     final b = _backups.first;
     final ok = await showDialog<bool>(context: context, builder: (_) => AlertDialog(
@@ -116,12 +116,7 @@ class BackupTabState extends State<BackupTab> {
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text('${b.studentCount} متسابق  ·  ${b.levelCount} مستوى${b.imageCount > 0 ? '  ·  ${b.imageCount} صورة' : ''}', style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700)),
                     Text('${b.sizeFormatted}  ·  ${b.createdAt.toString().substring(0, 16).replaceAll('T', ' ')}', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade500)),
-                  ])),
-                  IconButton(icon: Icon(Icons.delete_outline_rounded, size: 16, color: Colors.red.shade300), onPressed: () => _delete(b), splashRadius: 16),
-                ]),
-              )),
-          ]),
-        ),
+              ])),
       ]),
     );
   }
