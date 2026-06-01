@@ -88,11 +88,16 @@ class BackupTabState extends State<BackupTab> {
   @override
   Widget build(BuildContext context) {
     final c = widget.primary;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+    return Container(
+      color: const Color(0xFFF5F5F7),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 20, offset: const Offset(0, 4))]),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
           Row(children: [
             Expanded(child: _stat(Icons.save_rounded, '', 'نسخة', const Color(0xFF735C00))),
             const SizedBox(width: 10),
@@ -124,6 +129,7 @@ class BackupTabState extends State<BackupTab> {
             )),
         ],
       ),
+    ),
     );
   }
 
