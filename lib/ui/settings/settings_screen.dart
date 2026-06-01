@@ -978,150 +978,51 @@ class _FaqCardState extends State<_FaqCard> {
 
   Widget _buildBackupSection() {
     final BackupService backupService = BackupService();
-
     return SectionCard(
       title: 'النسخ الاحتياطي واستعادة البيانات',
       description: 'إنشاء نسخة احتياطية لجميع بيانات المتسابقين واستعادتها عند الحاجة',
       icon: Icons.backup_rounded,
       primaryColor: _primary,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: _backupActionCard(
-                  icon: Icons.cloud_download_rounded,
-                  title: 'إنشاء نسخة احتياطية',
-                  description: 'حفظ جميع بيانات المتسابقين في ملف JSON',
-                  color: Colors.blue.shade600,
-                  onTap: () async {
-                    try {
-                      AppTheme.showSnack(context, 'جاري إنشاء النسخة الاحتياطية...');
-                      final file = await backupService.exportBackupToFile();
-                      if (file != null && mounted) {
-                        AppTheme.showSnack(context, 'تم حفظ النسخة الاحتياطية بنجاح');
-                      }
-                    } catch (e) {
-                      if (mounted) AppTheme.showSnack(context, 'فشل: $e', color: AppTheme.errorColor);
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _backupActionCard(
-                  icon: Icons.restore_page_rounded,
-                  title: 'استعادة نسخة احتياطية',
-                  description: 'استيراد بيانات المتسابقين من ملف JSON',
-                  color: Colors.orange.shade700,
-                  onTap: () async {
-                    try {
-                      final data = await backupService.pickBackupFile();
-                      if (data == null) return;
-                      
-                      final confirm = await showDialog<bool>(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          title: const Text('تأكيد الاستعادة',
-                            style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w800)),
-                          content: Text(
-                            'سيتم استعادة ${(data['students'] as List?)?.length ?? 0} متسابق. هل أنت متأكد؟',
-                            style: const TextStyle(fontFamily: 'Cairo')),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(ctx, false),
-                              child: const Text('إلغاء', style: TextStyle(fontFamily: 'Cairo')),
-                            ),
-                            ElevatedButton(
-                              onPressed: () => Navigator.pop(ctx, true),
-                              child: const Text('استعادة', style: TextStyle(fontFamily: 'Cairo')),
-                            ),
-                          ],
-                        ),
-                      );
-
-                      if (confirm == true && mounted) {
-                        AppTheme.showSnack(context, 'جاري استعادة البيانات...');
-                        final count = await backupService.restoreFromFile(data);
-                        if (mounted) {
-                          AppTheme.showSnack(context, 'تم استعادة $count متسابق بنجاح');
-                          _load();
-                        }
-                      }
-                    } catch (e) {
-                      if (mounted) AppTheme.showSnack(context, 'فشل: $e', color: AppTheme.errorColor);
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.amber.shade50,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.amber.shade100),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.info_outline_rounded, size: 20, color: Colors.amber.shade700),
-                const SizedBox(width: 10),
-                const Expanded(
-                  child: Text(
-                    'تنبيه: النسخ الاحتياطي يحفظ بيانات المتسابقين فقط. يُنصح بعمل نسخة احتياطية دورياً.',
-                    style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: Color(0xFF92400E)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(children: [
+          Expanded(child: _backupCard(Icons.cloud_download_rounded, 'إنشاء نسخة احتياطية', 'حفظ جميع بيانات المتسابقين في ملف JSON', Colors.blue.shade600, () async {
+            try {
+              AppTheme.showSnack(context, 'جاري إنشاء النسخة الاحتياطية...');
+              final file = await backupService.exportBackupToFile();
+              if (file != null && mounted) AppTheme.showSnack(context, 'تم حفظ النسخة الاحتياطية بنجاح');
+            } catch (e) { if (mounted) AppTheme.showError(context, e); }
+          })),
+          const SizedBox(width: 16),
+          Expanded(child: _backupCard(Icons.restore_page_rounded, 'استعادة نسخة احتياطية', 'استيراد بيانات المتسابقين من ملف JSON', Colors.orange.shade700, () async {
+            try {
+              final data = await backupService.pickBackupFile();
+              if (data == null) return;
+              final confirm = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
+                title: const Text('تأكيد الاستعادة', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w800)),
+                content: Text('سيتم استعادة ${(data['students'] as List?)?.length ?? 0} متسابق. هل أنت متأكد؟', style: const TextStyle(fontFamily: 'Cairo')),
+                actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء', style: TextStyle(fontFamily: 'Cairo'))), ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('استعادة', style: TextStyle(fontFamily: 'Cairo')))],
+              ));
+              if (confirm == true && mounted) { AppTheme.showSnack(context, 'جاري استعادة...'); final count = await backupService.restoreFromFile(data); if (mounted) { AppTheme.showSnack(context, 'تم استعادة $count متسابق بنجاح'); _load(); } }
+            } catch (e) { if (mounted) AppTheme.showError(context, e); }
+          })),
+        ]),
+        const SizedBox(height: 16),
+        Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: Colors.amber.shade50, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.amber.shade100)), child: Row(children: [
+          Icon(Icons.info_outline_rounded, size: 20, color: Colors.amber.shade700), const SizedBox(width: 10),
+          const Expanded(child: Text('تنبيه: النسخ الاحتياطي يحفظ بيانات المتسابقين فقط.', style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: Color(0xFF92400E)))),
+        ])),
+      ]),
     );
   }
 
-  Widget _backupActionCard({
-    required IconData icon,
-    required String title,
-    required String description,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.grey.shade200),
-          ),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.08),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, size: 28, color: color),
-              ),
-              const SizedBox(height: 14),
-              Text(title, style: const TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF03121C))),
-              const SizedBox(height: 6),
-              Text(description, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey.shade600, height: 1.4)),
-            ],
-          ),
-        ),
-      ),
-    );
+  Widget _backupCard(IconData icon, String title, String desc, Color color, VoidCallback onTap) {
+    return Material(color: Colors.white, borderRadius: BorderRadius.circular(14), child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(14), child: Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.grey.shade200)), child: Column(children: [
+      Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: color.withValues(alpha: 0.08), shape: BoxShape.circle), child: Icon(icon, size: 28, color: color)),
+      const SizedBox(height: 14), Text(title, style: const TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF03121C))),
+      const SizedBox(height: 6), Text(desc, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey.shade600, height: 1.4)),
+    ]))));
   }
+
 }
 
 // ──────────────────────────────────────────────────────────────

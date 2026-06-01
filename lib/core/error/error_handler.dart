@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:io';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ErrorMessage {
@@ -147,5 +149,3 @@ class AppErrorHandler {
     return '${text.substring(0, maxLen)}...';
   }
 }
-
-import 'package:http/http.dart' as http;

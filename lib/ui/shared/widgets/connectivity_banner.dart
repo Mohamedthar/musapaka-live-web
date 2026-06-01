@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../core/error/connectivity_service.dart';
+import '../../../core/error/connectivity_service.dart';
 
 class ConnectivityBanner extends StatefulWidget {
   final Widget child;

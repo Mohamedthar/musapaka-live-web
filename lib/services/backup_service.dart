@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:file_picker/file_picker.dart';
 
 import '../../data/models/student.dart';
 import '../../data/models/competition_level.dart';
@@ -29,18 +30,22 @@ class BackupService {
   }
 
   Future<File?> exportBackupToFile() async {
-    final backupFile = await createBackup();
-    final result = await FilePicker.platform.saveFile(
-      dialogTitle: 'حفظ النسخة الاحتياطية',
-      fileName: 'musapaka_backup_${DateTime.now().millisecondsSinceEpoch}.json',
-      type: FileType.custom,
-      allowedExtensions: ['json'],
-    );
+    try {
+      final backupFile = await createBackup();
+      final result = await FilePicker.platform.saveFile(
+        dialogTitle: 'حفظ النسخة الاحتياطية',
+        fileName: 'musapaka_backup_${DateTime.now().millisecondsSinceEpoch}.json',
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
 
-    if (result != null) {
-      final savedFile = File(result);
-      await savedFile.writeAsString(await backupFile.readAsString(), encoding: utf8);
-      return savedFile;
+      if (result != null) {
+        final savedFile = File(result);
+        await savedFile.writeAsString(await backupFile.readAsString(), encoding: utf8);
+        return savedFile;
+      }
+    } catch (_) {
+      debugPrint('File picker save failed');
     }
     return null;
   }
