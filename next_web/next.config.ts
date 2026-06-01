@@ -1,10 +1,8 @@
-import path from "path"
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   compress: true,
   productionBrowserSourceMaps: false,
-  reactStrictMode: true,
   poweredByHeader: false,
 
   images: {
@@ -14,11 +12,6 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'res.cloudinary.com' },
       { protocol: 'https', hostname: 'api.qrserver.com' },
     ],
-  },
-
-  experimental: {
-    optimizeCss: true,
-    optimizePackageImports: ['lucide-react', 'framer-motion', '@marsidev/react-turnstile'],
   },
 
   async headers() {
