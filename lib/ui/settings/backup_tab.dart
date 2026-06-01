@@ -98,38 +98,39 @@ class BackupTabState extends State<BackupTab> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-          Row(children: [
-            Expanded(child: _stat(Icons.save_rounded, '', 'نسخة', const Color(0xFF735C00))),
-            const SizedBox(width: 10),
-            Expanded(child: _stat(Icons.access_time_rounded, _lastBackup, 'آخر نسخة', const Color(0xFF2563EB))),
-            const SizedBox(width: 10),
-            Expanded(child: _stat(Icons.storage_rounded, _totalSize, 'الحجم', const Color(0xFF0D9488))),
-            const SizedBox(width: 10),
-            Expanded(child: _stat(Icons.image_rounded, '$_totalImages', 'صورة', Colors.deepOrange.shade400)),
-          ]),
-          const SizedBox(height: 20),
-          if (_loading)
-            const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
-          else if (_backups.isEmpty)
-            Center(child: Padding(padding: const EdgeInsets.all(30), child: Text('لا توجد نسخ احتياطية', style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: Colors.grey.shade500))))
-          else
-            ..._backups.take(10).map((b) => Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.grey.shade100)),
-              child: Row(children: [
-                Container(width: 40, height: 40, decoration: BoxDecoration(color: c.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)), child: const Icon(Icons.description_outlined, size: 18, color: Color(0xFF03121C))),
-                const SizedBox(width: 12),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('${b.studentCount} متسابق  ·  ${b.levelCount} مستوى${b.imageCount > 0 ? '  ·  ${b.imageCount} صورة' : ''}', style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700)),
-                  Text('${b.sizeFormatted}  ·  ${b.createdAt.toString().substring(0, 16).replaceAll('T', ' ')}', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade500)),
-                ])),
-                IconButton(icon: Icon(Icons.delete_outline_rounded, size: 16, color: Colors.red.shade300), onPressed: () => _delete(b), splashRadius: 16),
+              Row(children: [
+                Expanded(child: _stat(Icons.save_rounded, '', 'نسخة', const Color(0xFF735C00))),
+                const SizedBox(width: 10),
+                Expanded(child: _stat(Icons.access_time_rounded, _lastBackup, 'آخر نسخة', const Color(0xFF2563EB))),
+                const SizedBox(width: 10),
+                Expanded(child: _stat(Icons.storage_rounded, _totalSize, 'الحجم', const Color(0xFF0D9488))),
+                const SizedBox(width: 10),
+                Expanded(child: _stat(Icons.image_rounded, '$_totalImages', 'صورة', Colors.deepOrange.shade400)),
               ]),
-            )),
-        ],
+              const SizedBox(height: 20),
+              if (_loading)
+                const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
+              else if (_backups.isEmpty)
+                Center(child: Padding(padding: const EdgeInsets.all(30), child: Text('لا توجد نسخ احتياطية', style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: Colors.grey.shade500))))
+              else
+                ..._backups.take(10).map((b) => Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.grey.shade100)),
+                  child: Row(children: [
+                    Container(width: 40, height: 40, decoration: BoxDecoration(color: c.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)), child: const Icon(Icons.description_outlined, size: 18, color: Color(0xFF03121C))),
+                    const SizedBox(width: 12),
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('${b.studentCount} متسابق  ·  ${b.levelCount} مستوى${b.imageCount > 0 ? '  ·  ${b.imageCount} صورة' : ''}', style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700)),
+                      Text('${b.sizeFormatted}  ·  ${b.createdAt.toString().substring(0, 16).replaceAll('T', ' ')}', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade500)),
+                    ])),
+                    IconButton(icon: Icon(Icons.delete_outline_rounded, size: 16, color: Colors.red.shade300), onPressed: () => _delete(b), splashRadius: 16),
+                  ]),
+                )),
+            ],
+          ),
+        ),
       ),
-    ),
     );
   }
 
