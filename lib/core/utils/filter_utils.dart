@@ -6,13 +6,19 @@ List<Student> filterStudents(
   String? level,
   double? minScore,
   double? maxScore,
+  String? searchQuery,
 }) {
   return students.where((s) {
     final matchesLevel = level == null || s.level == level;
-    final scoreVal = s.totalScore ?? s.score ?? 0.0;
+    final scoreVal = s.totalScore ?? 0.0;
     final matchesScore = (minScore == null || scoreVal >= minScore) &&
                          (maxScore == null || scoreVal <= maxScore);
-    return matchesLevel && matchesScore;
+    final matchesSearch = searchQuery == null || searchQuery.isEmpty ||
+        s.name.contains(searchQuery) ||
+        (s.phone.contains(searchQuery)) ||
+        (s.nationalId != null && s.nationalId!.contains(searchQuery)) ||
+        (s.studentCode != null && s.studentCode!.contains(searchQuery));
+    return matchesLevel && matchesScore && matchesSearch;
   }).toList();
 }
 

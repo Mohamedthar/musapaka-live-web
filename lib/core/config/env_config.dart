@@ -47,5 +47,11 @@ class EnvConfig {
     }
   }
 
-  static String get(String key) => _values[key] ?? '';
+  static String get(String key) {
+    final value = _values[key];
+    if (value == null) {
+      throw Exception('مفتاح البيئة غير موجود: $key');
+    }
+    return value;
+  }
 }

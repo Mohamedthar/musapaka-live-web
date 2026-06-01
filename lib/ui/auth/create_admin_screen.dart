@@ -34,14 +34,18 @@ class _CreateAdminScreenState extends State<CreateAdminScreen> {
   }
 
   Future<void> _checkExistingAdmins() async {
-    final hasAdmins = await _authRepo.hasAdmins();
-    if (!mounted) return;
-    if (hasAdmins) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
-      );
-    } else {
-      setState(() => _isChecking = false);
+    try {
+      final hasAdmins = await _authRepo.hasAdmins();
+      if (!mounted) return;
+      if (hasAdmins) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
+        );
+      } else {
+        setState(() => _isChecking = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isChecking = false);
     }
   }
 

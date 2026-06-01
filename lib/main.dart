@@ -5,11 +5,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
 import 'core/config/env_config.dart';
+import 'core/utils/app_logger.dart';
 import 'config/routes.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EnvConfig.load();
+  await AppLogger.init();
 
   final supabaseUrl = AppConstants.supabaseUrl;
   final supabaseAnonKey = AppConstants.supabaseAnonKey;
@@ -18,6 +20,11 @@ void main() async {
     throw Exception('مفاتيح Supabase غير موجودة في ملف البيئة. تأكد من إعداد SUPABASE_URL و SUPABASE_ANON_KEY');
   }
 
+  if (!supabaseUrl.startsWith('https://')) {
+    throw Exception('يجب استخدام HTTPS في SUPABASE_URL لتأمين الاتصال');
+  }
+
+  AppLogger.info('بدء تشغيل التطبيق', tag: 'init');
   await Supabase.initialize(
     url: supabaseUrl,
     anonKey: supabaseAnonKey,
@@ -48,12 +55,15 @@ class QuranContestApp extends StatelessWidget {
       initialRoute: AppRoutes.splash,
       onGenerateRoute: AppRoutes.generateRoute,
       builder: (context, child) {
-        return Shortcuts(
-          shortcuts: <LogicalKeySet, Intent>{
-            LogicalKeySet(LogicalKeyboardKey.pageUp): const DoNothingAndStopPropagationIntent(),
-            LogicalKeySet(LogicalKeyboardKey.pageDown): const DoNothingAndStopPropagationIntent(),
-          },
-          child: child!,
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: Shortcuts(
+            shortcuts: <LogicalKeySet, Intent>{
+              LogicalKeySet(LogicalKeyboardKey.pageUp): const DoNothingAndStopPropagationIntent(),
+              LogicalKeySet(LogicalKeyboardKey.pageDown): const DoNothingAndStopPropagationIntent(),
+            },
+            child: child!,
+          ),
         );
       },
     );

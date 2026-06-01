@@ -25,7 +25,9 @@ class LevelsScreenState extends State<LevelsScreen> {
   final _service = SupabaseService();
   List<CompetitionLevel> _levels = [];
   List<Student> _allStudents = [];
+  Map<String, int> _studentCounts = {};
   bool _isLoading = true;
+  bool _studentsLoaded = false;
   String _search = '';
   String _filterStatus = 'all';
   static const _primary = Color(0xFF03121C);
@@ -45,11 +47,19 @@ class LevelsScreenState extends State<LevelsScreen> {
     setState(() => _isLoading = true);
     try {
       final levels = await _service.getLevels();
-      final students = await _service.getAllStudents();
-      if (mounted) setState(() { _levels = levels; _allStudents = students; _isLoading = false; });
+      final counts = await _service.getStudentsCountPerLevel();
+      if (mounted) setState(() { _levels = levels; _studentCounts = counts; _isLoading = false; });
     } catch (e) {
       if (mounted) { setState(() => _isLoading = false); _snack('خطأ: $e', Colors.red); }
     }
+  }
+
+  Future<void> _loadStudents() async {
+    if (_studentsLoaded) return;
+    try {
+      _allStudents = await _service.getAllStudents();
+      if (mounted) setState(() => _studentsLoaded = true);
+    } catch (_) {}
   }
 
   void _snack(String msg, [Color color = Colors.green]) {
@@ -57,6 +67,7 @@ class LevelsScreenState extends State<LevelsScreen> {
   }
 
   void onToggleAddPanel() {
+    _loadStudents();
     if (_showSidePanel && _editingLevel == null) {
       setState(() => _showSidePanel = false);
     } else {
@@ -66,6 +77,7 @@ class LevelsScreenState extends State<LevelsScreen> {
   }
 
   void _onEditLevel(CompetitionLevel l) {
+    _loadStudents();
     setState(() { _editingLevel = l; _showSidePanel = true; });
     if (ResponsiveUtils.isMobile(context)) _showSidePanelBottomSheet();
   }
@@ -248,6 +260,7 @@ class LevelsScreenState extends State<LevelsScreen> {
 
   Future<void> _exportExcel({String status = 'all', int? minAge, int? maxAge}) async {
     try {
+      await _loadStudents();
       final exportService = ExportService();
       final bytes = await exportService.levelsToExcel(
         levels: _levels,
@@ -341,6 +354,7 @@ class LevelsScreenState extends State<LevelsScreen> {
 
   Future<void> _exportPDF({String status = 'all', int? minAge, int? maxAge}) async {
     try {
+      await _loadStudents();
       final exportService = ExportService();
       final bytes = await exportService.levelsToPDF(
         levels: _levels,
@@ -377,7 +391,9 @@ class LevelsScreenState extends State<LevelsScreen> {
               if (_editingLevel == null) {
                 await _service.createLevel(l);
               } else {
-                await _service.updateLevel(_editingLevel!.id!, l);
+                final id = _editingLevel!.id;
+                if (id == null) { _snack('خطأ: لا يمكن تحديث مستوى بدون معرف', Colors.red); return; }
+                await _service.updateLevel(id, l);
               }
               _snack('تم الحفظ بنجاح');
               _load();
@@ -444,7 +460,7 @@ class LevelsScreenState extends State<LevelsScreen> {
                             totalLevels: _levels.length,
                             activeLevels: _levels.where((l) => l.isActive).length,
                             inactiveLevels: _levels.where((l) => !l.isActive).length,
-                            totalStudents: _allStudents.length,
+                            totalStudents: _studentCounts.values.fold(0, (a, b) => a + b),
                             primaryColor: _primary,
                           ),
                           LevelsFilterBar(

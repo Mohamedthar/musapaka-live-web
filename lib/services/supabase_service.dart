@@ -15,7 +15,10 @@ class SupabaseService {
           .select(_studentColumns)
           .order('created_at', ascending: false);
       if (limit != null) query = query.limit(limit);
-      if (offset != null) query = query.range(offset, offset + (limit ?? 1000) - 1);
+      if (offset != null) {
+        final effectiveLimit = limit ?? 100;
+        query = query.range(offset, offset + effectiveLimit - 1);
+      }
       final List<dynamic> data = await query;
       return data.map((json) => Student.fromJson(json)).toList();
     } catch (e) {
@@ -145,13 +148,30 @@ class SupabaseService {
     try {
       final response = await _client
           .from(AppConstants.tableName)
-          .select('*')
+          .select('id')
           .eq('level', levelTitle)
-          .limit(0)
           .count(CountOption.exact);
-      return response.count;
+      return response.count ?? 0;
     } catch (e) {
       throw Exception('فشل في التحقق من عدد الطلاب: $e');
+    }
+  }
+
+  Future<Map<String, int>> getStudentsCountPerLevel() async {
+    try {
+      final response = await _client
+          .from(AppConstants.tableName)
+          .select('level');
+      final counts = <String, int>{};
+      for (final row in response) {
+        final level = row['level'] as String?;
+        if (level != null) {
+          counts[level] = (counts[level] ?? 0) + 1;
+        }
+      }
+      return counts;
+    } catch (e) {
+      throw Exception('فشل في جلب عدد الطلاب لكل مستوى: $e');
     }
   }
 

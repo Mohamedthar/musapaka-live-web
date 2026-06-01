@@ -511,14 +511,18 @@ class ExportService {
   }
 
   Future<String?> saveFile(Uint8List bytes, String fileName, String extension) async {
-    final path = await FilePicker.saveFile(
-      dialogTitle: 'Export File',
-      fileName: fileName,
-      type: FileType.custom,
-      allowedExtensions: [extension],
-      bytes: bytes,
-    );
-    return path;
+    try {
+      final path = await FilePicker.saveFile(
+        dialogTitle: 'Export File',
+        fileName: fileName,
+        type: FileType.custom,
+        allowedExtensions: [extension],
+        bytes: bytes,
+      );
+      return path;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> printPdf(Uint8List pdfBytes) async {

@@ -272,3 +272,28 @@ body {
   100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
 }
 .animate-fall { animation: fall linear forwards; }
+
+@keyframes slide-down {
+  from { transform: translateY(-100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.animate-slide-down { animation: slide-down 0.3s ease-out; }
+
+/* ─── Performance ─── */
+.section-below-fold {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 500px;
+}
+
+img, video {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

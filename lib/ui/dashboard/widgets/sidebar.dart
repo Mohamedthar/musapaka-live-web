@@ -258,6 +258,12 @@ class _DashboardSidebarState extends State<DashboardSidebar>
                               isActive: widget.settingsSection == 'faqs',
                               onTap: () => widget.onSettingsSectionChanged('faqs'),
                             ),
+                            _subItem(
+                              icon: Icons.backup_rounded,
+                              label: 'النسخ الاحتياطي',
+                              isActive: widget.settingsSection == 'backup',
+                              onTap: () => widget.onSettingsSectionChanged('backup'),
+                            ),
                           ],
                         ],
                       ),

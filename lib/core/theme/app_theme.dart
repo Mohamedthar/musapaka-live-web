@@ -10,7 +10,7 @@ class AppTheme {
   static const Color warningColor = Color(0xFFF59E0B);
 
   static const Color textDark = Color(0xFF03121C);
-  static const Color textLight = Color(0xFF717171);
+  static const Color textLight = Color(0xFF595959);
 
   static ThemeData get lightTheme {
     return ThemeData(

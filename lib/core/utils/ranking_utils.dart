@@ -58,20 +58,17 @@ class RankingUtils {
     }
   }
 
-  /// Calculates dense ranks for a list of students based on their percentage.
-  /// Ignores students with null scores.
+  /// Calculates dense ranks for a list of students based on total score percentage.
+  /// Uses memorization amount as primary tiebreaker, then percentage.
   static List<RankedStudent> calculateRanks(List<Student> students, List<CompetitionLevel> levels) {
-    // 1. Filter out students without scores
     final scoredStudents = students.where((s) => s.totalScore != null).toList();
 
-    // 2. Map to a structure holding percentage
     final tempScored = scoredStudents.map((s) {
       final maxScore = getLevelMaxScore(s.level, levels);
       final percentage = maxScore > 0 ? (s.totalScore! / maxScore) * 100 : 0.0;
       return _TempScored(s, percentage, maxScore, s.memorizationAmount);
     }).toList();
 
-    // 3. Sort by memorization amount descending first, then percentage descending
     tempScored.sort((a, b) {
       final amountCompare = (b.memorizationAmount ?? 0).compareTo(a.memorizationAmount ?? 0);
       if (amountCompare != 0) return amountCompare;
@@ -83,6 +80,7 @@ class RankingUtils {
     final List<RankedStudent> rankedList = [];
     int currentRank = 1;
     double? previousPct;
+    int? previousAmount;
     List<_TempScored> currentTieGroup = [];
 
     void processTieGroup() {
@@ -105,23 +103,24 @@ class RankingUtils {
     }
 
     for (var ts in tempScored) {
-      // Round to 2 decimals to avoid tiny floating point differences causing ties to fail
-      double roundedPct = double.parse(ts.percentage.toStringAsFixed(2));
+      double roundedPct = double.parse(ts.percentage.toStringAsFixed(4));
+      int amount = ts.memorizationAmount ?? 0;
 
       if (previousPct == null) {
         currentTieGroup.add(ts);
         previousPct = roundedPct;
-      } else if (roundedPct == previousPct) {
+        previousAmount = amount;
+      } else if (roundedPct == previousPct && amount == previousAmount) {
         currentTieGroup.add(ts);
       } else {
         processTieGroup();
         currentRank++;
         currentTieGroup = [ts];
         previousPct = roundedPct;
+        previousAmount = amount;
       }
     }
 
-    // Process the last group
     processTieGroup();
 
     return rankedList;

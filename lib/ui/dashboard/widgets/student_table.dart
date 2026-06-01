@@ -23,7 +23,7 @@ class StudentTable extends StatelessWidget {
   final Function(Student) onEdit;
   final Function(Student) onPrint;
   final Function(Student) onDelete;
-  final Function(Student, double) onAddScore;
+  final Function(Student, double)? onAddScore;
   final ScreenType? screenType;
 
   const StudentTable({

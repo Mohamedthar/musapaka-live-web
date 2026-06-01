@@ -19,6 +19,9 @@ import '../auth/splash_screen.dart';
 import '../settings/settings_screen.dart';
 import '../statistics/statistics_screen.dart';
 import '../shared/widgets/export_fields.dart';
+import '../shared/widgets/pagination_controls.dart';
+import '../shared/widgets/empty_state.dart';
+import '../shared/widgets/error_state.dart';
 import 'widgets/stats_cards.dart';
 import 'widgets/filter_bar.dart';
 import 'widgets/student_table.dart';
@@ -68,6 +71,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   double? _maxScoreFilter;
   DateTime? _dateFilterStart;
   DateTime? _dateFilterEnd;
+  // Pagination
+  int _currentPage = 1;
+  int _pageSize = 25;
   // Bulk Actions & Sorting State
   final Set<int> _selectedIds = {};
   int? _sortColumnIndex;
@@ -365,6 +371,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
     }
     return list;
+  }
+
+  List<Student> get _pagedFiltered {
+    if (_filtered.length <= _pageSize) return _filtered;
+    final start = (_currentPage - 1) * _pageSize;
+    final end = start + _pageSize;
+    if (start >= _filtered.length) {
+      _currentPage = 1;
+      return _filtered.take(_pageSize).toList();
+    }
+    return _filtered.sublist(start, end.clamp(0, _filtered.length));
+  }
+
+  int get _totalPages {
+    if (_filtered.isEmpty) return 1;
+    return (_filtered.length / _pageSize).ceil();
+  }
+
+  void _resetPagination() {
+    _currentPage = 1;
   }
 
 
@@ -1355,64 +1381,79 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: _isLoading
                     ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor))
                     : _error != null
-                      ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                          Icon(Icons.error_outline_rounded, size: 60, color: Colors.red.shade300),
-                          const SizedBox(height: 12),
-                          Text(_error!, style: const TextStyle(color: Colors.red)),
-                          const SizedBox(height: 16),
-                          ElevatedButton(onPressed: _load,
-                            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
-                            child: const Text('إعادة المحاولة', style: TextStyle(color: Colors.white))),
-                        ]))
+                      ? ErrorState(
+                          message: 'حدث خطأ أثناء تحميل البيانات',
+                          details: _error,
+                          onRetry: _load,
+                        )
                       : _filtered.isEmpty
-                        ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                            Icon(Icons.group_outlined, size: 60, color: _primary.withValues(alpha: 0.2)),
-                            const SizedBox(height: 16),
-                            Text('لا يوجد متسابقون', style: TextStyle(fontFamily: 'Cairo', fontSize: 16, color: Colors.grey.shade500)),
-                          ]))
-                        : StudentTable(
-                            students: _filtered,
-                            levels: _levels,
-                            selectedIds: _selectedIds,
-                            onSelectionChanged: (id, selected) => setState(() {
-                              if (selected) { _selectedIds.add(id); } else { _selectedIds.remove(id); }
-                            }),
-                            onSelectAll: () => setState(() {
-                              if (_selectedIds.length == _filtered.length) { _selectedIds.clear(); }
-                              else { _selectedIds.addAll(_filtered.map((s) => s.id).where((id) => id != null).cast<int>()); }
-                            }),
-                            onStudentTap: _selectStudent,
-                            sortColumnIndex: _sortColumnIndex,
-                            sortAscending: _sortAscending,
-                            onSort: (index) => setState(() {
-                              if (_sortColumnIndex == index) { _sortAscending = !_sortAscending; }
-                              else { _sortColumnIndex = index; _sortAscending = true; }
-                            }),
-                            primaryColor: _primary,
-                            revealedIds: _revealedIds,
-                            onToggleReveal: (id) => setState(() {
-                              if (_revealedIds.contains(id)) { _revealedIds.remove(id); }
-                              else { _revealedIds.add(id); }
-                            }),
-                            onEdit: _onEditStudent,
-                            onPrint: _printStudentCard,
-                            onDelete: (s) => _deleteStudent(s.id!),
-                            onAddScore: (s, score) async {
-                              if (s.id == null) return;
-                              try {
-                                final updated = await _service.updateStudent(s.id!, s.copyWith(score: score));
-                                setState(() {
-                                  final i = _students.indexWhere((st) => st.id == updated.id);
-                                  if (i != -1) _students[i] = updated;
-                                  if (_selected?.id == updated.id) _selected = updated;
-                                });
-                              } catch (e) {
-                                if (!context.mounted) return;
-                                AppTheme.showSnack(context, 'خطأ في حفظ الدرجة', color: AppTheme.errorColor);
-                              }
-                            },
-                            screenType: screenType,
-                          ),
+                        ? EmptyState(
+                            icon: Icons.group_outlined,
+                            title: 'لا يوجد متسابقون',
+                            subtitle: 'لم يتم إضافة أي متسابق بعد',
+                            actionLabel: 'إضافة متسابق',
+                            onAction: () => setState(() => _showAddPanel = true),
+                          )
+                        : Column(children: [
+                            Expanded(
+                              child: StudentTable(
+                                students: _pagedFiltered,
+                                levels: _levels,
+                                selectedIds: _selectedIds,
+                                onSelectionChanged: (id, selected) => setState(() {
+                                  if (selected) { _selectedIds.add(id); } else { _selectedIds.remove(id); }
+                                }),
+                                onSelectAll: () => setState(() {
+                                  if (_selectedIds.length == _pagedFiltered.length) { _selectedIds.clear(); }
+                                  else { _selectedIds.addAll(_pagedFiltered.map((s) => s.id).where((id) => id != null).cast<int>()); }
+                                }),
+                                onStudentTap: _selectStudent,
+                                sortColumnIndex: _sortColumnIndex,
+                                sortAscending: _sortAscending,
+                                onSort: (index) => setState(() {
+                                  if (_sortColumnIndex == index) { _sortAscending = !_sortAscending; }
+                                  else { _sortColumnIndex = index; _sortAscending = true; }
+                                  _resetPagination();
+                                }),
+                                primaryColor: _primary,
+                                revealedIds: _revealedIds,
+                                onToggleReveal: (id) => setState(() {
+                                  if (_revealedIds.contains(id)) { _revealedIds.remove(id); }
+                                  else { _revealedIds.add(id); }
+                                }),
+                                onEdit: _onEditStudent,
+                                onPrint: _printStudentCard,
+                                onDelete: (s) => _deleteStudent(s.id!),
+                                onAddScore: (s, score) async {
+                                  if (s.id == null) return;
+                                  try {
+                                    final updated = await _service.updateStudent(s.id!, s.copyWith(score: score));
+                                    setState(() {
+                                      final i = _students.indexWhere((st) => st.id == updated.id);
+                                      if (i != -1) _students[i] = updated;
+                                      if (_selected?.id == updated.id) _selected = updated;
+                                    });
+                                  } catch (e) {
+                                    if (!context.mounted) return;
+                                    AppTheme.showSnack(context, 'خطأ في حفظ الدرجة', color: AppTheme.errorColor);
+                                  }
+                                },
+                                screenType: screenType,
+                              ),
+                            ),
+                            PaginationControls(
+                              currentPage: _currentPage,
+                              totalPages: _totalPages,
+                              totalItems: _filtered.length,
+                              itemsPerPage: _pageSize,
+                              onPageChanged: (page) => setState(() => _currentPage = page),
+                              pageSizeOptions: const [25, 50, 100],
+                              onPageSizeChanged: (size) => setState(() {
+                                _pageSize = size;
+                                _resetPagination();
+                              }),
+                            ),
+                          ]),
                 ),
               ]),
             ),

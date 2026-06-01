@@ -70,10 +70,21 @@ export default function HomePage() {
   const [faq, setFaq] = useState<{ q: string; a: string }[]>([]);
 
   useEffect(() => {
-    fetch('/api/faq')
-      .then((res) => res.json())
-      .then((json) => { if (json.data) setFaq(json.data); })
-      .catch(() => {});
+    let cancelled = false;
+    const loadFaq = async () => {
+      for (let i = 0; i < 3; i++) {
+        try {
+          const res = await fetch('/api/faq');
+          const json = await res.json();
+          if (!cancelled && json.data) setFaq(json.data);
+          return;
+        } catch (_) {
+          if (i < 2) await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+        }
+      }
+    };
+    loadFaq();
+    return () => { cancelled = true; };
   }, []);
 
   return (
@@ -258,7 +269,7 @@ export default function HomePage() {
       </section>
 
       {/* ─── JOURNEY ─── */}
-      <section className="relative py-20 bg-gradient-to-b from-surface via-surface to-surface-container-low overflow-hidden">
+      <section className="section-below-fold relative py-20 bg-gradient-to-b from-surface via-surface to-surface-container-low overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -387,7 +398,7 @@ export default function HomePage() {
 
       {/* ─── FAQ ─── */}
       {faq.length > 0 && (
-      <section className="relative py-16 bg-white overflow-hidden">
+      <section className="section-below-fold relative py-16 bg-white overflow-hidden">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-secondary-fixed/[0.04] rounded-full blur-[180px] pointer-events-none" />
         <div className="max-w-3xl mx-auto px-6 relative z-10">
           <motion.div

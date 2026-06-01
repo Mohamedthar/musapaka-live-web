@@ -489,7 +489,7 @@ class StudentEditPanel extends StatelessWidget {
     required Function(T?) onChanged,
   }) =>
       DropdownButtonFormField<T>(
-        initialValue: value,
+        value: value,
         items: items,
         onChanged: onChanged,
         isExpanded: true,

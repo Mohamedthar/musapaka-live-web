@@ -79,7 +79,8 @@ class PrintService {
   Future<String> saveStudentCardsToDownloads(List<Student> students, List<CompetitionLevel> levels) async {
     Directory? downloadsDir;
     if (Platform.isWindows) {
-      downloadsDir = Directory(p.join(Platform.environment['USERPROFILE']!, 'Downloads'));
+      final userProfile = Platform.environment['USERPROFILE'] ?? Platform.environment['HOMEPATH'];
+      downloadsDir = userProfile != null ? Directory(p.join(userProfile, 'Downloads')) : null;
     } else if (Platform.isAndroid) {
       downloadsDir = Directory('/storage/emulated/0/Download');
       if (!await downloadsDir.exists()) downloadsDir = await getExternalStorageDirectory();
@@ -123,7 +124,8 @@ class PrintService {
     try {
       final data = await rootBundle.load('assets/images/logo_musapaka.jpeg');
       return pw.MemoryImage(data.buffer.asUint8List());
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Failed to load logo asset: $e');
       return null;
     }
   }
@@ -140,7 +142,8 @@ class PrintService {
         return pw.MemoryImage(response.bodyBytes);
       }
       return null;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Failed to fetch QR code: $e');
       return null;
     }
   }
@@ -169,14 +172,17 @@ class PrintService {
           }
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Failed to fetch profile image: $e');
+    }
     return null;
   }
 
   Future<List<CompetitionLevel>> _fetchLevels(List<CompetitionLevel> defaultLevels) async {
     try {
       return await _service.getLevels();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Failed to fetch levels: $e');
       return defaultLevels;
     }
   }

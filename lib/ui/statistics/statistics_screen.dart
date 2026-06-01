@@ -219,11 +219,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     setState(() => _isLoading = true);
     try {
       await _service.generateCeremonyCodes();
+      await _loadData();
       if (mounted) AppTheme.showSnack(context, 'تم توليد الأكواد بنجاح!', color: Colors.green);
-      await _loadData(); // Refresh data to show new codes
     } catch (e) {
-      if (mounted) AppTheme.showSnack(context, 'خطأ: $e', color: Colors.red);
-      setState(() => _isLoading = false);
+      if (mounted) {
+        AppTheme.showSnack(context, 'خطأ: $e', color: Colors.red);
+        setState(() => _isLoading = false);
+      }
     }
   }
 

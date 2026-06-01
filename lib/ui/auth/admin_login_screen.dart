@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/utils/app_logger.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../shared/widgets/hero_branding.dart';
 import '../dashboard/dashboard_screen.dart';
@@ -51,7 +52,8 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                 ? 'الحساب غير مؤكد. عطّل "Confirm email" في إعدادات Supabase Auth.'
                 : 'خطأ: ${e.message}';
       });
-    } catch (_) {
+    } catch (e) {
+      AppLogger.error('Login failed', tag: 'auth', error: e);
       setState(() => _errorMessage = 'حدث خطأ غير متوقع. حاول مرة أخرى.');
     } finally {
       if (mounted) setState(() => _isLoading = false);

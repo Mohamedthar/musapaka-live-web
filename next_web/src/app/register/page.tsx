@@ -126,6 +126,20 @@ export default function RegisterPage() {
   useEffect(() => {
     const load = async () => {
       const countsMap: Record<string, number> = {};
+
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('musapaka_registration_draft') : null;
+      if (saved) {
+        try {
+          const draft = JSON.parse(saved);
+          if (draft.formData) setFormData(draft.formData);
+          if (draft.branchName) setBranchName(draft.branchName);
+          if (draft.memorizationAmount !== undefined) setMemorizationAmount(draft.memorizationAmount);
+          if (draft.gender) setFormData((p: typeof formData) => ({ ...p, gender: draft.gender }));
+          if (draft.level) setFormData((p: typeof formData) => ({ ...p, level: draft.level }));
+          if (draft.selectedRewaya) setFormData((p: typeof formData) => ({ ...p, selectedRewaya: draft.selectedRewaya }));
+        } catch (_) {}
+      }
+
       try {
         const { count: studentCount, error: countErr } = await getSupabase()
           .from('students')
@@ -193,6 +207,22 @@ export default function RegisterPage() {
     };
     load();
   }, [searchParams]);
+
+  useEffect(() => {
+    if (step >= 3) return;
+    if (typeof window === 'undefined') return;
+    try {
+      const draft = {
+        formData,
+        branchName,
+        memorizationAmount,
+        gender: formData.gender,
+        level: formData.level,
+        selectedRewaya: formData.selectedRewaya,
+      };
+      localStorage.setItem('musapaka_registration_draft', JSON.stringify(draft));
+    } catch (_) {}
+  }, [formData, branchName, memorizationAmount, step]);
 
   const extractedInfo = useMemo(() => {
     const id = formData.nationalId.trim();
@@ -395,13 +425,13 @@ export default function RegisterPage() {
     try {
       const [profileUrl, birthUrl] = await (async () => {
             const [profileBlob, birthBlob] = await Promise.all([
-              profileImage ? compressImage(profileImage) : Promise.resolve(null),
-              birthCertImage ? compressImage(birthCertImage) : Promise.resolve(null),
+              profileImage ? compressImage(profileImage).catch(() => null) : Promise.resolve(null),
+              birthCertImage ? compressImage(birthCertImage).catch(() => null) : Promise.resolve(null),
             ]);
 
             const [pUrl, bUrl] = await Promise.all([
-              profileBlob ? uploadToCloudinary(profileBlob) : Promise.resolve(null),
-              birthBlob ? uploadToCloudinary(birthBlob) : Promise.resolve(null),
+              profileBlob ? uploadToCloudinary(profileBlob).catch(() => null) : Promise.resolve(null),
+              birthBlob ? uploadToCloudinary(birthBlob).catch(() => null) : Promise.resolve(null),
             ]);
             return [pUrl, bUrl];
           })();
@@ -443,13 +473,19 @@ export default function RegisterPage() {
       setExamHour(result.data.exam_hour);
 
       localStorage.setItem('last_reg_time', Date.now().toString());
+      localStorage.removeItem('musapaka_registration_draft');
       toast.success('تم التسجيل بنجاح!');
       setSuccess(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: unknown) {
       toast.dismiss(uploadToast);
       console.error('Registration error:', err);
-      toast.error(err instanceof Error ? err.message : 'حدث خطأ غير متوقع');
+      const msg = err instanceof Error ? err.message : 'حدث خطأ غير متوقع';
+      if (msg.includes('انتهت') || msg.includes('فشل') || msg.includes('network') || msg.includes('fetch')) {
+        toast.error('فشل الاتصال بالخادم - لم تفقد بياناتك، حاول مرة أخرى');
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setLoading(false);
     }
