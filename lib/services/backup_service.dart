@@ -71,18 +71,37 @@ class BackupProgress {
 class BackupService {
   final SupabaseService _service = SupabaseService();
   static const String _autoBackupKey = 'last_auto_backup';
+  static const String _backupDirPrefKey = 'backup_directory_path';
   static const Duration _autoBackupInterval = Duration(hours: 24);
 
   String _backupDirPath = '';
 
   Future<String> get _backupDir async {
     if (_backupDirPath.isNotEmpty) return _backupDirPath;
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString(_backupDirPrefKey);
+    if (saved != null && saved.isNotEmpty) {
+      _backupDirPath = saved;
+      final d = Directory(_backupDirPath);
+      if (!await d.exists()) await d.create(recursive: true);
+      return _backupDirPath;
+    }
     final dir = await getApplicationDocumentsDirectory();
     _backupDirPath = '${dir.path}/musapaka_backups';
     final d = Directory(_backupDirPath);
     if (!await d.exists()) await d.create(recursive: true);
     return _backupDirPath;
   }
+
+  Future<void> setBackupDir(String path) async {
+    final d = Directory(path);
+    if (!await d.exists()) await d.create(recursive: true);
+    _backupDirPath = path;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_backupDirPrefKey, path);
+  }
+
+  Future<String> getBackupDirPath() async => await _backupDir;
 
   Future<String> get _imagesDir async {
     final dir = '${await _backupDir}/images';

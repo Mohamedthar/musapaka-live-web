@@ -17,10 +17,12 @@ class BackupTabState extends State<BackupTab> {
   List<BackupInfo> _backups = [];
   bool _loading = true;
   bool _working = false;
+  String _backupDirPath = '';
 
   @override void initState() { super.initState(); _load(); }
   Future<void> _load() async {
     _backups = await _b.listExistingBackups();
+    _backupDirPath = await _b.getBackupDirPath();
     if (mounted) setState(() => _loading = false);
   }
 
@@ -57,6 +59,45 @@ class BackupTabState extends State<BackupTab> {
       if (mounted) { AppTheme.showSnack(context, 'تم استعادة $n عنصر'); widget.onRestored(); _load(); }
     } catch (e) { if (mounted) AppTheme.showError(context, e); }
     finally { if (mounted) setState(() => _working = false); }
+  }
+
+  Future<void> _pickFolder() async {
+    final ctrl = TextEditingController(text: _backupDirPath);
+    final ok = await showDialog<bool>(context: context, builder: (_) => Directionality(
+      textDirection: TextDirection.rtl,
+      child: AlertDialog(
+        title: const Text('تغيير مجلد النسخ الاحتياطي', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w800)),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text('أدخل المسار الكامل للمجلد:', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey.shade600)),
+          const SizedBox(height: 10),
+          TextField(
+            controller: ctrl,
+            textDirection: TextDirection.ltr,
+            style: const TextStyle(fontFamily: 'Cairo', fontSize: 12),
+            decoration: InputDecoration(
+              hintText: 'مثال: D:\\Backups\\musapaka',
+              hintStyle: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade400),
+              filled: true, fillColor: Colors.grey.shade50,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            ),
+          ),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(_, false), child: const Text('إلغاء', style: TextStyle(fontFamily: 'Cairo'))),
+          ElevatedButton(onPressed: () => Navigator.pop(_, true), style: ElevatedButton.styleFrom(backgroundColor: widget.primary),
+            child: const Text('حفظ', style: TextStyle(fontFamily: 'Cairo', color: Colors.white))),
+        ],
+      ),
+    ));
+    if (ok == true && mounted && ctrl.text.trim().isNotEmpty) {
+      try {
+        await _b.setBackupDir(ctrl.text.trim());
+        _backupDirPath = ctrl.text.trim();
+        if (mounted) { setState(() {}); AppTheme.showSnack(context, 'تم تغيير المجلد'); }
+      } catch (e) { if (mounted) AppTheme.showError(context, e); }
+    }
+    ctrl.dispose();
   }
 
   Future<void> _delete(BackupInfo b) async {
@@ -128,6 +169,22 @@ class BackupTabState extends State<BackupTab> {
             ),
           )).toList());
         }),
+        const SizedBox(height: 14),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
+          child: Row(children: [
+            Icon(Icons.folder_rounded, size: 16, color: Colors.grey.shade500),
+            const SizedBox(width: 8),
+            Expanded(child: Text(_backupDirPath, style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade600), overflow: TextOverflow.ellipsis)),
+            InkWell(
+              onTap: _pickFolder,
+              borderRadius: BorderRadius.circular(8),
+              child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: c.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(8)),
+                child: Text('تغيير', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.w700, color: c))),
+            ),
+          ]),
+        ),
         const SizedBox(height: 20),
         if (_loading)
           const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
