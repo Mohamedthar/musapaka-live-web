@@ -94,11 +94,11 @@ class BackupTabState extends State<BackupTab> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(children: [
-            Expanded(child: _stat(Icons.save_rounded, '${_backups.length}', 'نسخة', c)),
+            Expanded(child: _stat(Icons.save_rounded, '', 'نسخة', const Color(0xFF735C00))),
             const SizedBox(width: 10),
-            Expanded(child: _stat(Icons.access_time_rounded, _lastBackup, 'آخر نسخة', Colors.blue.shade600)),
+            Expanded(child: _stat(Icons.access_time_rounded, _lastBackup, 'آخر نسخة', const Color(0xFF2563EB))),
             const SizedBox(width: 10),
-            Expanded(child: _stat(Icons.storage_rounded, _totalSize, 'الحجم', Colors.teal.shade600)),
+            Expanded(child: _stat(Icons.storage_rounded, _totalSize, 'الحجم', const Color(0xFF0D9488))),
             const SizedBox(width: 10),
             Expanded(child: _stat(Icons.image_rounded, '$_totalImages', 'صورة', Colors.deepOrange.shade400)),
           ]),

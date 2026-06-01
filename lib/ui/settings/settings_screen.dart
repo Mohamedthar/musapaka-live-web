@@ -277,11 +277,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(width: 10),
           if (_activeSection == 'backup') ...[
-            _tb(Icons.add_circle_outline, 'نسخة', const Color(0xFF03121C), () => _backupKey.currentState?.createBackup()),
-            const SizedBox(width: 6),
-            _tb(Icons.folder_open, 'مجلد', const Color(0xFF2563EB), () => _backupKey.currentState?.openFolder()),
-            const SizedBox(width: 6),
-            _tb(Icons.history, 'استعادة', const Color(0xFFC2410C), () => _backupKey.currentState?.restoreBackup()),
+            _backupBtn(Icons.add_circle_outline, 'إنشاء نسخة', const Color(0xFF03121C), () => _backupKey.currentState?.createBackup()),
+            const SizedBox(width: 8),
+            _backupBtn(Icons.folder_open, 'فتح المجلد', const Color(0xFF2563EB), () => _backupKey.currentState?.openFolder()),
+            const SizedBox(width: 8),
+            _backupBtn(Icons.history, 'استعادة نسخة', const Color(0xFFC2410C), () => _backupKey.currentState?.restoreBackup()),
             const SizedBox(width: 10),
           ],
           ElevatedButton.icon(
@@ -295,18 +295,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _tb(IconData icon, String label, Color color, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), border: Border.all(color: color.withValues(alpha: 0.15))),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 15, color: color),
-          const SizedBox(width: 5),
-          Text(label, style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.w700, color: color)),
-        ]),
+  Widget _backupBtn(IconData icon, String label, Color color, VoidCallback onTap) {
+    return ElevatedButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, size: 15),
+      label: Text(label, style: const TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w700)),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
