@@ -99,13 +99,6 @@ if (\$r -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output \$f.Selected
       if (mounted) AppTheme.showError(context, 'تعذر فتح الملفات: $e');
     }
   }
-      } else if (mounted) {
-        AppTheme.showSnack(context, 'لم يتم اختيار مجلد', color: Colors.orange);
-      }
-    } catch (e) {
-      if (mounted) AppTheme.showError(context, 'تعذر فتح الملفات: $e');
-    }
-  }
 
   Future<void> _delete(BackupInfo b) async {
     final ok = await showDialog<bool>(context: context, builder: (_) => AlertDialog(
