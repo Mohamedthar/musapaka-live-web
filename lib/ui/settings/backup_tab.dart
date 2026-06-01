@@ -88,53 +88,55 @@ class _BackupTabState extends State<BackupTab> {
   @override
   Widget build(BuildContext context) {
     final c = widget.primary;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        // ── Stats ──
-        Row(children: [
-          Expanded(child: _stat(Icons.save_rounded, '${_backups.length}', 'نسخة', c)),
-          const SizedBox(width: 10),
-          Expanded(child: _stat(Icons.access_time_rounded, _lastBackup, 'آخر نسخة', Colors.blue.shade600)),
-          const SizedBox(width: 10),
-          Expanded(child: _stat(Icons.storage_rounded, _totalSize, 'الحجم', Colors.teal.shade600)),
-          const SizedBox(width: 10),
-          Expanded(child: _stat(Icons.image_rounded, '$_totalImages', 'صورة', Colors.deepOrange.shade400)),
-        ]),
-        const SizedBox(height: 20),
-
-        // ── Buttons ──
-        Row(children: [
-          Expanded(child: _btn(Icons.add_circle_outline, 'إنشاء نسخة', 'البيانات + الصور', const Color(0xFF03121C), _working, _create)),
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(color: Colors.white, border: Border(bottom: BorderSide(color: Colors.grey.shade100))),
+        child: Row(children: [
+          _navBtn(Icons.add_circle_outline, 'إنشاء نسخة', const Color(0xFF03121C), _working, _create),
           const SizedBox(width: 8),
-          Expanded(child: _btn(Icons.folder_open, 'فتح المجلد', 'استعراض الملفات', const Color(0xFF2563EB), false, _openFolder)),
+          _navBtn(Icons.folder_open, 'فتح المجلد', const Color(0xFF2563EB), false, _openFolder),
           const SizedBox(width: 8),
-          Expanded(child: _btn(Icons.history, 'استعادة نسخة', 'أحدث نسخة', const Color(0xFFC2410C), false, _restore)),
+          _navBtn(Icons.history, 'استعادة نسخة', const Color(0xFFC2410C), false, _restore),
         ]),
-        const SizedBox(height: 24),
-
-        // ── List ──
-        if (_loading)
-          const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
-        else if (_backups.isEmpty)
-          Center(child: Padding(padding: const EdgeInsets.all(30), child: Text('لا توجد نسخ احتياطية', style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: Colors.grey.shade500))))
-        else
-          ..._backups.take(10).map((b) => Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.grey.shade100)),
-            child: Row(children: [
-              Container(width: 40, height: 40, decoration: BoxDecoration(color: c.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)), child: const Icon(Icons.description_outlined, size: 18, color: Color(0xFF03121C))),
-              const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('${b.studentCount} متسابق  ·  ${b.levelCount} مستوى${b.imageCount > 0 ? '  ·  ${b.imageCount} صورة' : ''}', style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700)),
-                Text('${b.sizeFormatted}  ·  ${b.createdAt.toString().substring(0, 16).replaceAll('T', ' ')}', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade500)),
-              ])),
-              IconButton(icon: Icon(Icons.delete_outline_rounded, size: 16, color: Colors.red.shade300), onPressed: () => _delete(b), splashRadius: 16),
+      ),
+      Expanded(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Row(children: [
+              Expanded(child: _stat(Icons.save_rounded, '${_backups.length}', 'نسخة', c)),
+              const SizedBox(width: 10),
+              Expanded(child: _stat(Icons.access_time_rounded, _lastBackup, 'آخر نسخة', Colors.blue.shade600)),
+              const SizedBox(width: 10),
+              Expanded(child: _stat(Icons.storage_rounded, _totalSize, 'الحجم', Colors.teal.shade600)),
+              const SizedBox(width: 10),
+              Expanded(child: _stat(Icons.image_rounded, '$_totalImages', 'صورة', Colors.deepOrange.shade400)),
             ]),
-          )),
-      ]),
-    );
+            const SizedBox(height: 20),
+            if (_loading)
+              const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
+            else if (_backups.isEmpty)
+              Center(child: Padding(padding: const EdgeInsets.all(30), child: Text('لا توجد نسخ احتياطية', style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: Colors.grey.shade500))))
+            else
+              ..._backups.take(10).map((b) => Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.grey.shade100)),
+                child: Row(children: [
+                  Container(width: 40, height: 40, decoration: BoxDecoration(color: c.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)), child: const Icon(Icons.description_outlined, size: 18, color: Color(0xFF03121C))),
+                  const SizedBox(width: 12),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('${b.studentCount} متسابق  ·  ${b.levelCount} مستوى${b.imageCount > 0 ? '  ·  ${b.imageCount} صورة' : ''}', style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700)),
+                    Text('${b.sizeFormatted}  ·  ${b.createdAt.toString().substring(0, 16).replaceAll('T', ' ')}', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade500)),
+                  ])),
+                  IconButton(icon: Icon(Icons.delete_outline_rounded, size: 16, color: Colors.red.shade300), onPressed: () => _delete(b), splashRadius: 16),
+                ]),
+              )),
+          ]),
+        ),
+      ),
+    ]);
   }
 
   Widget _stat(IconData icon, String value, String label, Color color) {
@@ -151,23 +153,23 @@ class _BackupTabState extends State<BackupTab> {
     );
   }
 
-  Widget _btn(IconData icon, String title, String sub, Color color, bool disabled, VoidCallback onTap) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: disabled ? null : onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: color.withValues(alpha: 0.2))),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            disabled ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)) : Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withValues(alpha: 0.08), shape: BoxShape.circle), child: Icon(icon, size: 20, color: color)),
-            const SizedBox(height: 6),
-            Text(title, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w800, color: color)),
-            const SizedBox(height: 1),
-            Text(sub, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo', fontSize: 9, color: Colors.grey.shade500)),
-          ]),
+  Widget _navBtn(IconData icon, String title, Color color, bool disabled, VoidCallback onTap) {
+    return Expanded(
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: disabled ? null : onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), border: Border.all(color: color.withValues(alpha: 0.15))),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              disabled ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : Container(padding: const EdgeInsets.all(5), decoration: BoxDecoration(color: color.withValues(alpha: 0.08), shape: BoxShape.circle), child: Icon(icon, size: 16, color: color)),
+              const SizedBox(height: 3),
+              Text(title, style: TextStyle(fontFamily: 'Cairo', fontSize: 10, fontWeight: FontWeight.w700, color: color)),
+            ]),
+          ),
         ),
       ),
     );
