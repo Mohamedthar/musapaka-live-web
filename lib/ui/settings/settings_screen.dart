@@ -824,7 +824,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   }
 
-  Widget _buildBackupSection() { return BackupTab(key: _backupKey, primary: _primary, onRestored: _load); }
+  Widget _buildBackupSection() {
+    return SectionCard(
+      title: 'النسخ الاحتياطي',
+      description: 'إنشاء واستعادة النسخ الاحتياطية للبيانات والصور',
+      icon: Icons.backup_rounded,
+      primaryColor: _primary,
+      child: BackupTab(key: _backupKey, primary: _primary, onRestored: _load),
+    );
+  }
 
 }
 

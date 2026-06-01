@@ -88,88 +88,96 @@ class BackupTabState extends State<BackupTab> {
   @override
   Widget build(BuildContext context) {
     final c = widget.primary;
-    return Container(
-      color: const Color(0xFFF5F5F7),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 20, offset: const Offset(0, 4))]),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(children: [
-                Expanded(child: _stat(Icons.save_rounded, '', 'نسخة', const Color(0xFF735C00))),
-                const SizedBox(width: 10),
-                Expanded(child: _stat(Icons.access_time_rounded, _lastBackup, 'آخر نسخة', const Color(0xFF2563EB))),
-                const SizedBox(width: 10),
-                Expanded(child: _stat(Icons.storage_rounded, _totalSize, 'الحجم', const Color(0xFF0D9488))),
-                const SizedBox(width: 10),
-                Expanded(child: _stat(Icons.image_rounded, '$_totalImages', 'صورة', Colors.deepOrange.shade400)),
+    final items = [
+      _StatItem(Icons.save_rounded, '', 'نسخة', const Color(0xFF735C00)),
+      _StatItem(Icons.access_time_rounded, _lastBackup, 'آخر نسخة', const Color(0xFF2563EB)),
+      _StatItem(Icons.storage_rounded, _totalSize, 'الحجم', const Color(0xFF0D9488)),
+      _StatItem(Icons.image_rounded, '$_totalImages', 'صورة', Colors.deepOrange.shade400),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        LayoutBuilder(builder: (ctx, constraints) {
+          final cols = constraints.maxWidth > 700 ? items.length : 2;
+          final w = (constraints.maxWidth - (cols - 1) * 10) / cols;
+          return Wrap(spacing: 10, runSpacing: 10, children: items.map((s) => SizedBox(
+            width: w,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+              decoration: BoxDecoration(
+                color: s.color.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: s.color.withValues(alpha: 0.1)),
+                boxShadow: [BoxShadow(color: s.color.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
+              ),
+              child: Row(children: [
+                Container(
+                  padding: const EdgeInsets.all(9),
+                  decoration: BoxDecoration(color: s.color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+                  child: Icon(s.icon, color: s.color, size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(s.label, maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: Colors.grey.shade700, fontWeight: FontWeight.w700)),
+                ),
+                const SizedBox(width: 8),
+                Text(s.value,
+                  style: const TextStyle(fontFamily: 'Cairo', fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF03121C))),
               ]),
-              const SizedBox(height: 20),
-              if (_loading)
-                const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
-              else if (_backups.isEmpty)
-                Center(child: Padding(padding: const EdgeInsets.all(30), child: Text('لا توجد نسخ احتياطية', style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: Colors.grey.shade500))))
-              else
-                ..._backups.take(10).map((b) => Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.grey.shade100)),
-                  child: Row(children: [
-                    Container(width: 40, height: 40, decoration: BoxDecoration(color: c.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)), child: const Icon(Icons.description_outlined, size: 18, color: Color(0xFF03121C))),
-                    const SizedBox(width: 12),
-                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('${b.studentCount} متسابق  ·  ${b.levelCount} مستوى${b.imageCount > 0 ? '  ·  ${b.imageCount} صورة' : ''}', style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700)),
-                      Text('${b.sizeFormatted}  ·  ${b.createdAt.toString().substring(0, 16).replaceAll('T', ' ')}', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade500)),
-                    ])),
-                    IconButton(icon: Icon(Icons.delete_outline_rounded, size: 16, color: Colors.red.shade300), onPressed: () => _delete(b), splashRadius: 16),
-                  ]),
-                )),
-            ],
-          ),
-        ),
-      ),
+            ),
+          )).toList());
+        }),
+        const SizedBox(height: 20),
+        if (_loading)
+          const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
+        else if (_backups.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(30),
+              child: Text('لا توجد نسخ احتياطية', style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: Colors.grey.shade500)),
+            ),
+          )
+        else
+          ..._backups.take(10).map((b) => Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.grey.shade100)),
+            child: Row(children: [
+              Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(color: c.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)),
+                child: const Icon(Icons.description_outlined, size: 18, color: Color(0xFF03121C)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(
+                    '${b.studentCount} متسابق  ·  ${b.levelCount} مستوى${b.imageCount > 0 ? '  ·  ${b.imageCount} صورة' : ''}',
+                    style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700),
+                  ),
+                  Text(
+                    '${b.sizeFormatted}  ·  ${b.createdAt.toString().substring(0, 16).replaceAll('T', ' ')}',
+                    style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade500),
+                  ),
+                ]),
+              ),
+              IconButton(
+                icon: Icon(Icons.delete_outline_rounded, size: 16, color: Colors.red.shade300),
+                onPressed: () => _delete(b),
+                splashRadius: 16,
+              ),
+            ]),
+          )),
+      ],
     );
   }
+}
 
-  Widget _tb(IconData icon, String label, Color color, bool disabled, VoidCallback onTap) {
-    return InkWell(
-      onTap: disabled ? null : onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), border: Border.all(color: color.withValues(alpha: 0.15))),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          disabled ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)) : Icon(icon, size: 15, color: color),
-          const SizedBox(width: 5),
-          Text(label, style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.w700, color: color)),
-        ]),
-      ),
-    );
-  }
-
-  Widget _stat(IconData icon, String value, String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.1)),
-        boxShadow: [BoxShadow(color: color.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
-      ),
-      child: Row(children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-          child: Icon(icon, color: color, size: 20),
-        ),
-        const SizedBox(width: 10),
-        Expanded(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey.shade700, fontWeight: FontWeight.w700))),
-        const SizedBox(width: 6),
-        Text(value, style: const TextStyle(fontFamily: 'Cairo', fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF03121C))),
-      ]),
-    );
-  }
+class _StatItem {
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
+  const _StatItem(this.icon, this.value, this.label, this.color);
 }
