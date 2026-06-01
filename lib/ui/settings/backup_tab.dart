@@ -105,11 +105,11 @@ class _BackupTabState extends State<BackupTab> {
 
         // ── Buttons ──
         Row(children: [
-          Expanded(child: _btn(Icons.add_circle_outline, 'إنشاء نسخة', 'البيانات + الصور', c, _working, _create)),
+          Expanded(child: _btn(Icons.add_circle_outline, 'إنشاء نسخة', 'البيانات + الصور', const Color(0xFF03121C), _working, _create)),
           const SizedBox(width: 10),
-          Expanded(child: _btn(Icons.folder_open, 'فتح المجلد', 'استعراض الملفات', Colors.blue.shade600, false, _openFolder)),
+          Expanded(child: _btn(Icons.folder_open, 'فتح المجلد', 'استعراض الملفات', const Color(0xFF2563EB), false, _openFolder)),
           const SizedBox(width: 10),
-          Expanded(child: _btn(Icons.history, 'استعادة نسخة', 'أحدث نسخة', Colors.orange.shade700, false, _restore)),
+          Expanded(child: _btn(Icons.history, 'استعادة نسخة', 'أحدث نسخة', const Color(0xFFC2410C), false, _restore)),
         ]),
         const SizedBox(height: 24),
 
@@ -152,22 +152,36 @@ class _BackupTabState extends State<BackupTab> {
   }
 
   Widget _btn(IconData icon, String title, String sub, Color color, bool disabled, VoidCallback onTap) {
-    return ElevatedButton(
-      onPressed: disabled ? null : onTap,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        elevation: 0,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: disabled ? null : onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: disabled
+                ? null
+                : LinearGradient(colors: [color, Color.lerp(color, Colors.black, 0.2)!], begin: Alignment.topCenter, end: Alignment.bottomCenter),
+            boxShadow: disabled ? null : [BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))],
+          ),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            if (disabled)
+              const SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+            else
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
+                child: Icon(icon, size: 22, color: Colors.white),
+              ),
+            const SizedBox(height: 10),
+            Text(title, textAlign: TextAlign.center, style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white)),
+            const SizedBox(height: 3),
+            Text(sub, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo', fontSize: 10, color: Colors.white.withValues(alpha: 0.75), height: 1.3)),
+          ]),
+        ),
       ),
-      child: Column(children: [
-        disabled ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : Icon(icon, size: 22),
-        const SizedBox(height: 6),
-        Text(title, style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 1),
-        Text(sub, style: TextStyle(fontFamily: 'Cairo', fontSize: 10, color: Colors.white70)),
-      ]),
     );
   }
 }
