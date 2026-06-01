@@ -5,6 +5,7 @@ declare module 'lucide-react' {
   }
   export type Icon = FC<LucideProps>;
   export const AlertTriangle: Icon;
+  export const ArchiveRestore: Icon;
   export const ArrowLeft: Icon;
   export const ArrowRight: Icon;
   export const Award: Icon;
@@ -33,6 +34,10 @@ declare module 'lucide-react' {
   export const Menu: Icon;
   export const Phone: Icon;
   export const Printer: Icon;
+  export const Redo2: Icon;
+  export const RefreshCcw: Icon;
+  export const RefreshCw: Icon;
+  export const RotateCw: Icon;
   export const Search: Icon;
   export const Send: Icon;
   export const ShieldCheck: Icon;
@@ -43,5 +48,6 @@ declare module 'lucide-react' {
   export const UserCheck: Icon;
   export const UserPlus: Icon;
   export const Users: Icon;
+  export const WifiOff: Icon;
   export const X: Icon;
 }
