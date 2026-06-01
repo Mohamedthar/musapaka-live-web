@@ -14,11 +14,11 @@ const cairo = Cairo({
 });
 
 const notoSerif = Noto_Serif({
-  subsets: ["arabic"],
+  subsets: ["latin"],
   variable: "--font-noto-serif",
   display: "swap",
   weight: ["700", "900"],
-  preload: true,
+  preload: false,
 });
 
 export const metadata: Metadata = {
