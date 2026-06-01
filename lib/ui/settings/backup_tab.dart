@@ -67,13 +67,12 @@ class BackupTabState extends State<BackupTab> {
 
   Future<void> _pickFolder() async {
     try {
-      // Write PowerShell script to temp file to bypass execution policy
       final script = '''
 Add-Type -AssemblyName System.Windows.Forms
 [System.Windows.Forms.Application]::EnableVisualStyles()
 \$f = New-Object System.Windows.Forms.FolderBrowserDialog
 \$f.Description = "اختر مجلد النسخ الاحتياطي"
-\$f.SelectedPath = "$_backupDirPath"
+\$f.SelectedPath = "${_backupDirPath.replaceAll('"', '`"')}"
 \$r = \$f.ShowDialog()
 if (\$r -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output \$f.SelectedPath }
 ''';
@@ -85,14 +84,21 @@ if (\$r -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output \$f.Selected
         '-File', scriptFile.path,
       ]);
       await scriptFile.delete();
-      if (result.exitCode == 0 && mounted) {
+      if (mounted) {
         final path = result.stdout.toString().trim();
         if (path.isNotEmpty) {
           await _b.setBackupDir(path);
           _backupDirPath = path;
           setState(() {});
-          if (mounted) AppTheme.showSnack(context, 'تم تغيير المجلد');
+          AppTheme.showSnack(context, 'تم تغيير المجلد');
+        } else {
+          AppTheme.showSnack(context, 'لم يتم اختيار مجلد', color: Colors.orange);
         }
+      }
+    } catch (e) {
+      if (mounted) AppTheme.showError(context, 'تعذر فتح الملفات: $e');
+    }
+  }
       } else if (mounted) {
         AppTheme.showSnack(context, 'لم يتم اختيار مجلد', color: Colors.orange);
       }
