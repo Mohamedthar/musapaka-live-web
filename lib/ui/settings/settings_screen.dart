@@ -825,12 +825,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildBackupSection() {
-    final backupColor = const Color(0xFF735C00);
     return Container(
       decoration: BoxDecoration(
-        color: backupColor,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 20, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 20, offset: const Offset(0, 4))],
       ),
       child: Padding(
         padding: const EdgeInsets.all(24),
