@@ -12,6 +12,7 @@ import '../../ui/dashboard/widgets/stats_cards.dart';
 import 'models/day_block.dart';
 import 'widgets/section_card.dart';
 import 'widgets/form_fields.dart';
+import 'backup_tab.dart';
 
 class SettingsScreen extends StatefulWidget {
   final Color? primaryColor;
@@ -799,7 +800,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   }
 
-  Widget _buildBackupSection() { return _BackupTab(primary: _primary, onRestored: _load); }
+  Widget _buildBackupSection() { return BackupTab(primary: _primary, onRestored: _load); }
 
 }
 
@@ -1015,159 +1016,5 @@ class _CompactDropdown extends StatelessWidget {
       items: items.map((i) => DropdownMenuItem(value: i, child: Text(_formatTime(i)))).toList(),
       onChanged: (v) { if (v != null) onChanged(v); },
     );
-  }
-}
-
-// ──────────────────────────────────────────────────────────────
-// Backup Tab
-// ──────────────────────────────────────────────────────────────
-class _BackupTab extends StatefulWidget {
-  final Color primary;
-  final VoidCallback onRestored;
-  const _BackupTab({required this.primary, required this.onRestored});
-  @override State<_BackupTab> createState() => _BackupTabState();
-}
-
-class _BackupTabState extends State<_BackupTab> {
-  final BackupService _backupService = BackupService();
-  List<BackupInfo> _backups = [];
-  bool _loading = true;
-  bool _working = false;
-  BackupProgress? _progress;
-
-  @override void initState() { super.initState(); _load(); }
-  Future<void> _load() async {
-    setState(() => _loading = true);
-    _backups = await _backupService.listExistingBackups();
-    if (mounted) setState(() => _loading = false);
-  }
-
-  Future<void> _createBackup() async {
-    setState(() { _working = true; _progress = null; });
-    try {
-      await _backupService.createBackup(includeImages: true, onProgress: (p) {
-        if (mounted) setState(() => _progress = p);
-      });
-      if (mounted) { AppTheme.showSnack(context, 'تم إنشاء النسخة الاحتياطية مع الصور بنجاح'); _load(); }
-    } catch (e) { if (mounted) AppTheme.showError(context, e); }
-    finally { if (mounted) setState(() { _working = false; _progress = null; }); }
-  }
-
-  Future<void> _saveToLocation() async {
-    setState(() => _working = true);
-    try { final file = await _backupService.saveToCustomLocation(); if (mounted) { AppTheme.showSnack(context, file != null ? 'تم الحفظ' : 'تم الحفظ في مجلد المستندات'); _load(); } }
-    catch (e) { if (mounted) AppTheme.showError(context, e); }
-    finally { if (mounted) setState(() => _working = false); }
-  }
-
-  Future<void> _restore() async {
-    await _load();
-    if (_backups.isEmpty) { AppTheme.showSnack(context, 'لا توجد نسخ احتياطية للاستعادة'); return; }
-
-    final selected = await showDialog<BackupInfo>(context: context, builder: (_) => AlertDialog(
-      title: const Text('اختر النسخة للاستعادة', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w800)),
-      content: SizedBox(width: 400, child: ListView.builder(
-        shrinkWrap: true,
-        itemCount: _backups.length,
-        itemBuilder: (_, i) {
-          final b = _backups[i];
-          return ListTile(
-            leading: Icon(Icons.description_outlined, color: widget.primary),
-            title: Text('${b.studentCount} متسابق  ·  ${b.levelCount} مستوى${b.imageCount > 0 ? '  ·  ${b.imageCount} صورة' : ''}', style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700)),
-            subtitle: Text('${b.sizeFormatted}  ·  ${b.createdAt.toString().substring(0, 16).replaceAll('T', ' ')}', style: const TextStyle(fontFamily: 'Cairo', fontSize: 11)),
-            onTap: () => Navigator.pop(_, b),
-          );
-        },
-      )),
-      actions: [TextButton(onPressed: () => Navigator.pop(_), child: const Text('إلغاء', style: TextStyle(fontFamily: 'Cairo')))],
-    ));
-
-    if (selected == null || !mounted) return;
-
-    setState(() => _working = true);
-    try {
-      final json = await File(selected.path).readAsString(encoding: utf8);
-      final data = jsonDecode(json) as Map<String, dynamic>;
-      AppTheme.showSnack(context, 'جاري استعادة ${selected.studentCount} متسابق...');
-      final n = await _backupService.restoreFromFile(data);
-      if (mounted) { AppTheme.showSnack(context, 'تم استعادة $n عنصر بنجاح'); widget.onRestored(); _load(); }
-    } catch (e) { if (mounted) AppTheme.showError(context, e); }
-    finally { if (mounted) setState(() => _working = false); }
-  }
-
-  Future<void> _delete(BackupInfo b) async {
-    final ok = await showDialog<bool>(context: context, builder: (_) => AlertDialog(
-      title: const Text('حذف النسخة', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w800)),
-      content: Text('حذف نسخة ${b.createdAt.toString().substring(0, 16)}؟', style: const TextStyle(fontFamily: 'Cairo')),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(_, false), child: const Text('إلغاء', style: TextStyle(fontFamily: 'Cairo'))),
-        ElevatedButton(onPressed: () => Navigator.pop(_, true), style: ElevatedButton.styleFrom(backgroundColor: Colors.red), child: const Text('حذف', style: TextStyle(fontFamily: 'Cairo', color: Colors.white))),
-      ],
-    ));
-    if (ok == true && mounted) { await _backupService.deleteBackup(b.path); _load(); }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final c = widget.primary;
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      SectionCard(title: 'إجراءات النسخ الاحتياطي', description: 'إنشاء وحفظ واستعادة النسخ الاحتياطية مع الصور', icon: Icons.cloud_sync_rounded, primaryColor: c, child: Column(children: [
-        if (_progress != null)
-          Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(12)),
-            child: Column(children: [
-              Row(children: [
-                const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
-                const SizedBox(width: 10),
-                Text('جاري تحميل الصور: ${_progress!.done}/${_progress!.total}', style: const TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w700)),
-              ]),
-              if (_progress!.currentFile != null) ...[
-                const SizedBox(height: 4),
-                Text(_progress!.currentFile!, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade600)),
-              ],
-            ]),
-          ),
-        Row(children: [
-          Expanded(child: _btn(Icons.save_alt_rounded, 'إنشاء نسخة', 'حفظ تلقائي', c, _working, _createBackup)),
-          const SizedBox(width: 12),
-          Expanded(child: _btn(Icons.folder_open_rounded, 'حفظ في...', 'اختيار المكان', Colors.teal.shade600, _working, _saveToLocation)),
-          const SizedBox(width: 12),
-          Expanded(child: _btn(Icons.restore_rounded, 'استعادة', 'من ملف JSON', Colors.orange.shade700, _working, _restore)),
-        ]),
-      ])),
-      const SizedBox(height: 20),
-      SectionCard(title: 'النسخ الموجودة', description: '${_backups.length} نسخة', icon: Icons.history_rounded, primaryColor: c, child: _loading
-        ? const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
-        : _backups.isEmpty
-          ? Center(child: Padding(padding: const EdgeInsets.all(20), child: Text('لا توجد نسخ احتياطية', style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: Colors.grey.shade500))))
-          : Column(children: _backups.map((b) => Container(
-              margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade100)),
-              child: Row(children: [
-                Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: c.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)), child: Icon(Icons.description_outlined, size: 20, color: c)),
-                const SizedBox(width: 12),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('${b.studentCount} متسابق  ·  ${b.levelCount} مستوى${b.imageCount > 0 ? '  ·  ${b.imageCount} صورة' : ''}', style: const TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w700)),
-                  Row(children: [Text(b.sizeFormatted, style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade500)), const SizedBox(width: 8), Text(b.createdAt.toString().substring(0, 16).replaceAll('T', ' '), style: TextStyle(fontFamily: 'Cairo', fontSize: 10, color: Colors.grey.shade400))]),
-                ])),
-                IconButton(icon: Icon(Icons.delete_outline_rounded, size: 16, color: Colors.red.shade300), onPressed: () => _delete(b), splashRadius: 16),
-              ]),
-            )).toList(),
-          ),
-      ),
-    ]);
-  }
-
-  Widget _btn(IconData icon, String title, String sub, Color color, bool disabled, VoidCallback onTap) {
-    return Material(color: Colors.white, borderRadius: BorderRadius.circular(14), child: InkWell(onTap: disabled ? null : onTap, borderRadius: BorderRadius.circular(14), child: Container(
-      padding: const EdgeInsets.all(14), decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.grey.shade200)),
-      child: Column(children: [
-        disabled ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)) : Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withValues(alpha: 0.08), shape: BoxShape.circle), child: Icon(icon, size: 20, color: color)),
-        const SizedBox(height: 8), Text(title, style: const TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF03121C))),
-        const SizedBox(height: 2), Text(sub, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo', fontSize: 10, color: Colors.grey.shade500)),
-      ]),
-    )));
   }
 }
