@@ -139,36 +139,41 @@ class BackupTabState extends State<BackupTab> {
             ),
           )
         else
-          ..._backups.take(10).map((b) => Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.grey.shade100)),
-            child: Row(children: [
-              Container(
-                width: 40, height: 40,
-                decoration: BoxDecoration(color: c.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.description_outlined, size: 18, color: Color(0xFF03121C)),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(
-                    '${b.studentCount} متسابق  ·  ${b.levelCount} مستوى${b.imageCount > 0 ? '  ·  ${b.imageCount} صورة' : ''}',
-                    style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700),
+          LayoutBuilder(builder: (ctx, constraints) {
+            final w = (constraints.maxWidth - 10) / 2;
+            return Wrap(spacing: 10, runSpacing: 10, children: _backups.take(10).map((b) => SizedBox(
+              width: w,
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.grey.shade100)),
+                child: Row(children: [
+                  Container(
+                    width: 40, height: 40,
+                    decoration: BoxDecoration(color: c.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)),
+                    child: const Icon(Icons.description_outlined, size: 18, color: Color(0xFF03121C)),
                   ),
-                  Text(
-                    '${b.sizeFormatted}  ·  ${b.createdAt.toString().substring(0, 16).replaceAll('T', ' ')}',
-                    style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade500),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(
+                        '${b.studentCount} متسابق  ·  ${b.levelCount} مستوى${b.imageCount > 0 ? '  ·  ${b.imageCount} صورة' : ''}',
+                        style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700),
+                      ),
+                      Text(
+                        '${b.sizeFormatted}  ·  ${b.createdAt.toString().substring(0, 16).replaceAll('T', ' ')}',
+                        style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade500),
+                      ),
+                    ]),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.delete_outline_rounded, size: 16, color: Colors.red.shade300),
+                    onPressed: () => _delete(b),
+                    splashRadius: 16,
                   ),
                 ]),
               ),
-              IconButton(
-                icon: Icon(Icons.delete_outline_rounded, size: 16, color: Colors.red.shade300),
-                onPressed: () => _delete(b),
-                splashRadius: 16,
-              ),
-            ]),
-          )),
+            )).toList());
+          }),
       ],
     );
   }
