@@ -37,8 +37,11 @@ class BackupTabState extends State<BackupTab> {
   }
 
   Future<void> openFolder() async {
-    await _b.saveToCustomLocation();
-    if (mounted) { AppTheme.showSnack(context, 'تم فتح مجلد النسخ'); _load(); }
+    try {
+      await Process.run('explorer', [await _b.getBackupDirPath()]);
+    } catch (_) {
+      if (mounted) AppTheme.showSnack(context, 'تعذر فتح المجلد', color: Colors.orange);
+    }
   }
 
   Future<void> restoreBackup() async {
@@ -64,15 +67,24 @@ class BackupTabState extends State<BackupTab> {
 
   Future<void> _pickFolder() async {
     try {
+      // Write PowerShell script to temp file to bypass execution policy
+      final script = '''
+Add-Type -AssemblyName System.Windows.Forms
+[System.Windows.Forms.Application]::EnableVisualStyles()
+\$f = New-Object System.Windows.Forms.FolderBrowserDialog
+\$f.Description = "اختر مجلد النسخ الاحتياطي"
+\$f.SelectedPath = "$_backupDirPath"
+\$r = \$f.ShowDialog()
+if (\$r -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output \$f.SelectedPath }
+''';
+      final scriptFile = File('${Directory.systemTemp.path}\\pick_folder.ps1');
+      await scriptFile.writeAsString(script);
       final result = await Process.run('powershell', [
+        '-ExecutionPolicy', 'Bypass',
         '-NoProfile',
-        '-Command',
-        'Add-Type -AssemblyName System.Windows.Forms; '
-        '\$f = New-Object System.Windows.Forms.FolderBrowserDialog; '
-        '\$f.Description = "اختر مجلد النسخ الاحتياطي"; '
-        '\$f.SelectedPath = "$_backupDirPath"; '
-        'if (\$f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output \$f.SelectedPath }'
+        '-File', scriptFile.path,
       ]);
+      await scriptFile.delete();
       if (result.exitCode == 0 && mounted) {
         final path = result.stdout.toString().trim();
         if (path.isNotEmpty) {
@@ -81,9 +93,11 @@ class BackupTabState extends State<BackupTab> {
           setState(() {});
           if (mounted) AppTheme.showSnack(context, 'تم تغيير المجلد');
         }
+      } else if (mounted) {
+        AppTheme.showSnack(context, 'لم يتم اختيار مجلد', color: Colors.orange);
       }
     } catch (e) {
-      if (mounted) AppTheme.showError(context, e);
+      if (mounted) AppTheme.showError(context, 'تعذر فتح الملفات: $e');
     }
   }
 

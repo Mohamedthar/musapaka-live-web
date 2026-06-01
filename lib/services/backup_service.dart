@@ -209,13 +209,9 @@ class BackupService {
 
   Future<File?> saveToCustomLocation() async {
     final file = await createBackup(includeImages: false);
-    final dir = await _backupDir;
     try {
-      await Process.run('explorer', ['/select,', file.path]);
-    } catch (_) {
-      try { await Process.run('open', ['-R', file.path]); } catch (_) {}
-    }
-    AppLogger.info('Opened backup folder: $dir', tag: 'backup');
+      await Process.run('explorer', [await _backupDir]);
+    } catch (_) {}
     return file;
   }
 
@@ -223,7 +219,7 @@ class BackupService {
     final backups = await listExistingBackups();
     if (backups.isEmpty) return null;
     try {
-      await Process.run('explorer', ['/select,', backups.first.path]);
+      await Process.run('explorer', [await _backupDir]);
     } catch (_) {}
     return null;
   }
