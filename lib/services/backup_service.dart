@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -15,6 +17,7 @@ class BackupInfo {
   final DateTime createdAt;
   final int studentCount;
   final int levelCount;
+  final int imageCount;
 
   BackupInfo({
     required this.path,
@@ -22,6 +25,7 @@ class BackupInfo {
     required this.createdAt,
     required this.studentCount,
     required this.levelCount,
+    this.imageCount = 0,
   });
 
   String get sizeFormatted {
@@ -48,11 +52,20 @@ class BackupInfo {
         createdAt: DateTime.tryParse(data['created_at']?.toString() ?? '') ?? file.lastModifiedSync(),
         studentCount: students.length,
         levelCount: levels.length,
+        imageCount: data['image_count'] as int? ?? 0,
       );
     } catch (_) {
       return BackupInfo(path: file.path, sizeBytes: size, createdAt: file.lastModifiedSync(), studentCount: 0, levelCount: 0);
     }
   }
+}
+
+class BackupProgress {
+  final int total;
+  final int done;
+  final String? currentFile;
+  const BackupProgress({required this.total, required this.done, this.currentFile});
+  double get percent => total > 0 ? done / total : 0;
 }
 
 class BackupService {
@@ -71,11 +84,58 @@ class BackupService {
     return _backupDirPath;
   }
 
+  Future<String> get _imagesDir async {
+    final dir = '${await _backupDir}/images';
+    final d = Directory(dir);
+    if (!await d.exists()) await d.create(recursive: true);
+    return dir;
+  }
+
+  String _sanitize(String s) {
+    return s.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_').trim();
+  }
+
   String _formatDate(DateTime d) {
     return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}_${d.hour.toString().padLeft(2, '0')}${d.minute.toString().padLeft(2, '0')}';
   }
 
-  Future<File> createBackup({bool includeSettings = true}) async {
+  Future<Uint8List?> _downloadImage(String? url) async {
+    if (url == null || url.isEmpty || url.contains('placehold')) return null;
+    try {
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 15));
+      if (response.statusCode == 200) return response.bodyBytes;
+      return null;
+    } catch (_) { return null; }
+  }
+
+  Future<int> _downloadStudentImages(Student student, String backupFolderName) async {
+    final safeName = _sanitize(student.name);
+    final folderName = '${safeName}_${student.id ?? ''}';
+    final dir = Directory('${await _imagesDir}/$backupFolderName/$folderName');
+    if (!await dir.exists()) await dir.create(recursive: true);
+
+    int count = 0;
+
+    final profile = await _downloadImage(student.profileImageUrl);
+    if (profile != null) {
+      await File('${dir.path}/profile.jpg').writeAsBytes(profile);
+      count++;
+    }
+
+    final birth = await _downloadImage(student.birthCertificateUrl);
+    if (birth != null) {
+      await File('${dir.path}/birth_certificate.jpg').writeAsBytes(birth);
+      count++;
+    }
+
+    return count;
+  }
+
+  Future<File> createBackup({
+    bool includeSettings = true,
+    bool includeImages = true,
+    void Function(BackupProgress)? onProgress,
+  }) async {
     AppLogger.info('Starting backup', tag: 'backup');
 
     final results = await Future.wait([
@@ -91,11 +151,29 @@ class BackupService {
       try { settings = await _service.getSettings(); } catch (_) {}
     }
 
+    int totalImages = 0;
+    final backupFolderName = _formatDate(DateTime.now());
+
+    if (includeImages) {
+      final studentsWithImages = students.where((s) =>
+        (s.profileImageUrl != null && s.profileImageUrl!.isNotEmpty) ||
+        (s.birthCertificateUrl != null && s.birthCertificateUrl!.isNotEmpty)
+      ).toList();
+
+      for (int i = 0; i < studentsWithImages.length; i++) {
+        onProgress?.call(BackupProgress(total: studentsWithImages.length, done: i, currentFile: studentsWithImages[i].name));
+        totalImages += await _downloadStudentImages(studentsWithImages[i], backupFolderName);
+      }
+      onProgress?.call(BackupProgress(total: studentsWithImages.length, done: studentsWithImages.length));
+    }
+
     final backupData = {
-      'version': '2.0',
+      'version': '3.0',
       'created_at': DateTime.now().toIso8601String(),
       'total_students': students.length,
       'total_levels': levels.length,
+      'image_count': totalImages,
+      'images_folder': backupFolderName,
       'students': students.map((s) => s.toJson()).toList(),
       'levels': levels.map((l) => l.toJson()).toList(),
       if (settings != null) 'settings': settings,
@@ -103,10 +181,10 @@ class BackupService {
 
     final json = const JsonEncoder.withIndent('  ').convert(backupData);
     final dir = await _backupDir;
-    final filename = 'musapaka_backup_${_formatDate(DateTime.now())}.json';
+    final filename = 'musapaka_backup_$backupFolderName.json';
     final file = File('$dir/$filename');
     await file.writeAsString(json, encoding: utf8);
-    AppLogger.info('Backup saved: $filename', tag: 'backup');
+    AppLogger.info('Backup saved: $filename ($totalImages images)', tag: 'backup');
     return file;
   }
 
@@ -152,7 +230,31 @@ class BackupService {
   }
 
   Future<bool> deleteBackup(String path) async {
-    try { await File(path).delete(); return true; } catch (_) { return false; }
+    try {
+      final info = BackupInfo.fromFile(File(path));
+      await File(path).delete();
+      if (info.imageCount > 0) {
+        final jsonData = jsonDecode(await File(path).readAsString(encoding: utf8)) as Map<String, dynamic>;
+        final folder = jsonData['images_folder'] as String?;
+        if (folder != null) {
+          final imgDir = Directory('${await _imagesDir}/$folder');
+          if (await imgDir.exists()) await imgDir.delete(recursive: true);
+        }
+      }
+      return true;
+    } catch (_) { return false; }
+  }
+
+  Future<int> getTotalImageSize() async {
+    try {
+      final d = Directory(await _imagesDir);
+      if (!await d.exists()) return 0;
+      int total = 0;
+      for (final entity in d.listSync(recursive: true)) {
+        if (entity is File) total += entity.lengthSync();
+      }
+      return total;
+    } catch (_) { return 0; }
   }
 
   Future<DateTime?> getLastBackupDate() async {
@@ -173,7 +275,7 @@ class BackupService {
     if (await shouldAutoBackup()) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_autoBackupKey, DateTime.now().toIso8601String());
-      try { return await createBackup(); } catch (_) { return null; }
+      try { return await createBackup(includeImages: true); } catch (_) { return null; }
     }
     return null;
   }

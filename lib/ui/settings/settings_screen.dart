@@ -1031,6 +1031,7 @@ class _BackupTabState extends State<_BackupTab> {
   List<BackupInfo> _backups = [];
   bool _loading = true;
   bool _working = false;
+  BackupProgress? _progress;
 
   @override void initState() { super.initState(); _load(); }
   Future<void> _load() async {
@@ -1040,10 +1041,14 @@ class _BackupTabState extends State<_BackupTab> {
   }
 
   Future<void> _createBackup() async {
-    setState(() => _working = true);
-    try { await _backupService.createBackup(); if (mounted) { AppTheme.showSnack(context, 'تم إنشاء النسخة الاحتياطية بنجاح'); _load(); } }
-    catch (e) { if (mounted) AppTheme.showError(context, e); }
-    finally { if (mounted) setState(() => _working = false); }
+    setState(() { _working = true; _progress = null; });
+    try {
+      await _backupService.createBackup(includeImages: true, onProgress: (p) {
+        if (mounted) setState(() => _progress = p);
+      });
+      if (mounted) { AppTheme.showSnack(context, 'تم إنشاء النسخة الاحتياطية مع الصور بنجاح'); _load(); }
+    } catch (e) { if (mounted) AppTheme.showError(context, e); }
+    finally { if (mounted) setState(() { _working = false; _progress = null; }); }
   }
 
   Future<void> _saveToLocation() async {
@@ -1093,7 +1098,24 @@ class _BackupTabState extends State<_BackupTab> {
   Widget build(BuildContext context) {
     final c = widget.primary;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      SectionCard(title: 'إجراءات النسخ الاحتياطي', description: 'إنشاء وحفظ واستعادة النسخ الاحتياطية', icon: Icons.cloud_sync_rounded, primaryColor: c, child: Column(children: [
+      SectionCard(title: 'إجراءات النسخ الاحتياطي', description: 'إنشاء وحفظ واستعادة النسخ الاحتياطية مع الصور', icon: Icons.cloud_sync_rounded, primaryColor: c, child: Column(children: [
+        if (_progress != null)
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(12)),
+            child: Column(children: [
+              Row(children: [
+                const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                const SizedBox(width: 10),
+                Text('جاري تحميل الصور: ${_progress!.done}/${_progress!.total}', style: const TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w700)),
+              ]),
+              if (_progress!.currentFile != null) ...[
+                const SizedBox(height: 4),
+                Text(_progress!.currentFile!, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade600)),
+              ],
+            ]),
+          ),
         Row(children: [
           Expanded(child: _btn(Icons.save_alt_rounded, 'إنشاء نسخة', 'حفظ تلقائي', c, _working, _createBackup)),
           const SizedBox(width: 12),
@@ -1114,7 +1136,7 @@ class _BackupTabState extends State<_BackupTab> {
                 Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: c.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)), child: Icon(Icons.description_outlined, size: 20, color: c)),
                 const SizedBox(width: 12),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('${b.studentCount} متسابق  ·  ${b.levelCount} مستوى', style: const TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w700)),
+                  Text('${b.studentCount} متسابق  ·  ${b.levelCount} مستوى${b.imageCount > 0 ? '  ·  ${b.imageCount} صورة' : ''}', style: const TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w700)),
                   Row(children: [Text(b.sizeFormatted, style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade500)), const SizedBox(width: 8), Text(b.createdAt.toString().substring(0, 16).replaceAll('T', ' '), style: TextStyle(fontFamily: 'Cairo', fontSize: 10, color: Colors.grey.shade400))]),
                 ])),
                 IconButton(icon: Icon(Icons.delete_outline_rounded, size: 16, color: Colors.red.shade300), onPressed: () => _delete(b), splashRadius: 16),
