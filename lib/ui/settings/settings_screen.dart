@@ -798,272 +798,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildBackupSection() {
-    final BackupService backuper = BackupService();
-    return SectionCard(
-      title: 'النسخ الاحتياطي واستعادة البيانات',
-      description: 'إنشاء نسخة احتياطية لجميع بيانات المتسابقين واستعادتها',
-      icon: Icons.backup_rounded,
-      primaryColor: _primary,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Row(children: [
-          Expanded(child: _backupCard(Icons.cloud_download_rounded, 'إنشاء نسخة احتياطية', 'حفظ البيانات في ملف JSON', Colors.blue.shade600, () async {
-            try {
-              AppTheme.showSnack(context, 'جاري الإنشاء...');
-              final f = await backuper.exportBackupToFile();
-              if (f != null && mounted) AppTheme.showSnack(context, 'تم الحفظ بنجاح');
-            } catch (e) { if (mounted) AppTheme.showError(context, e); }
-          })),
-          const SizedBox(width: 16),
-          Expanded(child: _backupCard(Icons.restore_page_rounded, 'استعادة نسخة', 'استيراد من ملف JSON', Colors.orange.shade700, () async {
-            try {
-              final data = await backuper.pickBackupFile();
-              if (data == null) { AppTheme.showSnack(context, 'تعذر قراءة الملف'); return; }
-              final count = (data['students'] as List?)?.length ?? 0;
-              final ok = await showDialog<bool>(context: context, builder: (_) => AlertDialog(
-                title: const Text('تأكيد الاستعادة', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w800)),
-                content: Text('سيتم استعادة  متسابق', style: const TextStyle(fontFamily: 'Cairo')),
-                actions: [TextButton(onPressed: () => Navigator.pop(_, false), child: const Text('إلغاء', style: TextStyle(fontFamily: 'Cairo'))), ElevatedButton(onPressed: () => Navigator.pop(_, true), child: const Text('استعادة', style: TextStyle(fontFamily: 'Cairo')))],
-              ));
-              if (ok == true && mounted) { AppTheme.showSnack(context, 'جاري الاستعادة...'); final n = await backuper.restoreFromFile(data); if (mounted) { AppTheme.showSnack(context, 'تم استعادة  متسابق بنجاح'); _load(); } }
-            } catch (e) { if (mounted) AppTheme.showError(context, e); }
-          })),
-        ]),
-        const SizedBox(height: 16),
-        Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: Colors.amber.shade50, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.amber.shade100)), child: Row(children: [
-          Icon(Icons.info_outline_rounded, size: 20, color: Colors.amber.shade700), const SizedBox(width: 10),
-          const Expanded(child: Text('ينصح بعمل نسخ احتياطي دوري.', style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: Color(0xFF92400E)))),
-        ])),
-      ]),
-    );
+    return _BackupTab(primary: _primary, onRestored: _load);
   }
 
-  Widget _backupCard(IconData icon, String title, String desc, Color color, VoidCallback onTap) {
-    return Material(color: Colors.white, borderRadius: BorderRadius.circular(14), child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(14), child: Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.grey.shade200)), child: Column(children: [
-      Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: color.withValues(alpha: 0.08), shape: BoxShape.circle), child: Icon(icon, size: 24, color: color)),
-      const SizedBox(height: 12), Text(title, style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF03121C))),
-      const SizedBox(height: 4), Text(desc, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade600)),
-    ]))));
-  }
-
-}
-
-// ──────────────────────────────────────────────────────────────
-// Faq Card - with proper controller lifecycle
-// ──────────────────────────────────────────────────────────────
-class _FaqCard extends StatefulWidget {
-  final int index;
-  final Map<String, dynamic> faq;
-  final Color primary;
-  final bool isExpanded;
-  final VoidCallback onToggleExpand;
-  final VoidCallback onDelete;
-
-  const _FaqCard({
-    required this.index,
-    required this.faq,
-    required this.primary,
-    required this.isExpanded,
-    required this.onToggleExpand,
-    required this.onDelete,
-  });
-
-  @override
-  State<_FaqCard> createState() => _FaqCardState();
-}
-
-class _FaqCardState extends State<_FaqCard> {
-  late final TextEditingController _qCtrl;
-  late final TextEditingController _aCtrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _qCtrl = TextEditingController(text: widget.faq['q'] as String? ?? '');
-    _aCtrl = TextEditingController(text: widget.faq['a'] as String? ?? '');
-  }
-
-  @override
-  void didUpdateWidget(covariant _FaqCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final newQ = widget.faq['q'] as String? ?? '';
-    final newA = widget.faq['a'] as String? ?? '';
-    if (_qCtrl.text != newQ) {
-      _qCtrl.text = newQ;
-    }
-    if (_aCtrl.text != newA) {
-      _aCtrl.text = newA;
-    }
-  }
-
-  @override
-  void dispose() {
-    _qCtrl.dispose();
-    _aCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final q = widget.faq['q'] as String? ?? '';
-    final a = widget.faq['a'] as String? ?? '';
-    final isEmpty = q.trim().isEmpty;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isEmpty ? Colors.orange.shade200 : widget.isExpanded ? widget.primary.withValues(alpha: 0.2) : Colors.grey.shade200),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.01), blurRadius: 8, offset: const Offset(0, 3))],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          InkWell(
-            onTap: widget.onToggleExpand,
-            borderRadius: const BorderRadius.only(topLeft: Radius.circular(14), topRight: Radius.circular(14)),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: isEmpty ? Colors.orange.withValues(alpha: 0.03) : widget.isExpanded ? const Color(0xFFF8FAFC) : const Color(0xFFF8FAFC),
-                borderRadius: const BorderRadius.only(topLeft: Radius.circular(14), topRight: Radius.circular(14)),
-                border: widget.isExpanded ? Border(bottom: BorderSide(color: Colors.grey.shade100)) : null,
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 30, height: 30,
-                    decoration: BoxDecoration(color: isEmpty ? Colors.orange.withValues(alpha: 0.1) : widget.primary.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
-                    alignment: Alignment.center,
-                    child: Text('${widget.index + 1}', style: TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w900, color: isEmpty ? Colors.orange.shade700 : widget.primary)),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      q.isEmpty ? '(سؤال فارغ - اضغط للتعديل)' : q,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontFamily: 'Cairo', fontSize: 12.5, fontWeight: FontWeight.bold, color: isEmpty ? Colors.orange.shade700 : const Color(0xFF1E293B)),
-                    ),
-                  ),
-                  if (!isEmpty)
-                    Container(
-                      margin: const EdgeInsets.only(right: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(6)),
-                      child: Text('${a.length} حرف', style: TextStyle(fontFamily: 'Cairo', fontSize: 10, fontWeight: FontWeight.w700, color: Colors.green.shade700)),
-                    ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    widget.isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                    size: 20, color: widget.primary.withValues(alpha: 0.5),
-                  ),
-                  const SizedBox(width: 4),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
-                    onPressed: widget.onDelete,
-                    splashRadius: 16, padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeInOut,
-            alignment: Alignment.topCenter,
-            child: widget.isExpanded
-                ? Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        TextField(
-                          controller: _qCtrl,
-                          textDirection: TextDirection.rtl,
-                          onChanged: (v) => widget.faq['q'] = v,
-                          style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w600),
-                          decoration: InputDecoration(
-                            labelText: 'السؤال',
-                            labelStyle: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey.shade600),
-                            hintText: 'مثال: كيف أعرف أن تسجيلي تم بنجاح؟',
-                            hintStyle: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey.shade400),
-                            filled: true, fillColor: const Color(0xFFF8FAFC),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
-                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
-                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: widget.primary, width: 1.5)),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text('الإجابة', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w700, color: Colors.grey.shade600)),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: _aCtrl,
-                          textDirection: TextDirection.rtl,
-                          onChanged: (v) => widget.faq['a'] = v,
-                          maxLines: 3,
-                          style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w600),
-                          decoration: InputDecoration(
-                            hintText: 'اكتب الإجابة هنا...',
-                            hintStyle: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey.shade400),
-                            filled: true, fillColor: const Color(0xFFF8FAFC),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
-                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
-                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: widget.primary, width: 1.5)),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : const SizedBox.shrink(),
-          ),
-        ],
-      ),
-    );
-  }
-
-
-  Widget _backupActionCard({
-    required IconData icon,
-    required String title,
-    required String description,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.grey.shade200),
-          ),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.08),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, size: 28, color: color),
-              ),
-              const SizedBox(height: 14),
-              Text(title, style: const TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF03121C))),
-              const SizedBox(height: 6),
-              Text(description, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey.shade600, height: 1.4)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -1100,5 +837,144 @@ class _CompactDropdown extends StatelessWidget {
       items: items.map((i) => DropdownMenuItem(value: i, child: Text(_formatTime(i)))).toList(),
       onChanged: (v) { if (v != null) onChanged(v); },
     );
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+// Backup Tab
+// ──────────────────────────────────────────────────────────────
+class _BackupTab extends StatefulWidget {
+  final Color primary;
+  final VoidCallback onRestored;
+  const _BackupTab({required this.primary, required this.onRestored});
+  @override State<_BackupTab> createState() => _BackupTabState();
+}
+
+class _BackupTabState extends State<_BackupTab> {
+  final BackupService _backupService = BackupService();
+  List<BackupInfo> _backups = [];
+  bool _loading = true;
+  bool _working = false;
+
+  @override void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    setState(() => _loading = true);
+    final backups = await _backupService.listExistingBackups();
+    if (mounted) setState(() { _backups = backups; _loading = false; });
+  }
+
+  Future<void> _createBackup() async {
+    setState(() => _working = true);
+    try { await _backupService.createBackup(); if (mounted) { AppTheme.showSnack(context, 'تم إنشاء النسخة الاحتياطية بنجاح'); _load(); } }
+    catch (e) { if (mounted) AppTheme.showError(context, e); }
+    finally { if (mounted) setState(() => _working = false); }
+  }
+
+  Future<void> _saveToLocation() async {
+    setState(() => _working = true);
+    try {
+      final file = await _backupService.saveToCustomLocation();
+      if (mounted) { AppTheme.showSnack(context, file != null ? 'تم حفظ النسخة في: ${file.path}' : 'تم الحفظ في مجلد المستندات'); _load(); }
+    } catch (e) { if (mounted) AppTheme.showError(context, e); }
+    finally { if (mounted) setState(() => _working = false); }
+  }
+
+  Future<void> _restore() async {
+    setState(() => _working = true);
+    try {
+      final data = await _backupService.pickBackupFile();
+      if (data == null) { setState(() => _working = false); return; }
+      final count = (data['students'] as List?)?.length ?? 0;
+      final levelCount = (data['levels'] as List?)?.length ?? 0;
+      final confirm = await showDialog<bool>(context: context, builder: (_) => AlertDialog(
+        title: const Text('تأكيد الاستعادة', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w800)),
+        content: Text('سيتم استعادة $count متسابق و $levelCount مستوى.\nهل تريد المتابعة؟', style: const TextStyle(fontFamily: 'Cairo')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(_, false), child: const Text('إلغاء', style: TextStyle(fontFamily: 'Cairo'))),
+          ElevatedButton(onPressed: () => Navigator.pop(_, true), style: ElevatedButton.styleFrom(backgroundColor: widget.primary), child: const Text('استعادة', style: TextStyle(fontFamily: 'Cairo', color: Colors.white))),
+        ],
+      ));
+      if (confirm == true && mounted) {
+        AppTheme.showSnack(context, 'جاري استعادة البيانات...');
+        final restored = await _backupService.restoreFromFile(data);
+        if (mounted) { AppTheme.showSnack(context, 'تم استعادة $restored عنصر بنجاح'); widget.onRestored(); _load(); }
+      }
+    } catch (e) { if (mounted) AppTheme.showError(context, e); }
+    finally { if (mounted) setState(() => _working = false); }
+  }
+
+  Future<void> _deleteBackup(BackupInfo info) async {
+    final confirm = await showDialog<bool>(context: context, builder: (_) => AlertDialog(
+      title: const Text('حذف النسخة', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w800)),
+      content: Text('حذف نسخة ${info.createdAt.toString().substring(0, 16)}؟', style: const TextStyle(fontFamily: 'Cairo')),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(_, false), child: const Text('إلغاء', style: TextStyle(fontFamily: 'Cairo'))),
+        ElevatedButton(onPressed: () => Navigator.pop(_, true), style: ElevatedButton.styleFrom(backgroundColor: Colors.red), child: const Text('حذف', style: TextStyle(fontFamily: 'Cairo', color: Colors.white))),
+      ],
+    ));
+    if (confirm == true && mounted) {
+      await _backupService.deleteBackup(info.path);
+      _load();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.primary;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      SectionCard(title: 'إجراءات النسخ الاحتياطي', description: 'إنشاء وحفظ واستعادة النسخ الاحتياطية', icon: Icons.cloud_sync_rounded, primaryColor: color, child: Column(children: [
+        Row(children: [
+          Expanded(child: _actionBtn(Icons.save_alt_rounded, 'إنشاء نسخة', 'حفظ في مجلد المستندات', color, _working, _createBackup)),
+          const SizedBox(width: 12),
+          Expanded(child: _actionBtn(Icons.folder_open_rounded, 'حفظ في...', 'اختيار مكان الحفظ', Colors.teal.shade600, _working, _saveToLocation)),
+          const SizedBox(width: 12),
+          Expanded(child: _actionBtn(Icons.restore_rounded, 'استعادة', 'استيراد من ملف', Colors.orange.shade700, _working, _restore)),
+        ]),
+      ])),
+      const SizedBox(height: 20),
+      SectionCard(title: 'النسخ الموجودة', description: '${_backups.length} نسخة احتياطية', icon: Icons.history_rounded, primaryColor: color, child: _loading
+        ? const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
+        : _backups.isEmpty
+          ? Center(child: Padding(padding: const EdgeInsets.all(20), child: Text('لا توجد نسخ احتياطية', style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: Colors.grey.shade500))))
+          : Column(children: _backups.map((b) => Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade100)),
+              child: Row(children: [
+                Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)), child: Icon(Icons.description_outlined, size: 20, color: color)),
+                const SizedBox(width: 12),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('${b.studentCount} متسابق  ·  ${b.levelCount} مستوى', style: const TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w700)),
+                  Text(b.sizeFormatted, style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade500)),
+                ])),
+                Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  Text(b.createdAt.toString().substring(0, 16).replaceAll('T', ' '), style: TextStyle(fontFamily: 'Cairo', fontSize: 10, color: Colors.grey.shade400)),
+                  const SizedBox(height: 4),
+                  GestureDetector(onTap: () => _deleteBackup(b), child: Icon(Icons.delete_outline_rounded, size: 16, color: Colors.red.shade300)),
+                ]),
+              ]),
+            )).toList(),
+          ),
+      ),
+    ]);
+  }
+
+  Widget _actionBtn(IconData icon, String title, String sub, Color c, bool disabled, VoidCallback onTap) {
+    return Material(color: Colors.white, borderRadius: BorderRadius.circular(14), child: InkWell(
+      onTap: disabled ? null : onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.grey.shade200)),
+        child: Column(children: [
+          disabled ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)) : Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: c.withValues(alpha: 0.08), shape: BoxShape.circle), child: Icon(icon, size: 20, color: c)),
+          const SizedBox(height: 8),
+          Text(title, style: const TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF03121C))),
+          const SizedBox(height: 2),
+          Text(sub, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo', fontSize: 10, color: Colors.grey.shade500)),
+        ]),
+      ),
+    ));
   }
 }

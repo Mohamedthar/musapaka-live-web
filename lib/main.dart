@@ -7,6 +7,7 @@ import 'core/constants/app_constants.dart';
 import 'core/config/env_config.dart';
 import 'core/utils/app_logger.dart';
 import 'core/error/connectivity_service.dart';
+import 'services/backup_service.dart';
 import 'config/routes.dart';
 
 void main() async {
@@ -32,6 +33,8 @@ void main() async {
     url: supabaseUrl,
     anonKey: supabaseAnonKey,
   );
+
+  BackupService().autoBackupIfNeeded();
 
   runApp(const QuranContestApp());
 }
