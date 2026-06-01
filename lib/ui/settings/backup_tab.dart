@@ -91,14 +91,16 @@ class _BackupTabState extends State<BackupTab> {
     return SingleChildScrollView(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(color: Colors.white, border: Border(bottom: BorderSide(color: Colors.grey.shade100))),
           child: Row(children: [
-            _navBtn(Icons.add_circle_outline, 'إنشاء نسخة', const Color(0xFF03121C), _working, _create),
-            const SizedBox(width: 8),
-            _navBtn(Icons.folder_open, 'فتح المجلد', const Color(0xFF2563EB), false, _openFolder),
-            const SizedBox(width: 8),
-            _navBtn(Icons.history, 'استعادة نسخة', const Color(0xFFC2410C), false, _restore),
+            _tb(Icons.add_circle_outline, 'إنشاء نسخة', const Color(0xFF03121C), _working, _create),
+            const SizedBox(width: 6),
+            _tb(Icons.folder_open, 'فتح المجلد', const Color(0xFF2563EB), false, _openFolder),
+            const SizedBox(width: 6),
+            _tb(Icons.history, 'استعادة', const Color(0xFFC2410C), false, _restore),
+            const Spacer(),
+            IconButton(icon: const Icon(Icons.refresh_rounded, size: 18), onPressed: _load, splashRadius: 16, color: Colors.grey.shade500),
           ]),
         ),
         Padding(
@@ -139,6 +141,22 @@ class _BackupTabState extends State<BackupTab> {
     );
   }
 
+  Widget _tb(IconData icon, String label, Color color, bool disabled, VoidCallback onTap) {
+    return InkWell(
+      onTap: disabled ? null : onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), border: Border.all(color: color.withValues(alpha: 0.15))),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          disabled ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)) : Icon(icon, size: 15, color: color),
+          const SizedBox(width: 5),
+          Text(label, style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.w700, color: color)),
+        ]),
+      ),
+    );
+  }
+
   Widget _stat(IconData icon, String value, String label, Color color) {
     return Container(
       padding: const EdgeInsets.all(14),
@@ -150,28 +168,6 @@ class _BackupTabState extends State<BackupTab> {
         const SizedBox(height: 2),
         Text(label, style: TextStyle(fontFamily: 'Cairo', fontSize: 10, color: Colors.grey.shade500)),
       ]),
-    );
-  }
-
-  Widget _navBtn(IconData icon, String title, Color color, bool disabled, VoidCallback onTap) {
-    return Expanded(
-      child: Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        child: InkWell(
-          onTap: disabled ? null : onTap,
-          borderRadius: BorderRadius.circular(10),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), border: Border.all(color: color.withValues(alpha: 0.15))),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              disabled ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : Container(padding: const EdgeInsets.all(5), decoration: BoxDecoration(color: color.withValues(alpha: 0.08), shape: BoxShape.circle), child: Icon(icon, size: 16, color: color)),
-              const SizedBox(height: 3),
-              Text(title, style: TextStyle(fontFamily: 'Cairo', fontSize: 10, fontWeight: FontWeight.w700, color: color)),
-            ]),
-          ),
-        ),
-      ),
     );
   }
 }
