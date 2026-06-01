@@ -1,4 +1,6 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' as intl;
 
 import '../../core/theme/app_theme.dart';
@@ -1059,25 +1061,36 @@ class _BackupTabState extends State<_BackupTab> {
   }
 
   Future<void> _restore() async {
+    await _load();
+    if (_backups.isEmpty) { AppTheme.showSnack(context, 'لا توجد نسخ احتياطية للاستعادة'); return; }
+
+    final selected = await showDialog<BackupInfo>(context: context, builder: (_) => AlertDialog(
+      title: const Text('اختر النسخة للاستعادة', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w800)),
+      content: SizedBox(width: 400, child: ListView.builder(
+        shrinkWrap: true,
+        itemCount: _backups.length,
+        itemBuilder: (_, i) {
+          final b = _backups[i];
+          return ListTile(
+            leading: Icon(Icons.description_outlined, color: widget.primary),
+            title: Text('${b.studentCount} متسابق  ·  ${b.levelCount} مستوى${b.imageCount > 0 ? '  ·  ${b.imageCount} صورة' : ''}', style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700)),
+            subtitle: Text('${b.sizeFormatted}  ·  ${b.createdAt.toString().substring(0, 16).replaceAll('T', ' ')}', style: const TextStyle(fontFamily: 'Cairo', fontSize: 11)),
+            onTap: () => Navigator.pop(_, b),
+          );
+        },
+      )),
+      actions: [TextButton(onPressed: () => Navigator.pop(_), child: const Text('إلغاء', style: TextStyle(fontFamily: 'Cairo')))],
+    ));
+
+    if (selected == null || !mounted) return;
+
     setState(() => _working = true);
     try {
-      final data = await _backupService.pickBackupFile();
-      if (data == null) { setState(() => _working = false); return; }
-      final students = (data['students'] as List?)?.length ?? 0;
-      final levels = (data['levels'] as List?)?.length ?? 0;
-      final ok = await showDialog<bool>(context: context, builder: (_) => AlertDialog(
-        title: const Text('تأكيد الاستعادة', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w800)),
-        content: Text('استعادة $students متسابق و $levels مستوى؟', style: const TextStyle(fontFamily: 'Cairo')),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(_, false), child: const Text('إلغاء', style: TextStyle(fontFamily: 'Cairo'))),
-          ElevatedButton(onPressed: () => Navigator.pop(_, true), style: ElevatedButton.styleFrom(backgroundColor: widget.primary), child: const Text('استعادة', style: TextStyle(fontFamily: 'Cairo', color: Colors.white))),
-        ],
-      ));
-      if (ok == true && mounted) {
-        AppTheme.showSnack(context, 'جاري الاستعادة...');
-        final n = await _backupService.restoreFromFile(data);
-        if (mounted) { AppTheme.showSnack(context, 'تم استعادة $n عنصر'); widget.onRestored(); _load(); }
-      }
+      final json = await File(selected.path).readAsString(encoding: utf8);
+      final data = jsonDecode(json) as Map<String, dynamic>;
+      AppTheme.showSnack(context, 'جاري استعادة ${selected.studentCount} متسابق...');
+      final n = await _backupService.restoreFromFile(data);
+      if (mounted) { AppTheme.showSnack(context, 'تم استعادة $n عنصر بنجاح'); widget.onRestored(); _load(); }
     } catch (e) { if (mounted) AppTheme.showError(context, e); }
     finally { if (mounted) setState(() => _working = false); }
   }

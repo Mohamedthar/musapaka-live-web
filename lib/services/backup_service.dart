@@ -189,15 +189,24 @@ class BackupService {
   }
 
   Future<File?> saveToCustomLocation() async {
-    return await createBackup();
+    final file = await createBackup(includeImages: false);
+    final dir = await _backupDir;
+    try {
+      await Process.run('explorer', ['/select,', file.path]);
+    } catch (_) {
+      try { await Process.run('open', ['-R', file.path]); } catch (_) {}
+    }
+    AppLogger.info('Opened backup folder: $dir', tag: 'backup');
+    return file;
   }
 
   Future<Map<String, dynamic>?> pickBackupFile() async {
+    final backups = await listExistingBackups();
+    if (backups.isEmpty) return null;
     try {
-      final backups = await listExistingBackups();
-      if (backups.isEmpty) return null;
-      return jsonDecode(await File(backups.first.path).readAsString(encoding: utf8)) as Map<String, dynamic>;
-    } catch (_) { return null; }
+      await Process.run('explorer', ['/select,', backups.first.path]);
+    } catch (_) {}
+    return null;
   }
 
   Future<int> restoreFromFile(Map<String, dynamic> backupData) async {
