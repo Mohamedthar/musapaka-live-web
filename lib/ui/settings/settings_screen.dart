@@ -25,6 +25,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final SupabaseService _service = SupabaseService();
+  final GlobalKey<BackupTabState> _backupKey = GlobalKey<BackupTabState>();
 
   bool _loading = true;
   bool _saving = false;
@@ -275,6 +276,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const SizedBox(width: 10),
+          if (_activeSection == 'backup') ...[
+            _tb(Icons.add_circle_outline, 'نسخة', const Color(0xFF03121C), () => _backupKey.currentState?._create()),
+            const SizedBox(width: 6),
+            _tb(Icons.folder_open, 'مجلد', const Color(0xFF2563EB), () => _backupKey.currentState?._openFolder()),
+            const SizedBox(width: 6),
+            _tb(Icons.history, 'استعادة', const Color(0xFFC2410C), () => _backupKey.currentState?._restore()),
+            const SizedBox(width: 10),
+          ],
           ElevatedButton.icon(
             onPressed: _saving ? null : _save,
             icon: _saving ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.save_rounded, size: 16, color: Colors.white),
@@ -282,6 +291,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: ElevatedButton.styleFrom(backgroundColor: _saving ? Colors.grey.shade400 : _primary, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11))),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _tb(IconData icon, String label, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), border: Border.all(color: color.withValues(alpha: 0.15))),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, size: 15, color: color),
+          const SizedBox(width: 5),
+          Text(label, style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.w700, color: color)),
+        ]),
       ),
     );
   }
@@ -800,7 +825,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   }
 
-  Widget _buildBackupSection() { return BackupTab(primary: _primary, onRestored: _load); }
+  Widget _buildBackupSection() { return BackupTab(key: _backupKey, primary: _primary, onRestored: _load); }
 
 }
 

@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 
@@ -9,10 +9,10 @@ class BackupTab extends StatefulWidget {
   final Color primary;
   final VoidCallback onRestored;
   const BackupTab({required this.primary, required this.onRestored});
-  @override State<BackupTab> createState() => _BackupTabState();
+  @override BackupTabState createState() => BackupTabState();
 }
 
-class _BackupTabState extends State<BackupTab> {
+class BackupTabState extends State<BackupTab> {
   final BackupService _b = BackupService();
   List<BackupInfo> _backups = [];
   bool _loading = true;
@@ -89,23 +89,8 @@ class _BackupTabState extends State<BackupTab> {
   Widget build(BuildContext context) {
     final c = widget.primary;
     return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(color: Colors.white, border: Border(bottom: BorderSide(color: Colors.grey.shade100))),
-          child: Row(children: [
-            _tb(Icons.add_circle_outline, 'إنشاء نسخة', const Color(0xFF03121C), _working, _create),
-            const SizedBox(width: 6),
-            _tb(Icons.folder_open, 'فتح المجلد', const Color(0xFF2563EB), false, _openFolder),
-            const SizedBox(width: 6),
-            _tb(Icons.history, 'استعادة', const Color(0xFFC2410C), false, _restore),
-            const Spacer(),
-            IconButton(icon: const Icon(Icons.refresh_rounded, size: 18), onPressed: _load, splashRadius: 16, color: Colors.grey.shade500),
-          ]),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Row(children: [
               Expanded(child: _stat(Icons.save_rounded, '${_backups.length}', 'نسخة', c)),
               const SizedBox(width: 10),
