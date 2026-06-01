@@ -259,7 +259,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text('إعدادات النظام', style: TextStyle(fontFamily: 'Cairo', fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF03121C))),
-                if (!isMobile) Text('التحكم الكامل في إعدادات المسابقة والجدولة', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey.shade500)),
+                if (!isMobile)
+                  Text(
+                    _activeSection == 'backup'
+                      ? 'المسار: ${_backupKey.currentState?.backupDirPath ?? ''}'
+                      : 'التحكم الكامل في إعدادات المسابقة والجدولة',
+                    style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey.shade500),
+                    overflow: TextOverflow.ellipsis,
+                  ),
               ],
             ),
           ),
