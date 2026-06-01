@@ -106,9 +106,9 @@ class _BackupTabState extends State<BackupTab> {
         // ── Buttons ──
         Row(children: [
           Expanded(child: _btn(Icons.add_circle_outline, 'إنشاء نسخة', 'البيانات + الصور', const Color(0xFF03121C), _working, _create)),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(child: _btn(Icons.folder_open, 'فتح المجلد', 'استعراض الملفات', const Color(0xFF2563EB), false, _openFolder)),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(child: _btn(Icons.history, 'استعادة نسخة', 'أحدث نسخة', const Color(0xFFC2410C), false, _restore)),
         ]),
         const SizedBox(height: 24),
@@ -153,32 +153,20 @@ class _BackupTabState extends State<BackupTab> {
 
   Widget _btn(IconData icon, String title, String sub, Color color, bool disabled, VoidCallback onTap) {
     return Material(
-      color: Colors.transparent,
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: disabled ? null : onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: disabled
-                ? null
-                : LinearGradient(colors: [color, Color.lerp(color, Colors.black, 0.2)!], begin: Alignment.topCenter, end: Alignment.bottomCenter),
-            boxShadow: disabled ? null : [BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))],
-          ),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: color.withValues(alpha: 0.2))),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            if (disabled)
-              const SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-            else
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
-                child: Icon(icon, size: 22, color: Colors.white),
-              ),
-            const SizedBox(height: 10),
-            Text(title, textAlign: TextAlign.center, style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white)),
-            const SizedBox(height: 3),
-            Text(sub, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo', fontSize: 10, color: Colors.white.withValues(alpha: 0.75), height: 1.3)),
+            disabled ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)) : Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withValues(alpha: 0.08), shape: BoxShape.circle), child: Icon(icon, size: 20, color: color)),
+            const SizedBox(height: 6),
+            Text(title, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w800, color: color)),
+            const SizedBox(height: 1),
+            Text(sub, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo', fontSize: 9, color: Colors.grey.shade500)),
           ]),
         ),
       ),
