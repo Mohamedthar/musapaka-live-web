@@ -71,53 +71,53 @@ class _BackupTabState extends State<BackupTab> {
     if (ok == true && mounted) { await _b.deleteBackup(b.path); _load(); }
   }
 
+  String get _lastBackup {
+    if (_backups.isEmpty) return 'لا يوجد';
+    final diff = DateTime.now().difference(_backups.first.createdAt);
+    if (diff.inMinutes < 60) return 'منذ ${diff.inMinutes} دقيقة';
+    if (diff.inHours < 24) return 'منذ ${diff.inHours} ساعة';
+    return 'منذ ${diff.inDays} يوم';
+  }
+  int get _totalImages => _backups.fold(0, (s, b) => s + b.imageCount);
+  String get _totalSize {
+    final bytes = _backups.fold<int>(0, (s, b) => s + b.sizeBytes);
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = widget.primary;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade100)),
-          child: Column(children: [
-            Row(children: [
-              Expanded(child: ElevatedButton.icon(
-                onPressed: _working ? null : _create,
-                icon: _working ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.save_alt_rounded, size: 18),
-                label: const Text('إنشاء نسخة', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w700)),
-                style: ElevatedButton.styleFrom(backgroundColor: c, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-              )),
-              const SizedBox(width: 10),
-              Expanded(child: OutlinedButton.icon(
-                onPressed: _openFolder,
-                icon: const Icon(Icons.folder_open_rounded, size: 18),
-                label: const Text('فتح المجلد', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w700)),
-                style: OutlinedButton.styleFrom(foregroundColor: Colors.blue.shade700, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), side: BorderSide(color: Colors.blue.shade200)),
-              )),
-              const SizedBox(width: 10),
-              Expanded(child: OutlinedButton.icon(
-                onPressed: _restore,
-                icon: const Icon(Icons.restore_rounded, size: 18),
-                label: const Text('استعادة', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w700)),
-                style: OutlinedButton.styleFrom(foregroundColor: Colors.orange.shade800, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), side: BorderSide(color: Colors.orange.shade200)),
-              )),
-            ]),
-          ]),
-        ),
+        // ── Stats ──
+        Row(children: [
+          Expanded(child: _stat(Icons.save_rounded, '${_backups.length}', 'نسخة', c)),
+          const SizedBox(width: 10),
+          Expanded(child: _stat(Icons.access_time_rounded, _lastBackup, 'آخر نسخة', Colors.blue.shade600)),
+          const SizedBox(width: 10),
+          Expanded(child: _stat(Icons.storage_rounded, _totalSize, 'الحجم', Colors.teal.shade600)),
+          const SizedBox(width: 10),
+          Expanded(child: _stat(Icons.image_rounded, '$_totalImages', 'صورة', Colors.deepOrange.shade400)),
+        ]),
         const SizedBox(height: 20),
+
+        // ── Buttons ──
+        Row(children: [
+          Expanded(child: _btn(Icons.add_circle_outline, 'إنشاء نسخة', 'البيانات + الصور', c, _working, _create)),
+          const SizedBox(width: 10),
+          Expanded(child: _btn(Icons.folder_open, 'فتح المجلد', 'استعراض الملفات', Colors.blue.shade600, false, _openFolder)),
+          const SizedBox(width: 10),
+          Expanded(child: _btn(Icons.history, 'استعادة نسخة', 'أحدث نسخة', Colors.orange.shade700, false, _restore)),
+        ]),
+        const SizedBox(height: 24),
+
+        // ── List ──
         if (_loading)
           const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
         else if (_backups.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(30),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade100)),
-            child: Column(children: [
-              Icon(Icons.cloud_off_rounded, size: 40, color: Colors.grey.shade300),
-              const SizedBox(height: 12),
-              const               Text('لا توجد نسخ احتياطية', style: TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF717171))),
-            ]),
-          )
+          Center(child: Padding(padding: const EdgeInsets.all(30), child: Text('لا توجد نسخ احتياطية', style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: Colors.grey.shade500))))
         else
           ..._backups.take(10).map((b) => Container(
             margin: const EdgeInsets.only(bottom: 8),
@@ -133,6 +133,40 @@ class _BackupTabState extends State<BackupTab> {
               IconButton(icon: Icon(Icons.delete_outline_rounded, size: 16, color: Colors.red.shade300), onPressed: () => _delete(b), splashRadius: 16),
             ]),
           )),
+      ]),
+    );
+  }
+
+  Widget _stat(IconData icon, String value, String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade100)),
+      child: Column(children: [
+        Container(padding: const EdgeInsets.all(7), decoration: BoxDecoration(color: color.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)), child: Icon(icon, size: 16, color: color)),
+        const SizedBox(height: 8),
+        Text(value, style: const TextStyle(fontFamily: 'Cairo', fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF03121C))),
+        const SizedBox(height: 2),
+        Text(label, style: TextStyle(fontFamily: 'Cairo', fontSize: 10, color: Colors.grey.shade500)),
+      ]),
+    );
+  }
+
+  Widget _btn(IconData icon, String title, String sub, Color color, bool disabled, VoidCallback onTap) {
+    return ElevatedButton(
+      onPressed: disabled ? null : onTap,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        elevation: 0,
+      ),
+      child: Column(children: [
+        disabled ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : Icon(icon, size: 22),
+        const SizedBox(height: 6),
+        Text(title, style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 1),
+        Text(sub, style: TextStyle(fontFamily: 'Cairo', fontSize: 10, color: Colors.white70)),
       ]),
     );
   }
