@@ -88,20 +88,20 @@ class _BackupTabState extends State<BackupTab> {
   @override
   Widget build(BuildContext context) {
     final c = widget.primary;
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(color: Colors.white, border: Border(bottom: BorderSide(color: Colors.grey.shade100))),
-        child: Row(children: [
-          _navBtn(Icons.add_circle_outline, 'إنشاء نسخة', const Color(0xFF03121C), _working, _create),
-          const SizedBox(width: 8),
-          _navBtn(Icons.folder_open, 'فتح المجلد', const Color(0xFF2563EB), false, _openFolder),
-          const SizedBox(width: 8),
-          _navBtn(Icons.history, 'استعادة نسخة', const Color(0xFFC2410C), false, _restore),
-        ]),
-      ),
-      Expanded(
-        child: SingleChildScrollView(
+    return SingleChildScrollView(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(color: Colors.white, border: Border(bottom: BorderSide(color: Colors.grey.shade100))),
+          child: Row(children: [
+            _navBtn(Icons.add_circle_outline, 'إنشاء نسخة', const Color(0xFF03121C), _working, _create),
+            const SizedBox(width: 8),
+            _navBtn(Icons.folder_open, 'فتح المجلد', const Color(0xFF2563EB), false, _openFolder),
+            const SizedBox(width: 8),
+            _navBtn(Icons.history, 'استعادة نسخة', const Color(0xFFC2410C), false, _restore),
+          ]),
+        ),
+        Padding(
           padding: const EdgeInsets.all(20),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Row(children: [
@@ -135,8 +135,8 @@ class _BackupTabState extends State<BackupTab> {
               )),
           ]),
         ),
-      ),
-    ]);
+      ]),
+    );
   }
 
   Widget _stat(IconData icon, String value, String label, Color color) {
