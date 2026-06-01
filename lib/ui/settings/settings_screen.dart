@@ -828,39 +828,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final backupColor = const Color(0xFF735C00);
     return Container(
       decoration: BoxDecoration(
-        color: backupColor.withValues(alpha: 0.04),
+        color: backupColor,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 20, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 20, offset: const Offset(0, 4))],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [backupColor.withValues(alpha: 0.15), backupColor.withValues(alpha: 0.06)],
-                      begin: Alignment.topRight, end: Alignment.bottomLeft,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(Icons.backup_rounded, color: backupColor, size: 22),
-                ),
-                const SizedBox(width: 16),
-                const Text('النسخ الاحتياطي', style: TextStyle(fontFamily: 'Cairo', fontSize: 15.5, fontWeight: FontWeight.w800, color: Color(0xFF03121C), letterSpacing: -0.2)),
-              ],
-            ),
-          ),
-          Divider(height: 1, color: Colors.grey.shade200),
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: BackupTab(key: _backupKey, primary: _primary, onRestored: _load),
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: BackupTab(key: _backupKey, primary: _primary, onRestored: _load),
       ),
     );
   }
