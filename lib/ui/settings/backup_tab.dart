@@ -145,7 +145,7 @@ class BackupTabState extends State<BackupTab> {
               width: w,
               child: Container(
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.grey.shade100)),
+                decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.grey.shade200)),
                 child: Row(children: [
                   Container(
                     width: 40, height: 40,
