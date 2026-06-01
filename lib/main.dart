@@ -6,6 +6,7 @@ import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
 import 'core/config/env_config.dart';
 import 'core/utils/app_logger.dart';
+import 'core/error/connectivity_service.dart';
 import 'config/routes.dart';
 
 void main() async {
@@ -25,6 +26,8 @@ void main() async {
   }
 
   AppLogger.info('بدء تشغيل التطبيق', tag: 'init');
+  ConnectivityService().start();
+
   await Supabase.initialize(
     url: supabaseUrl,
     anonKey: supabaseAnonKey,

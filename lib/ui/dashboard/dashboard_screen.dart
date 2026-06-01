@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -22,6 +22,7 @@ import '../shared/widgets/export_fields.dart';
 import '../shared/widgets/pagination_controls.dart';
 import '../shared/widgets/empty_state.dart';
 import '../shared/widgets/error_state.dart';
+import '../shared/widgets/connectivity_banner.dart';
 import 'widgets/stats_cards.dart';
 import 'widgets/filter_bar.dart';
 import 'widgets/student_table.dart';
@@ -302,7 +303,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString());
+      setState(() { _error = 'فشل تحميل البيانات'; });
+      AppTheme.showError(context, e, contextLabel: 'تحميل البيانات');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -550,7 +552,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
         AppTheme.showSnack(context, 'تم حذف المتسابق بنجاح', color: Colors.red.shade700);
       } catch (e) {
-        if (mounted) AppTheme.showSnack(context, 'خطأ: $e', color: AppTheme.errorColor);
+        if (mounted) AppTheme.showError(context, e);
       }
     }
   }
@@ -706,7 +708,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
       if (mounted) AppTheme.showSnack(context, 'تم حفظ التقييم');
     } catch (e) {
-      if (mounted) AppTheme.showSnack(context, 'خطأ: $e', color: AppTheme.errorColor);
+      if (mounted) AppTheme.showError(context, e);
     } finally { setState(() => _updating = false); }
   }
 
@@ -1115,7 +1117,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       
       if (mounted) AppTheme.showSnack(context, 'تم تحديث البيانات بنجاح');
     } catch (e) {
-      if (mounted) AppTheme.showSnack(context, 'خطأ: $e', color: AppTheme.errorColor);
+      if (mounted) AppTheme.showError(context, e);
     } finally {
       if (mounted) setState(() => _isEditSaving = false);
     }
@@ -1567,7 +1569,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
     }
 
-    return Scaffold(
+    return ConnectivityBanner(
+      child: Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
       body: isWide
         ? Row(children: [
@@ -1635,6 +1638,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           )
         : null,
       floatingActionButton: null,
+    ),
     );
   }
 

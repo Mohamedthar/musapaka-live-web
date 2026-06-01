@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../error/error_handler.dart';
 
 class AppTheme {
   static const Color primaryColor = Color(0xFF03121C);
@@ -88,6 +89,37 @@ class AppTheme {
       width: 340,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       duration: const Duration(seconds: 3),
+    ));
+  }
+
+  static void showError(BuildContext context, dynamic error, {String? contextLabel}) {
+    final msg = AppErrorHandler.classify(error, context: contextLabel);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Row(
+        children: [
+          const Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              msg.userMessage,
+              style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: errorColor,
+      behavior: SnackBarBehavior.floating,
+      width: 380,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      duration: const Duration(seconds: 4),
+      action: msg.canRetry
+          ? SnackBarAction(
+              label: 'إعادة',
+              textColor: Colors.white,
+              onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+            )
+          : null,
     ));
   }
 

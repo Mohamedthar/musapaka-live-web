@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../data/models/competition_level.dart';
 import '../../data/models/student.dart';
 import '../../services/supabase_service.dart';
