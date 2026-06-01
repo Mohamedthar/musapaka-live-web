@@ -1,9 +1,0 @@
-{
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./next_web/src/*"]
-    }
-  },
-  "exclude": ["node_modules", "build", ".dart_tool", "android", "ios", "linux", "macos", "windows"]
-}
