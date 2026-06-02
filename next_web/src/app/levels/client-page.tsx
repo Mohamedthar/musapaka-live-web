@@ -137,7 +137,12 @@ export default function LevelsClient({ initialLevels, initialError }: Props) {
                       transition={{ duration: 0.3, delay: Math.min(i * 0.04, 0.3), ease: [0.16, 1, 0.3, 1] }}
                       whileHover={{ y: -4 }}
                       className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden border border-outline-variant/10">
-                      <div className="bg-primary px-4 py-3 flex items-center gap-2.5">
+                      <div className="bg-primary px-4 py-3 flex items-center gap-2.5 relative overflow-hidden">
+                        <div className="absolute right-0 top-0 w-20 h-20 opacity-[0.08] pointer-events-none" style={{
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg width='80' height='80' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='70' cy='10' r='25' fill='none' stroke='%23ffe088' stroke-width='1'/%3E%3Ccircle cx='70' cy='10' r='18' fill='none' stroke='%23ffe088' stroke-width='0.6'/%3E%3Ccircle cx='70' cy='10' r='10' fill='%23ffe088' opacity='0.3'/%3E%3C/svg%3E")`,
+                          backgroundRepeat: 'no-repeat',
+                          backgroundPosition: 'top right',
+                        }} />
                         <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-secondary-fixed to-[#fed65b] text-on-secondary-fixed flex items-center justify-center font-black text-sm shrink-0 shadow-sm">
                           {codeNum || level.level_code}
                         </span>
@@ -150,7 +155,13 @@ export default function LevelsClient({ initialLevels, initialError }: Props) {
                           </span>
                         )}
                       </div>
-                      <div className="p-4 flex-1 flex flex-col gap-3">
+                      <div className="p-4 flex-1 flex flex-col gap-3 relative bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-from)_0%,_transparent_60%)] from-secondary-fixed/[0.04] to-transparent">
+                        <div className="absolute left-0 bottom-0 w-24 h-24 opacity-[0.06] pointer-events-none" style={{
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg width='96' height='96' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M96 96 L96 76 C96 40.7 67.3 12 32 12 L0 12 L0 0 L32 0 C74 0 108 34 108 76 L108 96 Z' fill='%23003527'/%3E%3Ccircle cx='88' cy='88' r='2' fill='%23735c00'/%3E%3Ccircle cx='76' cy='88' r='2' fill='%23735c00'/%3E%3Ccircle cx='88' cy='76' r='2' fill='%23735c00'/%3E%3C/svg%3E")`,
+                          backgroundRepeat: 'no-repeat',
+                          backgroundPosition: 'bottom left',
+                          backgroundSize: 'contain',
+                        }} />
                         <p className="text-sm font-bold text-primary leading-relaxed">{level.content}</p>
                         {level.prizes && (
                           <div className="bg-gradient-to-br from-secondary-fixed/[0.06] to-transparent rounded-xl p-3.5 border border-secondary-fixed/10">
