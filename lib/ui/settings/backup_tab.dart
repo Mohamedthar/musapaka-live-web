@@ -70,19 +70,20 @@ class BackupTabState extends State<BackupTab> {
     try {
       final path = await FilePicker.getDirectoryPath(
         dialogTitle: 'اختر مجلد النسخ الاحتياطي',
-        initialDirectory: _backupDirPath,
         lockParentWindow: true,
       );
-      if (mounted && path != null && path.isNotEmpty) {
-        await _b.setBackupDir(path);
-        _backupDirPath = path;
-        setState(() {});
-        AppTheme.showSnack(context, 'تم تغيير المجلد');
-      } else if (mounted) {
-        AppTheme.showSnack(context, 'لم يتم اختيار مجلد', color: Colors.orange);
+      if (mounted) {
+        if (path != null && path.isNotEmpty) {
+          await _b.setBackupDir(path);
+          _backupDirPath = path;
+          setState(() {});
+          AppTheme.showSnack(context, 'تم تغيير المجلد');
+        }
       }
     } catch (e) {
-      if (mounted) AppTheme.showError(context, 'تعذر فتح الملفات: $e');
+      if (mounted) {
+        AppTheme.showSnack(context, 'تعذر فتح نافذة اختيار المجلد. حاول مرة أخرى.', color: Colors.orange);
+      }
     }
   }
 
