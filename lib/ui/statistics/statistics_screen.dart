@@ -871,13 +871,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Widget _buildMemorizerFilterRow(bool isMobile, int filteredCount) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 24, vertical: 12),
-      child: isMobile
-          ? Row(children: [Expanded(child: _buildMemorizerSearchField()), const SizedBox(width: 8), _buildCounterBox(filteredCount, true)])
-          : Row(children: [
-              Expanded(child: _buildMemorizerSearchField()),
-              const SizedBox(width: 16),
-              _buildCounterBox(filteredCount, false),
-            ]),
+      child: Row(children: [
+        SizedBox(width: isMobile ? null : 320, child: _buildMemorizerSearchField()),
+        const SizedBox(width: 12),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(color: Colors.purple.shade50, borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.purple.shade100)),
+          child: Text('$filteredCount محفظ', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w800, color: Colors.purple.shade700)),
+        ),
+      ]),
     );
   }
 
