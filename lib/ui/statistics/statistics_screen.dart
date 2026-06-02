@@ -66,6 +66,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   // View toggle
   bool _showMemorizerBoard = false;
   List<MemorizerStat> _memorizerStats = [];
+  String _memorizerSearch = '';
+  final TextEditingController _memorizerSearchCtrl = TextEditingController();
 
   static const _primary = Color(0xFF03121C);
 
@@ -78,6 +80,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   @override
   void dispose() {
     _searchCtrl.dispose();
+    _memorizerSearchCtrl.dispose();
     super.dispose();
   }
 
@@ -768,17 +771,18 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Widget _buildMemorizerBoard(bool isMobile) {
     final allStats = _memorizerStats;
+    final q = _memorizerSearch.trim().toLowerCase();
+    final filteredStats = q.isEmpty
+        ? allStats
+        : allStats.where((m) => m.name.toLowerCase().contains(q) || (m.phone?.contains(q) ?? false)).toList();
 
     if (allStats.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.all(24),
-        child: Center(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.person_pin_circle_rounded, size: 48, color: Colors.grey.shade300),
-            const SizedBox(height: 12),
-            const Text('لا يوجد محفظين مسجلين', style: TextStyle(fontFamily: 'Cairo', fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF595959))),
-          ]),
-        ),
+      return const Center(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.person_pin_circle_rounded, size: 48, color: Color(0xFFCCCCCC)),
+          SizedBox(height: 12),
+          Text('لا يوجد محفظين مسجلين', style: TextStyle(fontFamily: 'Cairo', fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF595959))),
+        ]),
       );
     }
 
@@ -798,9 +802,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             StatEntry(title: 'أول 3 مراكز', value: '$totalTop3', icon: Icons.leaderboard_rounded, color: Colors.indigo),
           ]),
         ),
-        Expanded(
-          child: ListView(padding: const EdgeInsets.all(12), children: allStats.asMap().entries.map((e) => _buildMemorizerCard(e.key, e.value)).toList()),
-        ),
+        _buildMemorizerFilterRow(true, filteredStats.length),
+        Expanded(child: ListView(padding: const EdgeInsets.all(12), children: filteredStats.asMap().entries.map((e) => _buildMemorizerCard(e.key, e.value)).toList())),
       ]);
     }
 
@@ -821,77 +824,142 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               StatEntry(title: 'المركز الأول', value: '$totalWinners', icon: Icons.emoji_events_rounded, color: Colors.amber),
               StatEntry(title: 'أول 3 مراكز', value: '$totalTop3', icon: Icons.leaderboard_rounded, color: Colors.indigo),
             ]),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              child: Row(children: [
-                Expanded(child: _buildCounterBox(totalMemorizers, false)),
-              ]),
-            ),
+            _buildMemorizerFilterRow(false, filteredStats.length),
             Divider(height: 1, thickness: 1, color: Colors.grey.shade100),
-            Expanded(child: _buildMemorizerTable(allStats)),
+            Expanded(child: _buildMemorizerTable(filteredStats)),
           ]),
         ),
       ),
     );
   }
 
-  Widget _buildMemorizerTable(List<MemorizerStat> stats) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 3))],
+  Widget _buildMemorizerFilterRow(bool isMobile, int filteredCount) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 24, vertical: 12),
+      child: isMobile
+          ? Row(children: [Expanded(child: _buildMemorizerSearchField()), const SizedBox(width: 8), _buildCounterBox(filteredCount, true)])
+          : Row(children: [
+              Expanded(child: _buildMemorizerSearchField()),
+              const SizedBox(width: 16),
+              _buildCounterBox(filteredCount, false),
+            ]),
+    );
+  }
+
+  Widget _buildMemorizerSearchField() {
+    return TextField(
+      controller: _memorizerSearchCtrl,
+      onChanged: (v) => setState(() => _memorizerSearch = v),
+      textDirection: TextDirection.rtl,
+      style: const TextStyle(fontFamily: 'Cairo', fontSize: 13),
+      decoration: InputDecoration(
+        hintText: 'ابحث باسم المحفظ أو رقم الهاتف...',
+        hintStyle: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey.shade400),
+        prefixIcon: Icon(Icons.search_rounded, size: 20, color: Colors.grey.shade400),
+        suffixIcon: _memorizerSearch.isNotEmpty
+            ? IconButton(icon: Icon(Icons.close_rounded, size: 18, color: Colors.grey.shade400), onPressed: () { _memorizerSearchCtrl.clear(); setState(() => _memorizerSearch = ''); })
+            : null,
+        filled: true,
+        fillColor: const Color(0xFFF8FAFC),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: _primary, width: 1.5)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(children: [
-        // Table header
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(color: Colors.grey.shade50, border: Border(bottom: BorderSide(color: Colors.grey.shade200))),
-          child: Row(children: [
-            const SizedBox(width: 40, child: Text('#', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF595959)))),
-            const Expanded(flex: 3, child: Text('المحفظ', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF595959)))),
-            const Expanded(flex: 2, child: Text('الطلاب', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF595959)))),
-            const Expanded(flex: 2, child: Text('🏆 المركز الأول', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF595959)))),
-            const Expanded(flex: 2, child: Text('أول 3', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF595959)))),
-          ]),
+    );
+  }
+
+  Widget _buildMemorizerTable(List<MemorizerStat> stats) {
+    if (stats.isEmpty) {
+      return const Center(child: Text('لا توجد نتائج', style: TextStyle(fontFamily: 'Cairo', fontSize: 14, color: Color(0xFF595959))));
+    }
+
+    final table = Table(
+      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+      columnWidths: const {
+        0: FixedColumnWidth(52),
+        1: FlexColumnWidth(3),
+        2: FixedColumnWidth(130),
+        3: FixedColumnWidth(130),
+        4: FixedColumnWidth(120),
+      },
+      children: [
+        TableRow(
+          decoration: const BoxDecoration(color: _primary),
+          children: [
+            _mh('#', center: true),
+            _mh('المحفظ'),
+            _mh('👥 الطلاب', center: true),
+            _mh('🏆 المركز الأول', center: true),
+            _mh('أول 3 مراكز', center: true),
+          ],
         ),
         ...stats.asMap().entries.map((e) {
           final i = e.key;
           final m = e.value;
           final isTop = i < 3;
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          return TableRow(
             decoration: BoxDecoration(
-              color: isTop ? Colors.amber.shade50.withValues(alpha: 0.3) : (i % 2 == 0 ? Colors.white : Colors.grey.shade50.withValues(alpha: 0.3)),
+              color: _memorizerRowBg(i),
               border: i < stats.length - 1 ? Border(bottom: BorderSide(color: Colors.grey.shade100)) : null,
             ),
-            child: Row(children: [
-              SizedBox(
-                width: 40,
-                child: Container(
-                  width: 28, height: 28,
-                  decoration: BoxDecoration(
-                    color: isTop ? Colors.amber.shade100 : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text('${i + 1}', style: TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w900, color: isTop ? Colors.amber.shade800 : const Color(0xFF595959))),
-                ),
-              ),
-              Expanded(flex: 3, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            children: [
+              _mc(Center(child: Text('${i + 1}', style: TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700, color: isTop ? Colors.amber.shade800 : Colors.grey.shade500))), center: true),
+              _mc(Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
                 Text(m.name, style: TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF03121C))),
                 if (m.phone != null && m.phone!.isNotEmpty)
                   Text('📞 ${m.phone}', style: TextStyle(fontFamily: 'Cairo', fontSize: 10, color: Colors.grey.shade400)),
               ])),
-              Expanded(flex: 2, child: Text('${m.totalStudents}', style: TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.w800, color: _primary))),
-              Expanded(flex: 2, child: Text('${m.winnersCount}', style: TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.w800, color: m.winnersCount > 0 ? Colors.amber.shade800 : Colors.grey.shade400))),
-              Expanded(flex: 2, child: Text('${m.top3Count}', style: TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.w800, color: m.top3Count > 0 ? Colors.indigo.shade700 : Colors.grey.shade400))),
-            ]),
+              _mc(Center(child: Text('${m.totalStudents}', style: TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.w900, color: _primary))), center: true),
+              _mc(Center(child: _buildMemorizerBadge(m.winnersCount, Colors.amber.shade700, Colors.amber.withValues(alpha: 0.1))), center: true),
+              _mc(Center(child: _buildMemorizerBadge(m.top3Count, Colors.indigo.shade700, Colors.indigo.withValues(alpha: 0.1))), center: true),
+            ],
           );
         }),
-      ]),
+      ],
+    );
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Container(
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade100), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10)]),
+        child: ClipRRect(borderRadius: BorderRadius.circular(16), child: table),
+      ),
+    );
+  }
+
+  Color _memorizerRowBg(int index) {
+    if (index == 0) return Colors.amber.withValues(alpha: 0.06);
+    if (index == 1) return Colors.blueGrey.withValues(alpha: 0.04);
+    if (index == 2) return Colors.brown.withValues(alpha: 0.04);
+    return index % 2 == 0 ? Colors.white : const Color(0xFFF9FBFF);
+  }
+
+  TableCell _mh(String label, {bool center = false}) {
+    return TableCell(
+      child: Container(
+        alignment: center ? Alignment.center : Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Cairo', color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w700)),
+      ),
+    );
+  }
+
+  TableCell _mc(Widget child, {bool center = false}) {
+    return TableCell(
+      verticalAlignment: TableCellVerticalAlignment.middle,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        child: center ? child : child,
+      ),
+    );
+  }
+
+  Widget _buildMemorizerBadge(int count, Color color, Color bg) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8), border: Border.all(color: color.withValues(alpha: 0.3))),
+      child: Text('$count', style: TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.w900, color: count > 0 ? color : Colors.grey.shade300)),
     );
   }
 
