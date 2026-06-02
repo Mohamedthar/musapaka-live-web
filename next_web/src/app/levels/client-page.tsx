@@ -19,6 +19,19 @@ export default function LevelsClient({ initialLevels, initialError }: Props) {
   const [loading, setLoading] = useState(!initialLevels && !initialError);
   const [error, setError] = useState<string | null>(initialError);
 
+  const formatAge = (l: CompetitionLevel) => {
+    const op = (l as any).age_op || (l as any).birth_year_op;
+    if (op === 'gt') return `السن > ${l.min_age}`;
+    if (op === 'gte') return `السن ≥ ${l.min_age}`;
+    if (op === 'lt') return `السن < ${l.max_age}`;
+    if (op === 'lte') return `السن ≤ ${l.max_age}`;
+    if (op === 'range') return `من ${l.min_age} إلى ${l.max_age} سنة`;
+    if (l.min_age && l.max_age) return `فوق ${l.min_age} - ${l.max_age} فأقل`;
+    if (l.min_age) return `فوق ${l.min_age} عام`;
+    if (l.max_age) return `${l.max_age} فأقل`;
+    return 'جميع الأعمار';
+  };
+
   const fetchLevels = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -118,10 +131,10 @@ export default function LevelsClient({ initialLevels, initialError }: Props) {
                   const codeNum = String(level.level_code).replace(/\D/g, '');
                   return (
                     <motion.div key={level.id ?? i}
-                      initial={{ opacity: 0, y: 30 }}
+                      initial={{ opacity: 0, y: 20 }}
                       whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.5, delay: i * 0.08, ease: 'easeOut' }}
+                      viewport={{ once: true, margin: '-50px' }}
+                      transition={{ duration: 0.3, delay: Math.min(i * 0.04, 0.3), ease: [0.16, 1, 0.3, 1] }}
                       whileHover={{ y: -4 }}
                       className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden border border-outline-variant/10">
                       <div className="bg-primary px-4 py-3 flex items-center gap-2.5">
@@ -133,10 +146,7 @@ export default function LevelsClient({ initialLevels, initialError }: Props) {
                         </div>
                         {(level.min_age || level.max_age) && (
                           <span className="text-[10px] font-black text-secondary-fixed bg-white/10 px-2 py-0.5 rounded-lg shrink-0">
-                            {level.min_age ? `فوق ${level.min_age}` : ''}
-                            {level.min_age && level.max_age ? ' - ' : ''}
-                            {level.max_age ? `${level.max_age} فأقل` : ''}
-                            {!level.min_age && !level.max_age ? 'جميع الأعمار' : ''}
+                            {formatAge(level)}
                           </span>
                         )}
                       </div>
