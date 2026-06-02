@@ -18,6 +18,8 @@ class BackupTabState extends State<BackupTab> {
   List<BackupInfo> _backups = [];
   bool _loading = true;
   bool _working = false;
+  double _backupProgress = 0;
+  String _backupCurrentFile = '';
   String _backupDirPath = '';
   String get backupDirPath => _backupDirPath;
 
@@ -29,12 +31,20 @@ class BackupTabState extends State<BackupTab> {
   }
 
   Future<void> createBackup() async {
-    setState(() => _working = true);
+    setState(() { _working = true; _backupProgress = 0; _backupCurrentFile = ''; });
     try {
-      await _b.createBackup(includeImages: true);
+      await _b.createBackup(
+        includeImages: true,
+        onProgress: (p) {
+          if (mounted) setState(() {
+            _backupProgress = p.total > 0 ? p.done / p.total : 0;
+            _backupCurrentFile = p.currentFile ?? '';
+          });
+        },
+      );
       if (mounted) { AppTheme.showSnack(context, 'تم إنشاء النسخة الاحتياطية'); _load(); }
     } catch (e) { if (mounted) AppTheme.showError(context, e); }
-    finally { if (mounted) setState(() => _working = false); }
+    finally { if (mounted) setState(() { _working = false; _backupProgress = 0; }); }
   }
 
   Future<void> openFolder() async {
@@ -175,6 +185,29 @@ class BackupTabState extends State<BackupTab> {
           )).toList());
         }),
         const SizedBox(height: 20),
+        if (_working) ...[
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: const Color(0xFF03121C).withValues(alpha: 0.03), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFF03121C).withValues(alpha: 0.08))),
+            child: Column(children: [
+              Row(children: [
+                const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2.5)),
+                const SizedBox(width: 12),
+                Expanded(child: Text(
+                  _backupCurrentFile.isNotEmpty ? 'جاري تحميل: $_backupCurrentFile...' : 'جاري إنشاء النسخة الاحتياطية...',
+                  style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF03121C)),
+                )),
+                Text('${(_backupProgress * 100).toStringAsFixed(0)}%', style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF03121C))),
+              ]),
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(value: _backupProgress, minHeight: 6, backgroundColor: Colors.grey.shade200, color: const Color(0xFF03121C)),
+              ),
+            ]),
+          ),
+          const SizedBox(height: 16),
+        ],
         if (_loading)
           const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
         else if (_backups.isEmpty)
