@@ -921,12 +921,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: const BoxDecoration(color: _primary),
               child: Row(children: [
-                _mh2('#', 48),
+                _mh2('#', 44),
                 _mh2('المحفظ', null, flex: 14),
-                _mh2('رقم الهاتف', null, flex: 12),
-                _mh2('الطلاب', null, flex: 7, center: true),
-                _mh2('الأول', null, flex: 8, center: true),
-                _mh2('أول 3', null, flex: 7, center: true),
+                _mh2('الهاتف', null, flex: 12, center: true),
+                _mh2('الطلاب', null, flex: 6, center: true),
+                _mh2('الأول', null, flex: 6, center: true),
+                _mh2('أول 3', null, flex: 6, center: true),
               ]),
             ),
             ...stats.asMap().entries.map((e) {
@@ -945,12 +945,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       border: Border(bottom: BorderSide(color: isExpanded ? _primary.withValues(alpha: 0.15) : Colors.grey.shade100)),
                     ),
                     child: Row(children: [
-                      _td2('${i + 1}', 48, color: isExpanded ? _primary : (i < 3 ? Colors.amber.shade800 : Colors.grey.shade500)),
+                      _td2('${i + 1}', 44, center: true, color: isExpanded ? _primary : (i < 3 ? Colors.amber.shade800 : Colors.grey.shade500)),
                       _td2(m.name, null, flex: 14, bold: true),
-                      _td2(phone.isNotEmpty ? phone : '---', null, flex: 12, smaller: true, color: phone.isNotEmpty ? Colors.grey.shade700 : Colors.grey.shade400),
-                      _td2(null, null, flex: 7, badge: _buildMemNumBadge(m.totalStudents, _primary.withValues(alpha: 0.1), _primary)),
-                      _td2(null, null, flex: 8, badge: _buildMemNumBadge(m.winnersCount, Colors.amber.withValues(alpha: 0.1), Colors.amber.shade700)),
-                      _td2(null, null, flex: 7, badge: _buildMemNumBadge(m.top3Count, Colors.indigo.withValues(alpha: 0.08), Colors.indigo.shade700)),
+                      _td2(phone.isNotEmpty ? phone : '---', null, flex: 12, center: true, small: true, color: phone.isNotEmpty ? Colors.grey.shade700 : Colors.grey.shade400),
+                      _td2('${m.totalStudents}', null, flex: 6, center: true, bold: true),
+                      _td2('${m.winnersCount}', null, flex: 6, center: true, bold: true, color: m.winnersCount > 0 ? Colors.amber.shade700 : Colors.grey.shade400),
+                      _td2('${m.top3Count}', null, flex: 6, center: true, bold: true, color: m.top3Count > 0 ? Colors.indigo.shade600 : Colors.grey.shade400),
                     ]),
                   ),
                 ),
@@ -965,26 +965,27 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: const BorderRadius.vertical(top: Radius.circular(12)), border: Border(bottom: BorderSide(color: Colors.grey.shade200))),
                           child: Row(children: [
-                            _sh('#', 40),
+                            _sh('#', 36),
                             _sh('الطالب', null, flex: 3),
                             _sh('المستوى', null, flex: 2),
-                            _sh('الترتيب', null, flex: 1),
-                            _sh('الدرجة', 75),
+                            _sh('الترتيب', null, flex: 1, center: true),
+                            _sh('الدرجة', 80),
                             _sh('النسبة', 60),
                           ]),
                         ),
                         ...students.asMap().entries.map((se) {
                           final s = se.value;
                           final pctColor = s.percentage >= 95 ? Colors.green : (s.percentage >= 75 ? Colors.blue : (s.percentage >= 50 ? Colors.orange : Colors.red));
+                          final rankColor = s.rank == 1 ? Colors.amber.shade800 : (s.rank == 2 ? Colors.blueGrey.shade600 : (s.rank == 3 ? Colors.brown.shade500 : Colors.grey.shade600));
                           return Container(
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                             decoration: BoxDecoration(border: se.key < students.length - 1 ? Border(bottom: BorderSide(color: Colors.grey.shade100)) : null),
                             child: Row(children: [
-                              _sd('${se.key + 1}', 40),
+                              _sd('${se.key + 1}', 36, color: Colors.grey.shade500),
                               _sd(s.studentName, null, flex: 3, bold: true),
                               _sd(s.level, null, flex: 2),
-                              _sd(null, null, flex: 1, badge: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: s.rank == 1 ? Colors.amber.withValues(alpha: 0.15) : Colors.grey.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(6)), child: Text(s.rankTitle, style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.w800, color: s.rank == 1 ? Colors.amber.shade800 : Colors.grey.shade700)))),
-                              _sd(s.totalScore != null ? s.totalScore!.toStringAsFixed(0) : '---', 75),
+                              _sd('${s.rank}', null, flex: 1, center: true, bold: true, color: rankColor),
+                              _sd(s.totalScore != null ? s.totalScore!.toStringAsFixed(0) : '---', 80, color: _primary),
                               _sd('${s.percentage.toStringAsFixed(0)}%', 60, bold: true, color: pctColor),
                             ]),
                           );
@@ -1015,33 +1016,35 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   // Main table data cell
-  static Widget _td2(String? text, double? width, {int? flex, bool bold = false, bool smaller = false, Color? color, Widget? badge}) {
+  static Widget _td2(String? text, double? width, {int? flex, bool bold = false, bool small = false, Color? color, Widget? badge, bool center = false}) {
     Widget child;
     if (badge != null) {
-      child = Center(child: badge);
+      child = badge;
     } else {
-      child = Text(text ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: 'Cairo', fontSize: smaller ? 12 : 13, fontWeight: bold ? FontWeight.w700 : FontWeight.w500, color: color ?? const Color(0xFF1E293B)));
+      child = Text(text ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: center ? TextAlign.center : null, style: TextStyle(fontFamily: 'Cairo', fontSize: small ? 12 : 13, fontWeight: bold ? FontWeight.w700 : FontWeight.w500, color: color ?? const Color(0xFF1E293B)));
     }
+    if (center) child = Center(child: child);
     if (width != null) return SizedBox(width: width, child: child);
     return Expanded(flex: flex ?? 1, child: child);
   }
 
   // Sub-table header
   static const _shStyle = TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF888888));
-  static Widget _sh(String label, double? width, {int? flex}) {
-    final child = Text(label, style: _shStyle);
-    if (width != null) return SizedBox(width: width, child: child);
-    return Expanded(flex: flex ?? 1, child: child);
+  static Widget _sh(String label, double? width, {int? flex, bool center = false}) {
+    final child = Text(label, style: _shStyle, textAlign: center ? TextAlign.center : null);
+    if (width != null) return SizedBox(width: width, child: center ? Center(child: child) : child);
+    return Expanded(flex: flex ?? 1, child: center ? Center(child: child) : child);
   }
 
   // Sub-table data
-  static Widget _sd(String? text, double? width, {int? flex, bool bold = false, Color? color, Widget? badge}) {
+  static Widget _sd(String? text, double? width, {int? flex, bool bold = false, Color? color, Widget? badge, bool center = false}) {
     Widget child;
     if (badge != null) {
-      child = Center(child: badge);
+      child = badge;
     } else {
-      child = Text(text ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: bold ? FontWeight.w700 : FontWeight.w500, color: color ?? const Color(0xFF475569)));
+      child = Text(text ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: center ? TextAlign.center : null, style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: bold ? FontWeight.w700 : FontWeight.w500, color: color ?? const Color(0xFF475569)));
     }
+    if (center) child = Center(child: child);
     if (width != null) return SizedBox(width: width, child: child);
     return Expanded(flex: flex ?? 1, child: child);
   }
