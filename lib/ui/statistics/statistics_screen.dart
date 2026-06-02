@@ -878,10 +878,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       defaultVerticalAlignment: TableCellVerticalAlignment.middle,
       columnWidths: const {
         0: FixedColumnWidth(52),
-        1: FlexColumnWidth(2.5),
-        2: FixedColumnWidth(120),
-        3: FixedColumnWidth(130),
-        4: FixedColumnWidth(120),
+        1: FlexColumnWidth(2.2),
+        2: FixedColumnWidth(140),
+        3: FixedColumnWidth(100),
+        4: FixedColumnWidth(110),
+        5: FixedColumnWidth(100),
       },
       children: [
         TableRow(
@@ -889,8 +890,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           children: [
             _mh('#', center: true),
             _mh('المحفظ'),
-            _mh('👥 الطلاب', center: true),
-            _mh('🏆 المركز الأول', center: true),
+            _mh('رقم الهاتف', center: true),
+            _mh('الطلاب', center: true),
+            _mh('المركز الأول', center: true),
             _mh('أول 3 مراكز', center: true),
           ],
         ),
@@ -903,13 +905,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               border: i < stats.length - 1 ? Border(bottom: BorderSide(color: Colors.grey.shade100)) : null,
             ),
             children: [
-              _mc(Center(child: Text('${i + 1}', style: TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700, color: i < 3 ? Colors.amber.shade800 : Colors.grey.shade500))), center: true),
-              _mc(Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                Text(m.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.w700, color: _primary)),
-                if (m.phone != null && m.phone!.isNotEmpty)
-                  Text('📞 ${m.phone}', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
-              ])),
-              _mc(Center(child: _buildMemNumBadge(m.totalStudents, _primary.withValues(alpha: 0.12), _primary)), center: true),
+              _mc(Center(child: Text('${i + 1}', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w700, color: i < 3 ? Colors.amber.shade800 : Colors.grey.shade500))), center: true),
+              _mc(Text(m.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700, color: _primary))),
+              _mc(Center(child: Text(m.phone != null && m.phone!.isNotEmpty ? m.phone! : '---', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w600, color: m.phone != null && m.phone!.isNotEmpty ? Colors.grey.shade700 : Colors.grey.shade400)))),
+              _mc(Center(child: _buildMemNumBadge(m.totalStudents, _primary.withValues(alpha: 0.12), _primary))),
               _mc(Center(child: _buildMemNumBadge(m.winnersCount, Colors.amber.withValues(alpha: 0.12), Colors.amber.shade700))),
               _mc(Center(child: _buildMemNumBadge(m.top3Count, Colors.indigo.withValues(alpha: 0.1), Colors.indigo.shade700))),
             ],
@@ -943,7 +942,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return TableCell(
       child: Container(
         alignment: center ? Alignment.center : Alignment.centerRight,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
         child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Cairo', color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w700)),
       ),
     );
@@ -953,7 +952,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return TableCell(
       verticalAlignment: TableCellVerticalAlignment.middle,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         child: center ? child : child,
       ),
     );
