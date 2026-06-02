@@ -66,7 +66,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   // View toggle
   bool _showMemorizerBoard = false;
   List<MemorizerStat> _memorizerStats = [];
-  String? _memorizerLevelFilter;
 
   static const _primary = Color(0xFF03121C);
 
@@ -771,12 +770,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final allStats = _memorizerStats;
 
     if (allStats.isEmpty) {
-      return Center(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.person_pin_circle_rounded, size: 48, color: Colors.grey.shade300),
-          const SizedBox(height: 12),
-          const Text('لا يوجد محفظين مسجلين', style: TextStyle(fontFamily: 'Cairo', fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF595959))),
-        ]),
+      return Padding(
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.person_pin_circle_rounded, size: 48, color: Colors.grey.shade300),
+            const SizedBox(height: 12),
+            const Text('لا يوجد محفظين مسجلين', style: TextStyle(fontFamily: 'Cairo', fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF595959))),
+          ]),
+        ),
       );
     }
 
@@ -785,40 +787,51 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final totalWinners = allStats.fold(0, (sum, m) => sum + m.winnersCount);
     final totalTop3 = allStats.fold(0, (sum, m) => sum + m.top3Count);
 
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(isMobile ? 12 : 24),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // ── KPI Cards ───────────────────────────────
-        DashboardStatsCards(stats: [
-          StatEntry(title: 'المحفظين', value: '$totalMemorizers', icon: Icons.group_rounded, color: Colors.purple),
-          StatEntry(title: 'إجمالي الطلاب', value: '$totalStudents', icon: Icons.people_rounded, color: Colors.blue),
-          StatEntry(title: 'المركز الأول', value: '$totalWinners', icon: Icons.emoji_events_rounded, color: Colors.amber),
-          StatEntry(title: 'أول 3 مراكز', value: '$totalTop3', icon: Icons.leaderboard_rounded, color: Colors.indigo),
-        ]),
-        const SizedBox(height: 20),
+    if (isMobile) {
+      return Column(children: [
+        Container(
+          color: Colors.white,
+          child: DashboardStatsCards(stats: [
+            StatEntry(title: 'المحفظين', value: '$totalMemorizers', icon: Icons.group_rounded, color: Colors.purple),
+            StatEntry(title: 'إجمالي الطلاب', value: '$totalStudents', icon: Icons.people_rounded, color: Colors.blue),
+            StatEntry(title: 'المركز الأول', value: '$totalWinners', icon: Icons.emoji_events_rounded, color: Colors.amber),
+            StatEntry(title: 'أول 3 مراكز', value: '$totalTop3', icon: Icons.leaderboard_rounded, color: Colors.indigo),
+          ]),
+        ),
+        Expanded(
+          child: ListView(padding: const EdgeInsets.all(12), children: allStats.asMap().entries.map((e) => _buildMemorizerCard(e.key, e.value)).toList()),
+        ),
+      ]);
+    }
 
-        // ── Header ────────────────────────────────────
-        Row(children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Colors.purple.shade50, borderRadius: BorderRadius.circular(12)),
-            child: Icon(Icons.leaderboard_rounded, size: 20, color: Colors.purple.shade700),
-          ),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('ترتيب المحفظين', style: TextStyle(fontFamily: 'Cairo', fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF03121C))),
-            Text('مرتبين حسب أكبر عدد طلاب — المجموع عبر كل المستويات', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey.shade500)),
-          ])),
-          _buildCounterBox(totalMemorizers, isMobile),
-        ]),
-        const SizedBox(height: 16),
-
-        // ── Ranking List / Table ──────────────────────
-        if (!isMobile)
-          _buildMemorizerTable(allStats)
-        else
-          ...allStats.asMap().entries.map((e) => _buildMemorizerCard(e.key, e.value)),
-      ]),
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 20, offset: const Offset(0, 4))],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            DashboardStatsCards(stats: [
+              StatEntry(title: 'المحفظين', value: '$totalMemorizers', icon: Icons.group_rounded, color: Colors.purple),
+              StatEntry(title: 'إجمالي الطلاب', value: '$totalStudents', icon: Icons.people_rounded, color: Colors.blue),
+              StatEntry(title: 'المركز الأول', value: '$totalWinners', icon: Icons.emoji_events_rounded, color: Colors.amber),
+              StatEntry(title: 'أول 3 مراكز', value: '$totalTop3', icon: Icons.leaderboard_rounded, color: Colors.indigo),
+            ]),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              child: Row(children: [
+                Expanded(child: _buildCounterBox(totalMemorizers, false)),
+              ]),
+            ),
+            Divider(height: 1, thickness: 1, color: Colors.grey.shade100),
+            Expanded(child: _buildMemorizerTable(allStats)),
+          ]),
+        ),
+      ),
     );
   }
 
