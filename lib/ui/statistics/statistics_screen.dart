@@ -872,7 +872,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 24, vertical: 12),
       child: Row(children: [
-        SizedBox(width: isMobile ? null : 320, child: _buildMemorizerSearchField()),
+        Expanded(child: _buildMemorizerSearchField()),
         const SizedBox(width: 12),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
