@@ -939,7 +939,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 InkWell(
                   onTap: () => setState(() => _expandedMemorizerIndex = isExpanded ? null : i),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
                       color: _memRowBg(i),
                       border: Border(bottom: BorderSide(color: isExpanded ? _primary.withValues(alpha: 0.15) : Colors.grey.shade100)),
