@@ -6,6 +6,7 @@ import '../../data/models/student.dart';
 import '../../data/models/competition_level.dart';
 import '../../services/supabase_service.dart';
 import '../../services/export_service.dart';
+import '../dashboard/widgets/stats_cards.dart';
 import 'widgets/statistics_kpi_cards.dart';
 import 'widgets/statistics_ranking_table.dart';
 
@@ -65,6 +66,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   // View toggle
   bool _showMemorizerBoard = false;
   List<MemorizerStat> _memorizerStats = [];
+  String? _memorizerLevelFilter;
 
   static const _primary = Color(0xFF03121C);
 
@@ -766,8 +768,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildMemorizerBoard(bool isMobile) {
-    final stats = _memorizerStats;
-    if (stats.isEmpty) {
+    final allStats = _memorizerStats;
+
+    if (allStats.isEmpty) {
       return Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Icon(Icons.person_pin_circle_rounded, size: 48, color: Colors.grey.shade300),
@@ -776,9 +779,25 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         ]),
       );
     }
+
+    final totalMemorizers = allStats.length;
+    final totalStudents = allStats.fold(0, (sum, m) => sum + m.totalStudents);
+    final totalWinners = allStats.fold(0, (sum, m) => sum + m.winnersCount);
+    final totalTop3 = allStats.fold(0, (sum, m) => sum + m.top3Count);
+
     return SingleChildScrollView(
       padding: EdgeInsets.all(isMobile ? 12 : 24),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // ── KPI Cards ───────────────────────────────
+        DashboardStatsCards(stats: [
+          StatEntry(title: 'المحفظين', value: '$totalMemorizers', icon: Icons.group_rounded, color: Colors.purple),
+          StatEntry(title: 'إجمالي الطلاب', value: '$totalStudents', icon: Icons.people_rounded, color: Colors.blue),
+          StatEntry(title: 'المركز الأول', value: '$totalWinners', icon: Icons.emoji_events_rounded, color: Colors.amber),
+          StatEntry(title: 'أول 3 مراكز', value: '$totalTop3', icon: Icons.leaderboard_rounded, color: Colors.indigo),
+        ]),
+        const SizedBox(height: 20),
+
+        // ── Header ────────────────────────────────────
         Row(children: [
           Container(
             padding: const EdgeInsets.all(10),
@@ -788,48 +807,113 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           const SizedBox(width: 12),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Text('ترتيب المحفظين', style: TextStyle(fontFamily: 'Cairo', fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF03121C))),
-            Text('مرتبين حسب أكبر عدد طلاب لكل محفظ، مع ذكر عدد الفائزين بالمركز الأول', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey.shade500)),
+            Text('مرتبين حسب أكبر عدد طلاب — المجموع عبر كل المستويات', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey.shade500)),
           ])),
-          _buildCounterBox(stats.length, isMobile),
+          _buildCounterBox(totalMemorizers, isMobile),
         ]),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
+
+        // ── Ranking List / Table ──────────────────────
+        if (!isMobile)
+          _buildMemorizerTable(allStats)
+        else
+          ...allStats.asMap().entries.map((e) => _buildMemorizerCard(e.key, e.value)),
+      ]),
+    );
+  }
+
+  Widget _buildMemorizerTable(List<MemorizerStat> stats) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 3))],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(children: [
+        // Table header
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(color: Colors.grey.shade50, border: Border(bottom: BorderSide(color: Colors.grey.shade200))),
+          child: Row(children: [
+            const SizedBox(width: 40, child: Text('#', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF595959)))),
+            const Expanded(flex: 3, child: Text('المحفظ', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF595959)))),
+            const Expanded(flex: 2, child: Text('الطلاب', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF595959)))),
+            const Expanded(flex: 2, child: Text('🏆 المركز الأول', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF595959)))),
+            const Expanded(flex: 2, child: Text('أول 3', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF595959)))),
+          ]),
+        ),
         ...stats.asMap().entries.map((e) {
           final i = e.key;
           final m = e.value;
           final isTop = i < 3;
           return Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: isTop ? Colors.amber.shade200 : Colors.grey.shade200),
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
+              color: isTop ? Colors.amber.shade50.withValues(alpha: 0.3) : (i % 2 == 0 ? Colors.white : Colors.grey.shade50.withValues(alpha: 0.3)),
+              border: i < stats.length - 1 ? Border(bottom: BorderSide(color: Colors.grey.shade100)) : null,
             ),
             child: Row(children: [
-              Container(
-                width: 38, height: 38,
-                decoration: BoxDecoration(
-                  color: isTop ? Colors.amber.shade50 : Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: isTop ? Colors.amber.shade300 : Colors.grey.shade200),
+              SizedBox(
+                width: 40,
+                child: Container(
+                  width: 28, height: 28,
+                  decoration: BoxDecoration(
+                    color: isTop ? Colors.amber.shade100 : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text('${i + 1}', style: TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w900, color: isTop ? Colors.amber.shade800 : const Color(0xFF595959))),
                 ),
-                alignment: Alignment.center,
-                child: Text('${i + 1}', style: TextStyle(fontFamily: 'Cairo', fontSize: 15, fontWeight: FontWeight.w900, color: isTop ? Colors.amber.shade800 : const Color(0xFF595959))),
               ),
-              const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(m.name, style: TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.w800, color: const Color(0xFF03121C))),
+              Expanded(flex: 3, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(m.name, style: TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF03121C))),
                 if (m.phone != null && m.phone!.isNotEmpty)
-                  Text('📞 ${m.phone}', style: TextStyle(fontFamily: 'Cairo', fontSize: 10.5, color: Colors.grey.shade500)),
-                Text('${m.totalStudents} طالب', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: _primary.withValues(alpha: 0.5))),
+                  Text('📞 ${m.phone}', style: TextStyle(fontFamily: 'Cairo', fontSize: 10, color: Colors.grey.shade400)),
               ])),
-              _memorizerBadge('🏆 المركز الأول', m.winnersCount, Colors.amber.shade700, Colors.amber.shade50),
-              const SizedBox(width: 8),
-              _memorizerBadge('أول 3 مراكز', m.top3Count, Colors.indigo.shade700, Colors.indigo.shade50),
+              Expanded(flex: 2, child: Text('${m.totalStudents}', style: TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.w800, color: _primary))),
+              Expanded(flex: 2, child: Text('${m.winnersCount}', style: TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.w800, color: m.winnersCount > 0 ? Colors.amber.shade800 : Colors.grey.shade400))),
+              Expanded(flex: 2, child: Text('${m.top3Count}', style: TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.w800, color: m.top3Count > 0 ? Colors.indigo.shade700 : Colors.grey.shade400))),
             ]),
           );
         }),
+      ]),
+    );
+  }
+
+  Widget _buildMemorizerCard(int i, MemorizerStat m) {
+    final isTop = i < 3;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: isTop ? Colors.amber.shade200 : Colors.grey.shade200),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
+      ),
+      child: Row(children: [
+        Container(
+          width: 36, height: 36,
+          decoration: BoxDecoration(
+            color: isTop ? Colors.amber.shade50 : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: isTop ? Colors.amber.shade300 : Colors.grey.shade200),
+          ),
+          alignment: Alignment.center,
+          child: Text('${i + 1}', style: TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.w900, color: isTop ? Colors.amber.shade800 : const Color(0xFF595959))),
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(m.name, style: TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w800, color: const Color(0xFF03121C))),
+          if (m.phone != null && m.phone!.isNotEmpty)
+            Text('📞 ${m.phone}', style: TextStyle(fontFamily: 'Cairo', fontSize: 10, color: Colors.grey.shade500)),
+          Text('${m.totalStudents} طالب', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: _primary.withValues(alpha: 0.5))),
+        ])),
+        _memorizerBadge('🏆 الأول', m.winnersCount, Colors.amber.shade700, Colors.amber.shade50),
+        const SizedBox(width: 6),
+        _memorizerBadge('أول 3', m.top3Count, Colors.indigo.shade700, Colors.indigo.shade50),
       ]),
     );
   }
