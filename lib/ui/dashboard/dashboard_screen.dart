@@ -78,64 +78,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // Bulk Actions & Sorting State
   final Set<int> _selectedIds = {};
   int? _sortColumnIndex;
-  bool _sortAscending = true;
-
-  // Sidebar & Panel Layout
-  bool _sidebarCollapsed = false;
-  double _sidePanelWidth = 520.0;
-  String _settingsSection = 'dates';
-
-  // Editing State
-  Uint8List? _editProfileBytes;
-  Uint8List? _editBirthCertBytes;
-  Uint8List? _originalProfileBytes;
-  Uint8List? _originalBirthCertBytes;
-  late TextEditingController _editNameCtrl;
-  late TextEditingController _editPhoneCtrl;
-  late TextEditingController _editNationalIdCtrl;
-  late TextEditingController _editAgeCtrl;
-  late TextEditingController _editMemorizerNameCtrl;
-  late TextEditingController _editMemorizerPhoneCtrl;
-  late TextEditingController _editMemorizerAddressCtrl;
-  late TextEditingController _editLocationCtrl;
-  String? _editGender;
-  String? _editSelectedLevel;
-  String? _editSelectedRewaya;
-  String? _editBranchName;
-  int? _editMemorizationAmount;
-  DateTime? _editBirthDate;
-  late TextEditingController _editBirthDateCtrl;
-  bool _isEditSaving = false;
-  
-  Timer? _editNameDebounce;
-  bool _isEditNameChecking = false;
-  bool _isEditNameDuplicate = false;
-  bool _isEditIdChecking = false;
-  bool _isEditIdDuplicate = false;
-
-  static const _primary = Color(0xFF03121C);
+  String _exportFolderPath = '';
 
   @override
-  void dispose() { 
-    _editNameDebounce?.cancel();
-    _editNationalIdCtrl.removeListener(_onNationalIdChanged);
-    _editNameCtrl.removeListener(_onEditNameChanged);
-    _scoreCtrl.dispose();
-    _rewayaScoreCtrl.dispose();
-    _tajweedScoreCtrl.dispose();
-    _voiceScoreCtrl.dispose();
-    _meaningScoreCtrl.dispose();
-    _searchCtrl.dispose();
-    _editNameCtrl.dispose();
-    _editPhoneCtrl.dispose();
-    _editNationalIdCtrl.dispose();
-    _editAgeCtrl.dispose();
-    _editMemorizerNameCtrl.dispose();
-    _editMemorizerPhoneCtrl.dispose();
-    _editMemorizerAddressCtrl.dispose();
-    _editLocationCtrl.dispose();
-    _editBirthDateCtrl.dispose();
-    super.dispose(); 
+  void initState() {
+    super.initState();
+    _editNameCtrl = TextEditingController();
+    _editPhoneCtrl = TextEditingController();
+    _editNationalIdCtrl = TextEditingController();
+    _editAgeCtrl = TextEditingController();
+    _editMemorizerNameCtrl = TextEditingController();
+    _editMemorizerPhoneCtrl = TextEditingController();
+    _editMemorizerAddressCtrl = TextEditingController();
+    _editLocationCtrl = TextEditingController();
+    _editBirthDateCtrl = TextEditingController();
+    _load();
+    _loadExportFolder();
+  }
+
+  Future<void> _loadExportFolder() async {
+    final path = await ExportService.getExportDir();
+    if (path != null && mounted) setState(() => _exportFolderPath = path);
+  }
+
+  Future<void> _pickExportFolder() async {
+    try {
+      final path = await FilePicker.getDirectoryPath(
+        dialogTitle: 'اختر مجلد حفظ التصدير',
+        lockParentWindow: true,
+      );
+      if (mounted && path != null && path.isNotEmpty) {
+        await ExportService.setExportDir(path);
+        setState(() => _exportFolderPath = path);
+        AppTheme.showSnack(context, 'تم تغيير مجلد الحفظ');
+      }
+    } catch (e) {
+      if (mounted) AppTheme.showSnack(context, 'تعذر فتح نافذة اختيار المجلد', color: Colors.orange);
+    }
   }
 
   @override
@@ -742,6 +721,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _exportExcel({String? level, double? minScore, double? maxScore}) async {
     try {
+      if (_exportFolderPath.isEmpty) {
+        await _pickExportFolder();
+        if (_exportFolderPath.isEmpty) return;
+      }
       final exportService = ExportService();
       final selectedLevelObj = level != null
           ? CompetitionLevel.findByTitle(_levels, level)
@@ -755,7 +738,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         maxScore: maxScore,
       );
       final fileName = 'Contestants_Report_${DateTime.now().millisecondsSinceEpoch}.xlsx';
-      final savePath = await exportService.saveFile(bytes, fileName, 'xlsx');
+      final savePath = await exportService.saveFile(bytes, fileName, 'xlsx', directory: _exportFolderPath);
       if (savePath != null && mounted) {
         AppTheme.showSnack(context, 'تم تصدير التقرير بنجاح ✓');
       }
@@ -885,9 +868,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _printStudentCard(Student s) async {
     try {
+      if (_exportFolderPath.isEmpty) {
+        await _pickExportFolder();
+        if (_exportFolderPath.isEmpty) return;
+      }
       AppTheme.showSnack(context, 'جاري حفظ استمارة المتسابق...', color: _primary);
       final printService = PrintService();
-      final path = await printService.saveStudentCardsToDownloads([s], _levels);
+      final path = await printService.saveStudentCardsToDownloads([s], _levels, customDir: _exportFolderPath);
       if (mounted) AppTheme.showSnack(context, 'تم الحفظ في: $path');
     } catch (e) {
       if (mounted) AppTheme.showSnack(context, 'خطأ في الحفظ: $e', color: AppTheme.errorColor);
@@ -898,11 +885,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (_selectedIds.isEmpty) return;
     
     try {
+      if (_exportFolderPath.isEmpty) {
+        await _pickExportFolder();
+        if (_exportFolderPath.isEmpty) return;
+      }
       AppTheme.showSnack(context, 'جاري تحضير وحفظ ${_selectedIds.length} استمارة...', color: _primary);
       
       final List<Student> selectedStudents = _students.where((s) => _selectedIds.contains(s.id)).toList();
       final printService = PrintService();
-      final path = await printService.saveStudentCardsToDownloads(selectedStudents, _levels);
+      final path = await printService.saveStudentCardsToDownloads(selectedStudents, _levels, customDir: _exportFolderPath);
       
       if (mounted) AppTheme.showSnack(context, 'تم حفظ جميع الاستمارات في: $path');
     } catch (e) {
@@ -1348,6 +1339,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         if (memorizersCount > 0)
                           StatEntry(title: 'المُحفِّظين', value: '$memorizersCount', icon: Icons.person_pin_circle_rounded, color: Colors.purple),
                       ]),
+                      if (!_isLoading)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          margin: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                          decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade200)),
+                          child: Row(children: [
+                            Icon(Icons.folder_rounded, size: 15, color: Colors.grey.shade500),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                _exportFolderPath.isNotEmpty ? _exportFolderPath : 'لم يتم تحديد مجلد',
+                                style: TextStyle(fontFamily: 'Cairo', fontSize: 10.5, color: Colors.grey.shade500),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            InkWell(
+                              onTap: _pickExportFolder,
+                              borderRadius: BorderRadius.circular(6),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(color: _primary.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(6)),
+                                child: Text('تغيير', style: TextStyle(fontFamily: 'Cairo', fontSize: 10, fontWeight: FontWeight.w700, color: _primary)),
+                              ),
+                            ),
+                          ]),
+                        ),
                       DashboardFilterBar(
                         currentLevelTitle: _levelFilterTitle,
                         levels: _levels,

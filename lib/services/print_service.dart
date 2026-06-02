@@ -79,9 +79,11 @@ class PrintService {
     );
   }
 
-  Future<String> saveStudentCardsToDownloads(List<Student> students, List<CompetitionLevel> levels) async {
+  Future<String> saveStudentCardsToDownloads(List<Student> students, List<CompetitionLevel> levels, {String? customDir}) async {
     Directory? downloadsDir;
-    if (Platform.isWindows) {
+    if (customDir != null) {
+      downloadsDir = Directory(customDir);
+    } else if (Platform.isWindows) {
       final userProfile = Platform.environment['USERPROFILE'] ?? Platform.environment['HOMEPATH'];
       downloadsDir = userProfile != null ? Directory(p.join(userProfile, 'Downloads')) : null;
     } else if (Platform.isAndroid) {
@@ -94,8 +96,7 @@ class PrintService {
     if (downloadsDir == null) throw Exception('تعذر الوصول لمجلد التحميلات');
 
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    final baseDir = Directory(p.join(downloadsDir.path, 'طلاب المسابقة'));
-    final targetDir = Directory(p.join(baseDir.path, today));
+    final targetDir = Directory(p.join(downloadsDir.path, 'طلاب المسابقة', today));
 
     if (!await targetDir.exists()) {
       await targetDir.create(recursive: true);

@@ -1,10 +1,12 @@
 import 'dart:typed_data';
+import 'dart:io';
 import 'package:syncfusion_flutter_xlsio/xlsio.dart' as xlsio;
 import 'package:syncfusion_officechart/officechart.dart' as chart_api;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../data/models/student.dart';
 import '../data/models/competition_level.dart';
 import '../core/theme/app_theme.dart';
@@ -510,8 +512,29 @@ class ExportService {
     return pdf.save();
   }
 
-  Future<String?> saveFile(Uint8List bytes, String fileName, String extension) async {
+  static const String _exportDirKey = 'export_directory_path';
+
+  static Future<String?> getExportDir() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_exportDirKey);
+  }
+
+  static Future<void> setExportDir(String path) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_exportDirKey, path);
+    final d = Directory(path);
+    if (!await d.exists()) await d.create(recursive: true);
+  }
+
+  Future<String?> saveFile(Uint8List bytes, String fileName, String extension, {String? directory}) async {
     try {
+      if (directory != null) {
+        final d = Directory(directory);
+        if (!await d.exists()) await d.create(recursive: true);
+        final file = File('${d.path}\\$fileName');
+        await file.writeAsBytes(bytes);
+        return file.path;
+      }
       final path = await FilePicker.saveFile(
         dialogTitle: 'Export File',
         fileName: fileName,
