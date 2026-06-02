@@ -84,6 +84,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   List<MemorizerStat> _memorizerStats = [];
   Map<String, List<_MemorizerStudentDetail>> _memorizerDetails = {};
   String _memorizerSearch = '';
+  int? _expandedMemorizerIndex;
   final TextEditingController _memorizerSearchCtrl = TextEditingController();
 
   static const _primary = Color(0xFF03121C);
@@ -901,6 +902,81 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       return const Center(child: Text('لا توجد نتائج', style: TextStyle(fontFamily: 'Cairo', fontSize: 14, color: Color(0xFF595959))));
     }
 
+    final rows = <TableRow>[];
+    rows.add(TableRow(
+      decoration: const BoxDecoration(color: _primary),
+      children: [
+        _mh('#', center: true),
+        _mh('المحفظ'),
+        _mh('رقم الهاتف', center: true),
+        _mh('الطلاب', center: true),
+        _mh('المركز الأول', center: true),
+        _mh('أول 3 مراكز', center: true),
+      ],
+    ));
+
+    for (var i = 0; i < stats.length; i++) {
+      final m = stats[i];
+      final phone = m.phone != null && m.phone!.isNotEmpty ? m.phone! : '';
+      final isExpanded = _expandedMemorizerIndex == i;
+      final students = _memorizerDetails[(phone.isNotEmpty ? '📞$phone' : '👤${m.name}')] ?? [];
+
+      rows.add(TableRow(
+        decoration: BoxDecoration(
+          color: _memRowBg(i),
+          border: Border(bottom: BorderSide(color: isExpanded ? _primary.withValues(alpha: 0.15) : Colors.grey.shade100)),
+        ),
+        children: [
+          _mc(InkWell(
+            onTap: () => setState(() => _expandedMemorizerIndex = isExpanded ? null : i),
+            child: Text('${i + 1}', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w700, color: isExpanded ? _primary : (i < 3 ? Colors.amber.shade800 : Colors.grey.shade500))),
+          ), center: true),
+          _mc(InkWell(
+            onTap: () => setState(() => _expandedMemorizerIndex = isExpanded ? null : i),
+            child: Text(m.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700, color: isExpanded ? _primary : _primary)),
+          )),
+          _mc(Center(child: Text(phone.isNotEmpty ? phone : '---', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w600, color: phone.isNotEmpty ? Colors.grey.shade700 : Colors.grey.shade400)))),
+          _mc(Center(child: _buildMemNumBadge(m.totalStudents, _primary.withValues(alpha: 0.12), _primary))),
+          _mc(Center(child: _buildMemNumBadge(m.winnersCount, Colors.amber.withValues(alpha: 0.12), Colors.amber.shade700))),
+          _mc(Center(child: _buildMemNumBadge(m.top3Count, Colors.indigo.withValues(alpha: 0.1), Colors.indigo.shade700))),
+        ],
+      ));
+
+      if (isExpanded && students.isNotEmpty) {
+        rows.add(TableRow(
+          decoration: const BoxDecoration(color: Color(0xFFF8F9FB)),
+          children: [
+            TableCell(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                child: Container(
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
+                  child: Column(children: [
+                    _subHeader(['#', 'الطالب', 'المستوى', 'الترتيب', 'الدرجة'], [40, null, null, null, 80]),
+                    ...students.asMap().entries.map((se) {
+                      final s = se.value;
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                        decoration: BoxDecoration(border: se.key < students.length - 1 ? Border(bottom: BorderSide(color: Colors.grey.shade100)) : null),
+                        child: Row(children: [
+                          SizedBox(width: 40, child: Text('${se.key + 1}', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade500))),
+                          Expanded(flex: 3, child: Text(s.studentName, style: const TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF03121C)), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                          Expanded(flex: 2, child: Text(s.level, style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade600), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                          Expanded(flex: 1, child: Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: s.rank == 1 ? Colors.amber.withValues(alpha: 0.12) : Colors.grey.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(6)), child: Text(s.rankTitle, style: TextStyle(fontFamily: 'Cairo', fontSize: 10, fontWeight: FontWeight.w800, color: s.rank == 1 ? Colors.amber.shade800 : Colors.grey.shade700)))),
+                          SizedBox(width: 80, child: Text(s.totalScore != null ? '${s.totalScore!.toStringAsFixed(0)} نقطة' : '---', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.w700, color: _primary))),
+                        ]),
+                      );
+                    }),
+                  ]),
+                ),
+              ),
+            ),
+            ...List.filled(5, const TableCell(child: SizedBox())),
+          ],
+        ));
+      }
+    }
+
     final tableContent = Table(
       defaultVerticalAlignment: TableCellVerticalAlignment.middle,
       columnWidths: const {
@@ -911,57 +987,31 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         4: FlexColumnWidth(1.0),
         5: FlexColumnWidth(0.9),
       },
-      children: [
-        TableRow(
-          decoration: const BoxDecoration(color: _primary),
-          children: [
-            _mh('#', center: true),
-            _mh('المحفظ'),
-            _mh('رقم الهاتف', center: true),
-            _mh('الطلاب', center: true),
-            _mh('المركز الأول', center: true),
-            _mh('أول 3 مراكز', center: true),
-          ],
-        ),
-        ...stats.asMap().entries.map((e) {
-          final i = e.key;
-          final m = e.value;
-          final key = (m.phone != null && m.phone!.isNotEmpty) ? '📞${m.phone}' : '👤${m.name}';
-          return TableRow(
-            decoration: BoxDecoration(
-              color: _memRowBg(i),
-              border: i < stats.length - 1 ? Border(bottom: BorderSide(color: Colors.grey.shade100)) : null,
-            ),
-            children: [
-              _mc(Center(child: InkWell(
-                onTap: () => _showMemorizerStudents(m, _memorizerDetails, key),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text('${i + 1}', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w700, color: i < 3 ? Colors.amber.shade800 : Colors.grey.shade500)),
-                ),
-              )), center: true),
-              _mc(InkWell(onTap: () => _showMemorizerStudents(m, _memorizerDetails, key), child: Padding(padding: const EdgeInsets.symmetric(vertical: 10), child: Text(m.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700, color: _primary))))),
-              _mc(Center(child: Text(m.phone != null && m.phone!.isNotEmpty ? m.phone! : '---', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w600, color: m.phone != null && m.phone!.isNotEmpty ? Colors.grey.shade700 : Colors.grey.shade400)))),
-              _mc(Center(child: _buildMemNumBadge(m.totalStudents, _primary.withValues(alpha: 0.12), _primary))),
-              _mc(Center(child: _buildMemNumBadge(m.winnersCount, Colors.amber.withValues(alpha: 0.12), Colors.amber.shade700))),
-              _mc(Center(child: _buildMemNumBadge(m.top3Count, Colors.indigo.withValues(alpha: 0.1), Colors.indigo.shade700))),
-            ],
-          );
-        }),
-      ],
+      children: rows,
     );
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade100),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10)],
-        ),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade100), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10)]),
         child: ClipRRect(borderRadius: BorderRadius.circular(16), child: tableContent),
       ),
+    );
+  }
+
+  Widget _subHeader(List<String> labels, List<double?> widths) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: const BorderRadius.vertical(top: Radius.circular(12)), border: Border(bottom: BorderSide(color: Colors.grey.shade200))),
+      child: Row(children: List.generate(labels.length, (i) {
+        final w = widths[i];
+        Widget text = Text(labels[i], style: const TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF888888)));
+        if (w != null) return SizedBox(width: w, child: text);
+        if (i == 1) return Expanded(flex: 3, child: text);
+        if (i == 2) return Expanded(flex: 2, child: text);
+        if (i == 3) return Expanded(flex: 1, child: text);
+        return Expanded(child: text);
+      })),
     );
   }
 
@@ -986,7 +1036,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return TableCell(
       verticalAlignment: TableCellVerticalAlignment.middle,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
         child: center ? child : child,
       ),
     );
