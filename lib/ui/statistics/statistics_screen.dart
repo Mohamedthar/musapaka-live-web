@@ -9,6 +9,20 @@ import '../../services/export_service.dart';
 import 'widgets/statistics_kpi_cards.dart';
 import 'widgets/statistics_ranking_table.dart';
 
+class MemorizerStat {
+  final String name;
+  final int totalStudents;
+  final int winnersCount;
+  final int top3Count;
+
+  MemorizerStat({
+    required this.name,
+    required this.totalStudents,
+    required this.winnersCount,
+    required this.top3Count,
+  });
+}
+
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
 
@@ -46,6 +60,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   List<RankedStudent> _cachedRanked = [];
   bool _needsRecompute = true;
 
+  // View toggle
+  bool _showMemorizerBoard = false;
+  List<MemorizerStat> _memorizerStats = [];
+
   static const _primary = Color(0xFF03121C);
 
   @override
@@ -76,6 +94,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         if (_levels.isNotEmpty) _selectedLevel = _levels.first;
         _isLoading = false;
         _needsRecompute = true;
+        _computeMemorizerStats();
       });
     } catch (e) {
       if (!mounted) return;
@@ -156,6 +175,29 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     }
   }
 
+  void _computeMemorizerStats() {
+    final map = <String, Map<String, int>>{};
+    for (final level in _levels) {
+      final levelStudents = _allStudents.where((s) => s.level == level.title).toList();
+      final ranked = RankingUtils.calculateRanks(levelStudents, [level]);
+      for (final r in ranked) {
+        final name = r.student.memorizerName?.trim();
+        if (name == null || name.isEmpty) continue;
+        map.putIfAbsent(name, () => {'total': 0, 'winners': 0, 'top3': 0});
+        map[name]!['total'] = map[name]!['total']! + 1;
+        if (r.rankNumber == 1) map[name]!['winners'] = map[name]!['winners']! + 1;
+        if (r.rankNumber <= 3) map[name]!['top3'] = map[name]!['top3']! + 1;
+      }
+    }
+    _memorizerStats = map.entries.map((e) => MemorizerStat(
+      name: e.key,
+      totalStudents: e.value['total']!,
+      winnersCount: e.value['winners']!,
+      top3Count: e.value['top3']!,
+    )).toList()
+      ..sort((a, b) => b.winnersCount.compareTo(a.winnersCount));
+  }
+
   void _onSort(int columnIndex, bool ascending) {
     setState(() {
       _sortColumnIndex = columnIndex;
@@ -187,6 +229,21 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             color: Colors.red);
       }
     }
+  }
+
+  Widget _viewToggleBtn(String label, bool isActive, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: isActive ? [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 4, offset: const Offset(0, 2))] : null,
+        ),
+        child: Text(label, style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w800, color: isActive ? _primary : Colors.grey.shade500)),
+      ),
+    );
   }
 
   void _invalidateCache() {
@@ -310,6 +367,19 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   ),
                 ),
               const SizedBox(width: 12),
+              // View toggle
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.all(3),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  _viewToggleBtn('المتسابقين', !_showMemorizerBoard, () => setState(() => _showMemorizerBoard = false)),
+                  _viewToggleBtn('المحفظين', _showMemorizerBoard, () => setState(() => _showMemorizerBoard = true)),
+                ]),
+              ),
+              const SizedBox(width: 12),
               // Export button
               if (isMobile)
                 IconButton(
@@ -351,7 +421,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                             child: Text('لا توجد مستويات مضافة بعد.',
                                 style: TextStyle(
                                     fontFamily: 'Cairo', fontSize: 16)))
-                        : isMobile
+                        : _showMemorizerBoard
+                            ? _buildMemorizerBoard(isMobile)
+                            : isMobile
                             // ── Mobile ─────────────────────────────────────
                             ? Column(
                                 children: [
@@ -683,6 +755,85 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildMemorizerBoard(bool isMobile) {
+    final stats = _memorizerStats;
+    if (stats.isEmpty) {
+      return Center(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.person_pin_circle_rounded, size: 48, color: Colors.grey.shade300),
+          const SizedBox(height: 12),
+          const Text('لا يوجد محفظين مسجلين', style: TextStyle(fontFamily: 'Cairo', fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF595959))),
+        ]),
+      );
+    }
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(isMobile ? 12 : 24),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: Colors.purple.shade50, borderRadius: BorderRadius.circular(12)),
+            child: Icon(Icons.leaderboard_rounded, size: 20, color: Colors.purple.shade700),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('ترتيب المحفظين', style: TextStyle(fontFamily: 'Cairo', fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF03121C))),
+            Text('حسب عدد الطلاب الفائزين بالمركز الأول في جميع المستويات', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey.shade500)),
+          ])),
+          _buildCounterBox(stats.length, isMobile),
+        ]),
+        const SizedBox(height: 20),
+        ...stats.asMap().entries.map((e) {
+          final i = e.key;
+          final m = e.value;
+          final isTop = i < 3;
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: isTop ? Colors.amber.shade200 : Colors.grey.shade200),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
+            ),
+            child: Row(children: [
+              Container(
+                width: 38, height: 38,
+                decoration: BoxDecoration(
+                  color: isTop ? Colors.amber.shade50 : Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: isTop ? Colors.amber.shade300 : Colors.grey.shade200),
+                ),
+                alignment: Alignment.center,
+                child: Text('${i + 1}', style: TextStyle(fontFamily: 'Cairo', fontSize: 15, fontWeight: FontWeight.w900, color: isTop ? Colors.amber.shade800 : const Color(0xFF595959))),
+              ),
+              const SizedBox(width: 12),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(m.name, style: TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.w800, color: const Color(0xFF03121C))),
+                const SizedBox(height: 2),
+                Text('${m.totalStudents} طالب', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade500)),
+              ])),
+              _memorizerBadge('🏆 المركز الأول', m.winnersCount, Colors.amber.shade700, Colors.amber.shade50),
+              const SizedBox(width: 8),
+              _memorizerBadge('أول 3 مراكز', m.top3Count, Colors.indigo.shade700, Colors.indigo.shade50),
+            ]),
+          );
+        }),
+      ]),
+    );
+  }
+
+  Widget _memorizerBadge(String label, int count, Color color, Color bg) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10), border: Border.all(color: color.withValues(alpha: 0.15))),
+      child: Column(children: [
+        Text('$count', style: TextStyle(fontFamily: 'Cairo', fontSize: 16, fontWeight: FontWeight.w900, color: color)),
+        Text(label, style: TextStyle(fontFamily: 'Cairo', fontSize: 9, fontWeight: FontWeight.w700, color: color.withValues(alpha: 0.8))),
+      ]),
     );
   }
 
