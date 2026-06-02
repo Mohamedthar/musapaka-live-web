@@ -26,6 +26,22 @@ class MemorizerStat {
   });
 }
 
+class _MemorizerStudentDetail {
+  final String studentName;
+  final String level;
+  final int rank;
+  final double? totalScore;
+  final String rankTitle;
+
+  _MemorizerStudentDetail({
+    required this.studentName,
+    required this.level,
+    required this.rank,
+    required this.totalScore,
+    required this.rankTitle,
+  });
+}
+
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
 
@@ -66,6 +82,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   // View toggle
   bool _showMemorizerBoard = false;
   List<MemorizerStat> _memorizerStats = [];
+  Map<String, List<_MemorizerStudentDetail>> _memorizerDetails = {};
   String _memorizerSearch = '';
   final TextEditingController _memorizerSearchCtrl = TextEditingController();
 
@@ -183,6 +200,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   void _computeMemorizerStats() {
     final map = <String, Map<String, dynamic>>{};
+    final detailsMap = <String, List<_MemorizerStudentDetail>>{};
     for (final level in _levels) {
       final levelStudents = _allStudents.where((s) => s.level == level.title).toList();
       final ranked = RankingUtils.calculateRanks(levelStudents, [level]);
@@ -193,10 +211,18 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         final key = (phone != null && phone.isNotEmpty) ? '📞$phone' : '👤$name';
         if (!map.containsKey(key)) {
           map[key] = {'name': name, 'phone': phone, 'total': 0, 'winners': 0, 'top3': 0};
+          detailsMap[key] = [];
         }
         map[key]!['total'] = map[key]!['total'] + 1;
         if (r.rankNumber == 1) map[key]!['winners'] = map[key]!['winners'] + 1;
         if (r.rankNumber <= 3) map[key]!['top3'] = map[key]!['top3'] + 1;
+        detailsMap[key]!.add(_MemorizerStudentDetail(
+          studentName: r.student.name,
+          level: r.student.level,
+          rank: r.rankNumber,
+          totalScore: r.student.totalScore,
+          rankTitle: r.rankTitle,
+        ));
       }
     }
     _memorizerStats = map.entries.map((e) => MemorizerStat(
@@ -207,6 +233,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       top3Count: e.value['top3'],
     )).toList()
       ..sort((a, b) => b.totalStudents.compareTo(a.totalStudents));
+    _memorizerDetails = detailsMap;
   }
 
   void _onSort(int columnIndex, bool ascending) {
@@ -877,12 +904,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final tableContent = Table(
       defaultVerticalAlignment: TableCellVerticalAlignment.middle,
       columnWidths: const {
-        0: FixedColumnWidth(52),
-        1: FlexColumnWidth(2.2),
-        2: FixedColumnWidth(140),
-        3: FixedColumnWidth(100),
-        4: FixedColumnWidth(110),
-        5: FixedColumnWidth(100),
+        0: FixedColumnWidth(48),
+        1: FlexColumnWidth(1.6),
+        2: FlexColumnWidth(1.2),
+        3: FlexColumnWidth(0.8),
+        4: FlexColumnWidth(1.0),
+        5: FlexColumnWidth(0.9),
       },
       children: [
         TableRow(
@@ -899,14 +926,21 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         ...stats.asMap().entries.map((e) {
           final i = e.key;
           final m = e.value;
+          final key = (m.phone != null && m.phone!.isNotEmpty) ? '📞${m.phone}' : '👤${m.name}';
           return TableRow(
             decoration: BoxDecoration(
               color: _memRowBg(i),
               border: i < stats.length - 1 ? Border(bottom: BorderSide(color: Colors.grey.shade100)) : null,
             ),
             children: [
-              _mc(Center(child: Text('${i + 1}', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w700, color: i < 3 ? Colors.amber.shade800 : Colors.grey.shade500))), center: true),
-              _mc(Text(m.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700, color: _primary))),
+              _mc(Center(child: InkWell(
+                onTap: () => _showMemorizerStudents(m, _memorizerDetails, key),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text('${i + 1}', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w700, color: i < 3 ? Colors.amber.shade800 : Colors.grey.shade500)),
+                ),
+              )), center: true),
+              _mc(InkWell(onTap: () => _showMemorizerStudents(m, _memorizerDetails, key), child: Padding(padding: const EdgeInsets.symmetric(vertical: 10), child: Text(m.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700, color: _primary))))),
               _mc(Center(child: Text(m.phone != null && m.phone!.isNotEmpty ? m.phone! : '---', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w600, color: m.phone != null && m.phone!.isNotEmpty ? Colors.grey.shade700 : Colors.grey.shade400)))),
               _mc(Center(child: _buildMemNumBadge(m.totalStudents, _primary.withValues(alpha: 0.12), _primary))),
               _mc(Center(child: _buildMemNumBadge(m.winnersCount, Colors.amber.withValues(alpha: 0.12), Colors.amber.shade700))),
@@ -967,6 +1001,93 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         border: Border.all(color: fgColor.withValues(alpha: 0.25)),
       ),
       child: Text('$count', style: TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w900, color: count > 0 ? fgColor : Colors.grey.shade300)),
+    );
+  }
+
+  void _showMemorizerStudents(MemorizerStat m, Map<String, List<_MemorizerStudentDetail>> details, String key) {
+    final students = details[key] ?? [];
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.7,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          builder: (ctx, scrollCtrl) {
+            return Column(children: [
+              Container(
+                width: 40, height: 4,
+                margin: const EdgeInsets.only(top: 12, bottom: 8),
+                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Row(children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(color: Colors.purple.shade50, borderRadius: BorderRadius.circular(10)),
+                    child: Icon(Icons.person_pin_circle_rounded, size: 20, color: Colors.purple.shade700),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(m.name, style: const TextStyle(fontFamily: 'Cairo', fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF03121C))),
+                    Text('${students.length} طالب في جميع المستويات', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey.shade500)),
+                  ])),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.pop(ctx),
+                    iconSize: 20,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    color: Colors.grey.shade500,
+                  ),
+                ]),
+              ),
+              Divider(height: 1, color: Colors.grey.shade100),
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollCtrl,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: students.length,
+                  itemBuilder: (ctx, i) {
+                    final s = students[i];
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Row(children: [
+                        Container(
+                          width: 32, height: 32,
+                          decoration: BoxDecoration(color: s.rank == 1 ? Colors.amber.shade100 : Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+                          alignment: Alignment.center,
+                          child: Text('${s.rank}', style: TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w900, color: s.rank == 1 ? Colors.amber.shade800 : Colors.grey.shade600)),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(s.studentName, style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF03121C))),
+                          Text('${s.level} • ${s.rankTitle}', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade500)),
+                        ])),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(color: _primary.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(8)),
+                          child: Text(s.totalScore != null ? '${s.totalScore!.toStringAsFixed(0)} نقطة' : '---', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w800, color: _primary)),
+                        ),
+                      ]),
+                    );
+                  },
+                ),
+              ),
+            ]);
+          },
+        );
+      },
     );
   }
 
