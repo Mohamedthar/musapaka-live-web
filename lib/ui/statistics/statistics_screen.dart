@@ -32,6 +32,7 @@ class _MemorizerStudentDetail {
   final int rank;
   final double? totalScore;
   final String rankTitle;
+  final double percentage;
 
   _MemorizerStudentDetail({
     required this.studentName,
@@ -39,6 +40,7 @@ class _MemorizerStudentDetail {
     required this.rank,
     required this.totalScore,
     required this.rankTitle,
+    required this.percentage,
   });
 }
 
@@ -223,6 +225,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           rank: r.rankNumber,
           totalScore: r.student.totalScore,
           rankTitle: r.rankTitle,
+          percentage: r.percentage,
         ));
       }
     }
@@ -914,17 +917,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: Column(children: [
-            // Header
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: const BoxDecoration(color: _primary),
               child: Row(children: [
-                const SizedBox(width: 48, child: Text('#', style: TextStyle(fontFamily: 'Cairo', color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w700))),
-                Expanded(flex: 16, child: Text('المحفظ', style: TextStyle(fontFamily: 'Cairo', color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w700))),
-                Expanded(flex: 12, child: Center(child: Text('رقم الهاتف', style: TextStyle(fontFamily: 'Cairo', color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w700)))),
-                Expanded(flex: 8, child: Center(child: Text('الطلاب', style: TextStyle(fontFamily: 'Cairo', color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w700)))),
-                Expanded(flex: 10, child: Center(child: Text('المركز الأول', style: TextStyle(fontFamily: 'Cairo', color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w700)))),
-                Expanded(flex: 9, child: Center(child: Text('أول 3', style: TextStyle(fontFamily: 'Cairo', color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w700)))),
+                _mh2('#', 48),
+                _mh2('المحفظ', null, flex: 14),
+                _mh2('رقم الهاتف', null, flex: 12),
+                _mh2('الطلاب', null, flex: 7, center: true),
+                _mh2('الأول', null, flex: 8, center: true),
+                _mh2('أول 3', null, flex: 7, center: true),
               ]),
             ),
             ...stats.asMap().entries.map((e) {
@@ -937,18 +939,18 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 InkWell(
                   onTap: () => setState(() => _expandedMemorizerIndex = isExpanded ? null : i),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     decoration: BoxDecoration(
                       color: _memRowBg(i),
                       border: Border(bottom: BorderSide(color: isExpanded ? _primary.withValues(alpha: 0.15) : Colors.grey.shade100)),
                     ),
                     child: Row(children: [
-                      SizedBox(width: 48, child: Text('${i + 1}', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w700, color: isExpanded ? _primary : (i < 3 ? Colors.amber.shade800 : Colors.grey.shade500)))),
-                      Expanded(flex: 16, child: Text(m.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700, color: isExpanded ? _primary : _primary))),
-                      Expanded(flex: 12, child: Center(child: Text(phone.isNotEmpty ? phone : '---', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w600, color: phone.isNotEmpty ? Colors.grey.shade700 : Colors.grey.shade400)))),
-                      Expanded(flex: 8, child: Center(child: _buildMemNumBadge(m.totalStudents, _primary.withValues(alpha: 0.12), _primary))),
-                      Expanded(flex: 10, child: Center(child: _buildMemNumBadge(m.winnersCount, Colors.amber.withValues(alpha: 0.12), Colors.amber.shade700))),
-                      Expanded(flex: 9, child: Center(child: _buildMemNumBadge(m.top3Count, Colors.indigo.withValues(alpha: 0.1), Colors.indigo.shade700))),
+                      _td2('${i + 1}', 48, color: isExpanded ? _primary : (i < 3 ? Colors.amber.shade800 : Colors.grey.shade500)),
+                      _td2(m.name, null, flex: 14, bold: true),
+                      _td2(phone.isNotEmpty ? phone : '---', null, flex: 12, smaller: true, color: phone.isNotEmpty ? Colors.grey.shade700 : Colors.grey.shade400),
+                      _td2(null, null, flex: 7, badge: _buildMemNumBadge(m.totalStudents, _primary.withValues(alpha: 0.1), _primary)),
+                      _td2(null, null, flex: 8, badge: _buildMemNumBadge(m.winnersCount, Colors.amber.withValues(alpha: 0.1), Colors.amber.shade700)),
+                      _td2(null, null, flex: 7, badge: _buildMemNumBadge(m.top3Count, Colors.indigo.withValues(alpha: 0.08), Colors.indigo.shade700)),
                     ]),
                   ),
                 ),
@@ -963,24 +965,27 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: const BorderRadius.vertical(top: Radius.circular(12)), border: Border(bottom: BorderSide(color: Colors.grey.shade200))),
                           child: Row(children: [
-                            const SizedBox(width: 40, child: Text('#', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF888888)))),
-                            const Expanded(flex: 3, child: Text('الطالب', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF888888)))),
-                            const Expanded(flex: 2, child: Text('المستوى', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF888888)))),
-                            const Expanded(flex: 1, child: Text('الترتيب', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF888888)))),
-                            const SizedBox(width: 80, child: Text('الدرجة', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF888888)))),
+                            _sh('#', 40),
+                            _sh('الطالب', null, flex: 3),
+                            _sh('المستوى', null, flex: 2),
+                            _sh('الترتيب', null, flex: 1),
+                            _sh('الدرجة', 75),
+                            _sh('النسبة', 60),
                           ]),
                         ),
                         ...students.asMap().entries.map((se) {
                           final s = se.value;
+                          final pctColor = s.percentage >= 95 ? Colors.green : (s.percentage >= 75 ? Colors.blue : (s.percentage >= 50 ? Colors.orange : Colors.red));
                           return Container(
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                             decoration: BoxDecoration(border: se.key < students.length - 1 ? Border(bottom: BorderSide(color: Colors.grey.shade100)) : null),
                             child: Row(children: [
-                              SizedBox(width: 40, child: Text('${se.key + 1}', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade500))),
-                              Expanded(flex: 3, child: Text(s.studentName, style: const TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF03121C)), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                              Expanded(flex: 2, child: Text(s.level, style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade600), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                              Expanded(flex: 1, child: Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: s.rank == 1 ? Colors.amber.withValues(alpha: 0.12) : Colors.grey.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(6)), child: Text(s.rankTitle, style: TextStyle(fontFamily: 'Cairo', fontSize: 10, fontWeight: FontWeight.w800, color: s.rank == 1 ? Colors.amber.shade800 : Colors.grey.shade700)))),
-                              SizedBox(width: 80, child: Text(s.totalScore != null ? '${s.totalScore!.toStringAsFixed(0)} نقطة' : '---', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.w700, color: _primary))),
+                              _sd('${se.key + 1}', 40),
+                              _sd(s.studentName, null, flex: 3, bold: true),
+                              _sd(s.level, null, flex: 2),
+                              _sd(null, null, flex: 1, badge: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: s.rank == 1 ? Colors.amber.withValues(alpha: 0.15) : Colors.grey.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(6)), child: Text(s.rankTitle, style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.w800, color: s.rank == 1 ? Colors.amber.shade800 : Colors.grey.shade700)))),
+                              _sd(s.totalScore != null ? s.totalScore!.toStringAsFixed(0) : '---', 75),
+                              _sd('${s.percentage.toStringAsFixed(0)}%', 60, bold: true, color: pctColor),
                             ]),
                           );
                         }),
@@ -1000,6 +1005,45 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     if (index == 1) return Colors.blueGrey.withValues(alpha: 0.04);
     if (index == 2) return Colors.brown.withValues(alpha: 0.04);
     return index % 2 == 0 ? Colors.white : const Color(0xFFF9FBFF);
+  }
+
+  // Main table header cell
+  static Widget _mh2(String label, double? width, {int? flex, bool center = false}) {
+    final child = Text(label, style: const TextStyle(fontFamily: 'Cairo', color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w700));
+    if (width != null) return SizedBox(width: width, child: center ? Center(child: child) : child);
+    return Expanded(flex: flex ?? 1, child: center ? Center(child: child) : child);
+  }
+
+  // Main table data cell
+  static Widget _td2(String? text, double? width, {int? flex, bool bold = false, bool smaller = false, Color? color, Widget? badge}) {
+    Widget child;
+    if (badge != null) {
+      child = Center(child: badge);
+    } else {
+      child = Text(text ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: 'Cairo', fontSize: smaller ? 12 : 13, fontWeight: bold ? FontWeight.w700 : FontWeight.w500, color: color ?? const Color(0xFF1E293B)));
+    }
+    if (width != null) return SizedBox(width: width, child: child);
+    return Expanded(flex: flex ?? 1, child: child);
+  }
+
+  // Sub-table header
+  static const _shStyle = TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF888888));
+  static Widget _sh(String label, double? width, {int? flex}) {
+    final child = Text(label, style: _shStyle);
+    if (width != null) return SizedBox(width: width, child: child);
+    return Expanded(flex: flex ?? 1, child: child);
+  }
+
+  // Sub-table data
+  static Widget _sd(String? text, double? width, {int? flex, bool bold = false, Color? color, Widget? badge}) {
+    Widget child;
+    if (badge != null) {
+      child = Center(child: badge);
+    } else {
+      child = Text(text ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: bold ? FontWeight.w700 : FontWeight.w500, color: color ?? const Color(0xFF475569)));
+    }
+    if (width != null) return SizedBox(width: width, child: child);
+    return Expanded(flex: flex ?? 1, child: child);
   }
 
   TableCell _mh(String label, {bool center = false}) {
