@@ -16,6 +16,7 @@ class MemorizerStat {
   final int totalStudents;
   final int winnersCount;
   final int top3Count;
+  final int passedCount;
 
   MemorizerStat({
     required this.name,
@@ -23,6 +24,7 @@ class MemorizerStat {
     required this.totalStudents,
     required this.winnersCount,
     required this.top3Count,
+    required this.passedCount,
   });
 }
 
@@ -213,12 +215,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         final phone = r.student.memorizerPhone?.trim();
         final key = (phone != null && phone.isNotEmpty) ? '📞$phone' : '👤$name';
         if (!map.containsKey(key)) {
-          map[key] = {'name': name, 'phone': phone, 'total': 0, 'winners': 0, 'top3': 0};
+          map[key] = {'name': name, 'phone': phone, 'total': 0, 'winners': 0, 'top3': 0, 'passed': 0};
           detailsMap[key] = [];
         }
         map[key]!['total'] = map[key]!['total'] + 1;
         if (r.rankNumber == 1) map[key]!['winners'] = map[key]!['winners'] + 1;
         if (r.rankNumber <= 3) map[key]!['top3'] = map[key]!['top3'] + 1;
+        if (r.percentage >= 95) map[key]!['passed'] = map[key]!['passed'] + 1;
         detailsMap[key]!.add(_MemorizerStudentDetail(
           studentName: r.student.name,
           level: r.student.level,
@@ -235,6 +238,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       totalStudents: e.value['total'],
       winnersCount: e.value['winners'],
       top3Count: e.value['top3'],
+      passedCount: e.value['passed'],
     )).toList()
       ..sort((a, b) => b.totalStudents.compareTo(a.totalStudents));
     _memorizerDetails = detailsMap;
@@ -924,9 +928,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 _mh2('#', 44),
                 _mh2('المحفظ', null, flex: 14),
                 _mh2('الهاتف', null, flex: 12, center: true),
-                _mh2('الطلاب', null, flex: 6, center: true),
-                _mh2('الأول', null, flex: 6, center: true),
-                _mh2('أول 3', null, flex: 6, center: true),
+                _mh2('الطلاب', null, flex: 5, center: true),
+                _mh2('الأول', null, flex: 5, center: true),
+                _mh2('مُكرَّم', null, flex: 5, center: true),
+                _mh2('أول 3', null, flex: 5, center: true),
               ]),
             ),
             ...stats.asMap().entries.map((e) {
@@ -948,9 +953,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       _td2('${i + 1}', 44, center: true, color: isExpanded ? _primary : (i < 3 ? Colors.amber.shade800 : Colors.grey.shade500)),
                       _td2(m.name, null, flex: 14, bold: true),
                       _td2(phone.isNotEmpty ? phone : '---', null, flex: 12, center: true, small: true, color: phone.isNotEmpty ? Colors.grey.shade700 : Colors.grey.shade400),
-                      _td2('${m.totalStudents}', null, flex: 6, center: true, bold: true),
-                      _td2('${m.winnersCount}', null, flex: 6, center: true, bold: true, color: m.winnersCount > 0 ? Colors.amber.shade700 : Colors.grey.shade400),
-                      _td2('${m.top3Count}', null, flex: 6, center: true, bold: true, color: m.top3Count > 0 ? Colors.indigo.shade600 : Colors.grey.shade400),
+                      _td2('${m.totalStudents}', null, flex: 5, center: true, bold: true),
+                      _td2('${m.winnersCount}', null, flex: 5, center: true, bold: true, color: m.winnersCount > 0 ? Colors.amber.shade700 : Colors.grey.shade400),
+                      _td2('${m.passedCount}', null, flex: 5, center: true, bold: true, color: m.passedCount > 0 ? Colors.green.shade700 : Colors.grey.shade400),
+                      _td2('${m.top3Count}', null, flex: 5, center: true, bold: true, color: m.top3Count > 0 ? Colors.indigo.shade600 : Colors.grey.shade400),
                     ]),
                   ),
                 ),
