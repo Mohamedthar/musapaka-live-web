@@ -1,6 +1,7 @@
 ﻿import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../services/backup_service.dart';
@@ -66,70 +67,23 @@ class BackupTabState extends State<BackupTab> {
   }
 
   Future<void> _pickFolder() async {
-    // Try VBScript (no execution policy issues)
     try {
-      final script = '''
-Set shell = CreateObject("Shell.Application")
-Set folder = shell.BrowseForFolder(0, "اختر مجلد النسخ الاحتياطي", 0, "$_backupDirPath")
-If Not folder Is Nothing Then
-    WScript.Echo folder.Self.Path
-End If
-''';
-      final scriptFile = File('${Directory.systemTemp.path}\\pick_folder.vbs');
-      await scriptFile.writeAsString(script);
-      final result = await Process.run('cscript', ['//nologo', scriptFile.path]);
-      await scriptFile.delete();
-      if (mounted) {
-        final path = result.stdout.toString().trim();
-        if (path.isNotEmpty) {
-          await _b.setBackupDir(path);
-          _backupDirPath = path;
-          setState(() {});
-          AppTheme.showSnack(context, 'تم تغيير المجلد');
-          return;
-        }
-      }
-    } catch (_) {}
-
-    // Fallback: text input dialog
-    if (!mounted) return;
-    final ctrl = TextEditingController(text: _backupDirPath);
-    final ok = await showDialog<bool>(context: context, builder: (_) => Directionality(
-      textDirection: TextDirection.rtl,
-      child: AlertDialog(
-        title: const Text('تغيير مجلد النسخ الاحتياطي', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w800)),
-        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Text('لم يتم اختيار مجلد. أدخل المسار يدوياً:', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey.shade600)),
-          const SizedBox(height: 10),
-          TextField(
-            controller: ctrl,
-            textDirection: TextDirection.ltr,
-            style: const TextStyle(fontFamily: 'Cairo', fontSize: 12),
-            decoration: InputDecoration(
-              hintText: 'مثال: C:\\Users\\...\\musapaka_backups',
-              hintStyle: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade400),
-              filled: true, fillColor: Colors.grey.shade50,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            ),
-          ),
-        ]),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(_, false), child: const Text('إلغاء', style: TextStyle(fontFamily: 'Cairo'))),
-          ElevatedButton(onPressed: () => Navigator.pop(_, true), style: ElevatedButton.styleFrom(backgroundColor: widget.primary),
-            child: const Text('حفظ', style: TextStyle(fontFamily: 'Cairo', color: Colors.white))),
-        ],
-      ),
-    ));
-    if (ok == true && mounted && ctrl.text.trim().isNotEmpty) {
-      try {
-        await _b.setBackupDir(ctrl.text.trim());
-        _backupDirPath = ctrl.text.trim();
+      final path = await FilePicker.getDirectoryPath(
+        dialogTitle: 'اختر مجلد النسخ الاحتياطي',
+        initialDirectory: _backupDirPath,
+        lockParentWindow: true,
+      );
+      if (mounted && path != null && path.isNotEmpty) {
+        await _b.setBackupDir(path);
+        _backupDirPath = path;
         setState(() {});
-        if (mounted) AppTheme.showSnack(context, 'تم تغيير المجلد');
-      } catch (e) { if (mounted) AppTheme.showError(context, e); }
+        AppTheme.showSnack(context, 'تم تغيير المجلد');
+      } else if (mounted) {
+        AppTheme.showSnack(context, 'لم يتم اختيار مجلد', color: Colors.orange);
+      }
+    } catch (e) {
+      if (mounted) AppTheme.showError(context, 'تعذر فتح الملفات: $e');
     }
-    ctrl.dispose();
   }
 
   Future<void> _delete(BackupInfo b) async {
