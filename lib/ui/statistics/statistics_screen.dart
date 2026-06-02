@@ -11,12 +11,14 @@ import 'widgets/statistics_ranking_table.dart';
 
 class MemorizerStat {
   final String name;
+  final String? phone;
   final int totalStudents;
   final int winnersCount;
   final int top3Count;
 
   MemorizerStat({
     required this.name,
+    required this.phone,
     required this.totalStudents,
     required this.winnersCount,
     required this.top3Count,
@@ -176,26 +178,31 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   void _computeMemorizerStats() {
-    final map = <String, Map<String, int>>{};
+    final map = <String, Map<String, dynamic>>{};
     for (final level in _levels) {
       final levelStudents = _allStudents.where((s) => s.level == level.title).toList();
       final ranked = RankingUtils.calculateRanks(levelStudents, [level]);
       for (final r in ranked) {
         final name = r.student.memorizerName?.trim();
         if (name == null || name.isEmpty) continue;
-        map.putIfAbsent(name, () => {'total': 0, 'winners': 0, 'top3': 0});
-        map[name]!['total'] = map[name]!['total']! + 1;
-        if (r.rankNumber == 1) map[name]!['winners'] = map[name]!['winners']! + 1;
-        if (r.rankNumber <= 3) map[name]!['top3'] = map[name]!['top3']! + 1;
+        final phone = r.student.memorizerPhone?.trim();
+        final key = (phone != null && phone.isNotEmpty) ? '📞$phone' : '👤$name';
+        if (!map.containsKey(key)) {
+          map[key] = {'name': name, 'phone': phone, 'total': 0, 'winners': 0, 'top3': 0};
+        }
+        map[key]!['total'] = map[key]!['total'] + 1;
+        if (r.rankNumber == 1) map[key]!['winners'] = map[key]!['winners'] + 1;
+        if (r.rankNumber <= 3) map[key]!['top3'] = map[key]!['top3'] + 1;
       }
     }
     _memorizerStats = map.entries.map((e) => MemorizerStat(
-      name: e.key,
-      totalStudents: e.value['total']!,
-      winnersCount: e.value['winners']!,
-      top3Count: e.value['top3']!,
+      name: e.value['name'],
+      phone: e.value['phone'],
+      totalStudents: e.value['total'],
+      winnersCount: e.value['winners'],
+      top3Count: e.value['top3'],
     )).toList()
-      ..sort((a, b) => b.winnersCount.compareTo(a.winnersCount));
+      ..sort((a, b) => b.totalStudents.compareTo(a.totalStudents));
   }
 
   void _onSort(int columnIndex, bool ascending) {
@@ -781,7 +788,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           const SizedBox(width: 12),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Text('ترتيب المحفظين', style: TextStyle(fontFamily: 'Cairo', fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF03121C))),
-            Text('حسب عدد الطلاب الفائزين بالمركز الأول في جميع المستويات', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey.shade500)),
+            Text('مرتبين حسب أكبر عدد طلاب لكل محفظ، مع ذكر عدد الفائزين بالمركز الأول', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey.shade500)),
           ])),
           _buildCounterBox(stats.length, isMobile),
         ]),
@@ -813,8 +820,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(m.name, style: TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.w800, color: const Color(0xFF03121C))),
-                const SizedBox(height: 2),
-                Text('${m.totalStudents} طالب', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade500)),
+                if (m.phone != null && m.phone!.isNotEmpty)
+                  Text('📞 ${m.phone}', style: TextStyle(fontFamily: 'Cairo', fontSize: 10.5, color: Colors.grey.shade500)),
+                Text('${m.totalStudents} طالب', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: _primary.withValues(alpha: 0.5))),
               ])),
               _memorizerBadge('🏆 المركز الأول', m.winnersCount, Colors.amber.shade700, Colors.amber.shade50),
               const SizedBox(width: 8),
