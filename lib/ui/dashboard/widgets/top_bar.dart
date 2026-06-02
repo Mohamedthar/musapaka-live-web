@@ -9,6 +9,8 @@ class DashboardTopBar extends StatelessWidget {
   final bool showAddPanel;
   final VoidCallback onToggleAddPanel;
   final Color primaryColor;
+  final String exportFolderPath;
+  final VoidCallback onChangeExportFolder;
 
   const DashboardTopBar({
     super.key,
@@ -19,6 +21,8 @@ class DashboardTopBar extends StatelessWidget {
     required this.showAddPanel,
     required this.onToggleAddPanel,
     required this.primaryColor,
+    required this.exportFolderPath,
+    required this.onChangeExportFolder,
   });
 
   @override
@@ -69,6 +73,15 @@ class DashboardTopBar extends StatelessWidget {
                 onPressed: onExportPDF,
                 tooltip: 'تصدير PDF',
                 visualDensity: VisualDensity.compact),
+            IconButton(
+                icon: Icon(
+                  exportFolderPath.isNotEmpty ? Icons.folder_rounded : Icons.folder_open_rounded, 
+                  size: 20, 
+                  color: exportFolderPath.isNotEmpty ? primaryColor : Colors.orange.shade600,
+                ),
+                onPressed: onChangeExportFolder,
+                tooltip: exportFolderPath.isNotEmpty ? 'تغيير مجلد الحفظ\n$exportFolderPath' : 'اختر مجلد الحفظ',
+                visualDensity: VisualDensity.compact),
           ] else ...[
             const SizedBox(width: 4),
             TextButton.icon(
@@ -96,6 +109,34 @@ class DashboardTopBar extends StatelessWidget {
             ),
           ],
           if (isWide) ...[
+            const SizedBox(width: 4),
+            Container(
+              height: 36,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              decoration: BoxDecoration(
+                color: exportFolderPath.isNotEmpty ? primaryColor.withValues(alpha: 0.04) : Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: exportFolderPath.isNotEmpty ? primaryColor.withValues(alpha: 0.12) : Colors.orange.shade200),
+              ),
+              child: TextButton.icon(
+                onPressed: onChangeExportFolder,
+                icon: Icon(Icons.folder_rounded, size: 17, color: exportFolderPath.isNotEmpty ? primaryColor : Colors.orange.shade700),
+                label: Text(
+                  exportFolderPath.isNotEmpty ? exportFolderPath.split('\\').last : 'اختر مجلد الحفظ',
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: exportFolderPath.isNotEmpty ? primaryColor : Colors.orange.shade700,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+            ),
             const SizedBox(width: 8),
             ElevatedButton.icon(
                 onPressed: onToggleAddPanel,

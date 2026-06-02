@@ -91,16 +91,13 @@ class _LevelsSidePanelState extends State<LevelsSidePanel> {
     _requireCustomAmount = widget.level?.requireCustomAmount ?? false;
     _hasBranches = widget.level?.branches.isNotEmpty ?? false;
 
-    final hasMin = widget.level?.minAge != null;
-    final hasMax = widget.level?.maxAge != null;
-    if (hasMin && hasMax) {
-      _ageType = 'range';
-    } else if (hasMin && !hasMax) {
-      _ageType = 'min_only';
-    } else if (!hasMin && hasMax) {
-      _ageType = 'max_only';
-    } else {
-      _ageType = 'all';
+    _ageType = widget.level?.ageOp ?? 'all';
+    if (_ageType == 'all') {
+      final hasMin = widget.level?.minAge != null;
+      final hasMax = widget.level?.maxAge != null;
+      if (hasMin && hasMax) _ageType = 'range';
+      else if (hasMin) _ageType = 'gte';
+      else if (hasMax) _ageType = 'lte';
     }
   }
 
@@ -269,13 +266,21 @@ class _LevelsSidePanelState extends State<LevelsSidePanel> {
                     _ageDropdown(),
                     if (_ageType != 'all') ...[
                       const SizedBox(height: 12),
-                      Row(children: [
-                        if (_ageType == 'range' || _ageType == 'min_only')
-                          Expanded(child: _field(_minAgeCtrl, 'فوق سن', Icons.arrow_upward_rounded, isNum: true)),
-                        if (_ageType == 'range') const SizedBox(width: 12),
-                        if (_ageType == 'range' || _ageType == 'max_only')
-                          Expanded(child: _field(_maxAgeCtrl, 'سن فأقل', Icons.arrow_downward_rounded, isNum: true)),
-                      ]),
+                      if (_ageType == 'gt')
+                        _field(_minAgeCtrl, 'الحد الأدنى (أكبر من)', Icons.arrow_upward_rounded, isNum: true),
+                      if (_ageType == 'gte')
+                        _field(_minAgeCtrl, 'الحد الأدنى (أكبر من أو يساوي)', Icons.arrow_upward_rounded, isNum: true),
+                      if (_ageType == 'lt')
+                        _field(_maxAgeCtrl, 'الحد الأقصى (أصغر من)', Icons.arrow_downward_rounded, isNum: true),
+                      if (_ageType == 'lte')
+                        _field(_maxAgeCtrl, 'الحد الأقصى (أصغر من أو يساوي)', Icons.arrow_downward_rounded, isNum: true),
+                      if (_ageType == 'range') ... [
+                        Row(children: [
+                          Expanded(child: _field(_minAgeCtrl, 'من عمر', Icons.arrow_upward_rounded, isNum: true)),
+                          const SizedBox(width: 12),
+                          Expanded(child: _field(_maxAgeCtrl, 'إلى عمر', Icons.arrow_downward_rounded, isNum: true)),
+                        ]),
+                      ],
                     ],
                     const SizedBox(height: 12),
                     Row(children: [
@@ -517,8 +522,9 @@ class _LevelsSidePanelState extends State<LevelsSidePanel> {
                             title: _titleCtrl.text.trim(),
                             content: _contentCtrl.text.trim(),
                             notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
-                            minAge: _ageType == 'all' || _ageType == 'max_only' ? null : int.tryParse(_minAgeCtrl.text),
-                            maxAge: _ageType == 'all' || _ageType == 'min_only' ? null : int.tryParse(_maxAgeCtrl.text),
+                            minAge: _ageType == 'all' || _ageType == 'lte' || _ageType == 'lt' ? null : int.tryParse(_minAgeCtrl.text),
+                            maxAge: _ageType == 'all' || _ageType == 'gte' || _ageType == 'gt' ? null : int.tryParse(_maxAgeCtrl.text),
+                            ageOp: _ageType == 'all' ? null : _ageType,
                             maxCapacity: cap,
                             isActive: _isActive,
                             totalPoints: int.tryParse(_totalPointsCtrl.text) ?? 100,
@@ -615,14 +621,16 @@ class _LevelsSidePanelState extends State<LevelsSidePanel> {
       onChanged: (v) => setState(() {
         _ageType = v!;
         if (_ageType == 'all') { _minAgeCtrl.clear(); _maxAgeCtrl.clear(); }
-        if (_ageType == 'min_only') { _maxAgeCtrl.clear(); }
-        if (_ageType == 'max_only') { _minAgeCtrl.clear(); }
+        if (_ageType == 'gt' || _ageType == 'gte') { _maxAgeCtrl.clear(); }
+        if (_ageType == 'lt' || _ageType == 'lte') { _minAgeCtrl.clear(); }
       }),
       items: [
         _buildAgeMenuItem('all', 'جميع الأعمار', Icons.all_inclusive_rounded, Colors.green),
-        _buildAgeMenuItem('range', 'نطاق عمري محدد', Icons.compare_arrows_rounded, Colors.blue),
-        _buildAgeMenuItem('min_only', 'حد أدنى للعمر', Icons.arrow_upward_rounded, Colors.orange),
-        _buildAgeMenuItem('max_only', 'حد أقصى للعمر', Icons.arrow_downward_rounded, Colors.purple),
+        _buildAgeMenuItem('gte', 'العمر ... فأكثر (≥)', Icons.arrow_upward_rounded, Colors.indigo),
+        _buildAgeMenuItem('gt', 'العمر أكبر من (>)', Icons.arrow_upward_rounded, Colors.blue),
+        _buildAgeMenuItem('lte', 'العمر ... فأقل (≤)', Icons.arrow_downward_rounded, Colors.deepOrange),
+        _buildAgeMenuItem('lt', 'العمر أصغر من (<)', Icons.arrow_downward_rounded, Colors.orange),
+        _buildAgeMenuItem('range', 'من عمر إلى عمر', Icons.compare_arrows_rounded, Colors.purple),
       ],
     );
   }

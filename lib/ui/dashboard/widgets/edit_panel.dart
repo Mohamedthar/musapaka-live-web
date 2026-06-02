@@ -595,11 +595,7 @@ class StudentEditPanel extends StatelessWidget {
   List<CompetitionLevel> get _ageFilteredLevels {
     final age = int.tryParse(ageController.text);
     if (age == null) return levels;
-    final filtered = levels.where((l) {
-      final min = l.minAge;
-      final max = l.maxAge;
-      return (min == null || age >= min) && (max == null || age <= max);
-    }).toList();
+    final filtered = levels.where((l) => l.ageMatches(age)).toList();
     final current = levels.where((l) => l.title == currentLevel).toList();
     for (final l in current) {
       if (!filtered.contains(l)) filtered.add(l);

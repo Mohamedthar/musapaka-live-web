@@ -155,12 +155,14 @@ class _RegistrationFormContentState extends State<RegistrationFormContent> {
       final int? monthPart = int.tryParse(id.substring(3, 5));
       final int? dayPart = int.tryParse(id.substring(5, 7));
 
-      if (centuryDigit != null && yearPart != null && monthPart != null && dayPart != null) {
+          if (centuryDigit != null && yearPart != null && monthPart != null && dayPart != null) {
         final int year = (centuryDigit == 2 ? 1900 : 2000) + yearPart;
         try {
           final DateTime birthDate = DateTime(year, monthPart, dayPart);
           if (_birthDate != birthDate) {
-            setState(() => _birthDate = birthDate);
+            setState(() {
+              _birthDate = birthDate;
+            });
           }
 
           final DateTime now = DateTime.now();
@@ -275,17 +277,17 @@ class _RegistrationFormContentState extends State<RegistrationFormContent> {
 
       if (_selectedLevelObj != null) {
         final age = int.tryParse(_ageCtrl.text);
-        if (age != null) {
-          if (_selectedLevelObj!.minAge != null && age < _selectedLevelObj!.minAge!) {
-            AppTheme.showSnack(context, 'عمرك أقل من الحد الأدنى المطلوب لهذا المستوى', color: Colors.red);
-            setState(() => _isLoading = false);
-            return;
-          }
-          if (_selectedLevelObj!.maxAge != null && age > _selectedLevelObj!.maxAge!) {
-            AppTheme.showSnack(context, 'عمرك أكبر من الحد الأقصى المطلوب لهذا المستوى', color: Colors.red);
-            setState(() => _isLoading = false);
-            return;
-          }
+        if (age != null && !_selectedLevelObj!.ageMatches(age)) {
+          final op = _selectedLevelObj!.ageOp;
+          String msg = 'عمرك غير مناسب لهذا المستوى';
+          if (op == 'gt') msg = 'يجب أن يكون عمرك أكبر من ${_selectedLevelObj!.minAge} سنة';
+          else if (op == 'gte') msg = 'يجب أن يكون عمرك ${_selectedLevelObj!.minAge} سنة على الأقل';
+          else if (op == 'lt') msg = 'يجب أن يكون عمرك أصغر من ${_selectedLevelObj!.maxAge} سنة';
+          else if (op == 'lte') msg = 'يجب أن يكون عمرك ${_selectedLevelObj!.maxAge} سنة على الأكثر';
+          else if (op == 'range') msg = 'العمر المطلوب من ${_selectedLevelObj!.minAge} إلى ${_selectedLevelObj!.maxAge} سنة';
+          AppTheme.showSnack(context, msg, color: Colors.red);
+          setState(() => _isLoading = false);
+          return;
         }
       }
 
@@ -659,11 +661,7 @@ class _RegistrationFormContentState extends State<RegistrationFormContent> {
   List<CompetitionLevel> get _filteredLevels {
     final age = int.tryParse(_ageCtrl.text);
     if (age == null) return _levels;
-    return _levels.where((l) {
-      final min = l.minAge;
-      final max = l.maxAge;
-      return (min == null || age >= min) && (max == null || age <= max);
-    }).toList();
+    return _levels.where((l) => l.ageMatches(age)).toList();
   }
 
   Widget _buildLevelDropdown() {

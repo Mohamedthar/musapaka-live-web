@@ -482,14 +482,7 @@ class ExportService {
           headers: ['المستوى', 'المحتوى', 'العمر', 'السعة', 'الطلاب', 'الحالة'],
           data: data.map((l) {
             final count = allStudents.where((s) => s.level == l.title).length;
-            String age = 'الكل';
-            if (l.minAge != null && l.maxAge != null) {
-              age = '${l.minAge}-${l.maxAge}';
-            } else if (l.minAge != null) {
-              age = '+${l.minAge}';
-            } else if (l.maxAge != null) {
-              age = '-${l.maxAge}';
-            }
+            String age = l.ageDescription;
             return [l.title, l.content, age, l.maxCapacity?.toString() ?? '∞', '$count', l.isActive ? 'نشط' : 'معطل'];
           }).toList(),
           headerStyle: pw.TextStyle(font: fontBold, color: PdfColors.white, fontSize: 10),

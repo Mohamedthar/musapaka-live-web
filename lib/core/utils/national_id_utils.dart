@@ -70,6 +70,12 @@ class NationalIdUtils {
     return age;
   }
 
+  static int? extractBirthYear(String id) {
+    final info = parse(id);
+    if (info == null) return null;
+    return int.tryParse(info.birthYear);
+  }
+
   static String? getGenderFromId(String id) {
     return parse(id)?.gender;
   }

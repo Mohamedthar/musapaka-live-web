@@ -101,14 +101,7 @@ class LevelsTable extends StatelessWidget {
         final cap = l.maxCapacity ?? 0;
         final double percent = cap > 0 ? (count / cap).clamp(0.0, 1.0) : 0.0;
 
-        String age = 'جميع الأعمار';
-        if (l.minAge != null && l.maxAge != null) {
-          age = 'فوق ${l.minAge} عام و ${l.maxAge} عام فأقل';
-        } else if (l.minAge != null) {
-          age = 'فوق ${l.minAge} عام';
-        } else if (l.maxAge != null) {
-          age = '${l.maxAge} عام فأقل';
-        }
+        String age = l.ageDescription;
 
         return Card(
           margin: const EdgeInsets.only(bottom: 10),
@@ -306,14 +299,7 @@ class LevelsTable extends StatelessWidget {
     final double percent = cap > 0 ? (count / cap).clamp(0.0, 1.0) : 0.0;
     onTapEdit() => onEditLevel(l);
 
-    String age = 'جميع الأعمار';
-    if (l.minAge != null && l.maxAge != null) {
-      age = 'فوق ${l.minAge} عام و ${l.maxAge} عام فأقل';
-    } else if (l.minAge != null) {
-      age = 'فوق ${l.minAge} عام';
-    } else if (l.maxAge != null) {
-      age = '${l.maxAge} عام فأقل';
-    }
+    String age = l.ageDescription;
 
     return TableRow(
       decoration: BoxDecoration(

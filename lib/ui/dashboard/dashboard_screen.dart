@@ -1,4 +1,5 @@
 ﻿import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -44,6 +45,8 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  Color get _primary => AppTheme.primaryColor;
+
   final GlobalKey<LevelsScreenState> _levelsKey = GlobalKey<LevelsScreenState>();
   final SupabaseService _service = SupabaseService();
   List<Student> _students = [];
@@ -78,11 +81,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // Bulk Actions & Sorting State
   final Set<int> _selectedIds = {};
   int? _sortColumnIndex;
+  bool _sortAscending = true;
+  bool _sidebarCollapsed = false;
+  double _sidePanelWidth = 520.0;
+  String _settingsSection = 'dates';
+  Uint8List? _editProfileBytes;
+  Uint8List? _editBirthCertBytes;
+  Uint8List? _originalProfileBytes;
+  Uint8List? _originalBirthCertBytes;
+  late TextEditingController _editNameCtrl;
+  late TextEditingController _editPhoneCtrl;
+  late TextEditingController _editNationalIdCtrl;
+  late TextEditingController _editAgeCtrl;
+  late TextEditingController _editMemorizerNameCtrl;
+  late TextEditingController _editMemorizerPhoneCtrl;
+  late TextEditingController _editMemorizerAddressCtrl;
+  late TextEditingController _editLocationCtrl;
+  late TextEditingController _editBirthDateCtrl;
+  Timer? _editNameDebounce;
+  bool _isEditNameDuplicate = false;
+  bool _isEditNameChecking = false;
+  bool _isEditIdChecking = false;
+  bool _isEditIdDuplicate = false;
+  bool _isEditSaving = false;
+  String? _editGender;
+  String? _editSelectedLevel;
+  String? _editSelectedRewaya;
+  String? _editBranchName;
+  int? _editMemorizationAmount;
+  DateTime? _editBirthDate;
   String _exportFolderPath = '';
 
   @override
-  void initState() {
-    super.initState();
+  void initState() { 
+    super.initState(); 
     _editNameCtrl = TextEditingController();
     _editPhoneCtrl = TextEditingController();
     _editNationalIdCtrl = TextEditingController();
@@ -92,6 +124,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _editMemorizerAddressCtrl = TextEditingController();
     _editLocationCtrl = TextEditingController();
     _editBirthDateCtrl = TextEditingController();
+    _editNationalIdCtrl.addListener(_onNationalIdChanged);
+    _editNameCtrl.addListener(_onEditNameChanged);
     _load();
     _loadExportFolder();
   }
@@ -115,23 +149,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     } catch (e) {
       if (mounted) AppTheme.showSnack(context, 'تعذر فتح نافذة اختيار المجلد', color: Colors.orange);
     }
-  }
-
-  @override
-  void initState() { 
-    super.initState(); 
-    _editNameCtrl = TextEditingController();
-    _editPhoneCtrl = TextEditingController();
-    _editNationalIdCtrl = TextEditingController();
-    _editAgeCtrl = TextEditingController();
-    _editMemorizerNameCtrl = TextEditingController();
-    _editMemorizerPhoneCtrl = TextEditingController();
-    _editMemorizerAddressCtrl = TextEditingController();
-    _editLocationCtrl = TextEditingController();
-    _editBirthDateCtrl = TextEditingController();
-    _editNationalIdCtrl.addListener(_onNationalIdChanged);
-    _editNameCtrl.addListener(_onEditNameChanged);
-    _load(); 
   }
 
   void _onEditNameChanged() {
@@ -741,6 +758,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final savePath = await exportService.saveFile(bytes, fileName, 'xlsx', directory: _exportFolderPath);
       if (savePath != null && mounted) {
         AppTheme.showSnack(context, 'تم تصدير التقرير بنجاح ✓');
+        if (_exportFolderPath.isNotEmpty) Process.run('explorer.exe', [_exportFolderPath]);
       }
     } catch (e) {
       if (mounted) AppTheme.showSnack(context, 'خطأ في التصدير: $e', color: AppTheme.errorColor);
@@ -794,7 +812,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     dropdownColor: Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey),
-                    style: const TextStyle(fontFamily: 'Cairo', fontSize: 14, color: _primary, fontWeight: FontWeight.w600),
+                    style: TextStyle(fontFamily: 'Cairo', fontSize: 14, color: _primary, fontWeight: FontWeight.w600),
                     items: [
                       DropdownMenuItem(
                         value: null, 
@@ -822,6 +840,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(width: 12),
                 Expanded(child: ExportNumberField(controller: maxScoreCtrl, hintText: 'إلى')),
               ]),
+              const SizedBox(height: 16),
+              ExportFolderRow(
+                path: _exportFolderPath,
+                onChangeTap: () async {
+                  await _pickExportFolder();
+                  setExportState(() {});
+                },
+              ),
             ]),
           ),
           ),
@@ -875,7 +901,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       AppTheme.showSnack(context, 'جاري حفظ استمارة المتسابق...', color: _primary);
       final printService = PrintService();
       final path = await printService.saveStudentCardsToDownloads([s], _levels, customDir: _exportFolderPath);
-      if (mounted) AppTheme.showSnack(context, 'تم الحفظ في: $path');
+      if (mounted) {
+        AppTheme.showSnack(context, 'تم الحفظ في: $path');
+        if (_exportFolderPath.isNotEmpty) Process.run('explorer.exe', [_exportFolderPath]);
+      }
     } catch (e) {
       if (mounted) AppTheme.showSnack(context, 'خطأ في الحفظ: $e', color: AppTheme.errorColor);
     }
@@ -895,7 +924,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final printService = PrintService();
       final path = await printService.saveStudentCardsToDownloads(selectedStudents, _levels, customDir: _exportFolderPath);
       
-      if (mounted) AppTheme.showSnack(context, 'تم حفظ جميع الاستمارات في: $path');
+      if (mounted) {
+        AppTheme.showSnack(context, 'تم حفظ جميع الاستمارات في: $path');
+        if (_exportFolderPath.isNotEmpty) Process.run('explorer.exe', [_exportFolderPath]);
+      }
     } catch (e) {
       if (mounted) AppTheme.showSnack(context, 'خطأ في الحفظ الجماعي: $e', color: AppTheme.errorColor);
     }
@@ -1310,6 +1342,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         showAddPanel: _showAddPanel,
         onToggleAddPanel: _onToggleAddStudentPanel,
         primaryColor: _primary,
+        exportFolderPath: _exportFolderPath,
+        onChangeExportFolder: _pickExportFolder,
       ),
       Expanded(child: Row(children: [
         Expanded(
@@ -1339,32 +1373,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         if (memorizersCount > 0)
                           StatEntry(title: 'المُحفِّظين', value: '$memorizersCount', icon: Icons.person_pin_circle_rounded, color: Colors.purple),
                       ]),
-                      if (!_isLoading)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          margin: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-                          decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade200)),
-                          child: Row(children: [
-                            Icon(Icons.folder_rounded, size: 15, color: Colors.grey.shade500),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                _exportFolderPath.isNotEmpty ? _exportFolderPath : 'لم يتم تحديد مجلد',
-                                style: TextStyle(fontFamily: 'Cairo', fontSize: 10.5, color: Colors.grey.shade500),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            InkWell(
-                              onTap: _pickExportFolder,
-                              borderRadius: BorderRadius.circular(6),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(color: _primary.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(6)),
-                                child: Text('تغيير', style: TextStyle(fontFamily: 'Cairo', fontSize: 10, fontWeight: FontWeight.w700, color: _primary)),
-                              ),
-                            ),
-                          ]),
-                        ),
                       DashboardFilterBar(
                         currentLevelTitle: _levelFilterTitle,
                         levels: _levels,
@@ -1530,6 +1538,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 isNameDuplicate: _isEditNameDuplicate,
                 isIdChecking: _isEditIdChecking,
                 isIdDuplicate: _isEditIdDuplicate,
+                 
                 onSave: _saveEdit,
                 onClose: () => _handleCloseEditPanel(onClose: () => setState(() { _showEditPanel = false; _editingStudent = null; })),
                 width: double.infinity,
@@ -1735,7 +1744,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               duration: const Duration(milliseconds: 300),
               width: isSelected ? 4 : 0,
               height: 4,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: _primary,
                 shape: BoxShape.circle,
               ),

@@ -86,6 +86,7 @@ export default function Step4Review({
           <>
             <Turnstile
               siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+              options={{ appearance: 'always' }}
               onSuccess={(token) => { setTurnstileToken(token); setTurnstileError(false); }}
               onExpire={() => { setTurnstileToken(null); setTurnstileError(true); }}
               onError={() => { setTurnstileToken(null); setTurnstileError(true); }}

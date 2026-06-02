@@ -5,6 +5,7 @@ class CompetitionLevel {
   final String? notes;
   final int? minAge;
   final int? maxAge;
+  final String? ageOp;
   final int? maxCapacity;
   final bool isActive;
   final String? levelCode;  // A, B, C...
@@ -32,6 +33,7 @@ class CompetitionLevel {
     this.notes,
     this.minAge,
     this.maxAge,
+    this.ageOp,
     this.maxCapacity,
     this.isActive = true,
     this.levelCode,
@@ -63,6 +65,7 @@ class CompetitionLevel {
       notes: json['notes'],
       minAge: json['min_age'],
       maxAge: json['max_age'],
+      ageOp: json['age_op'] ?? json['age_op'],
       maxCapacity: json['max_capacity'],
       isActive: json['is_active'] ?? true,
       levelCode: json['level_code'],
@@ -93,6 +96,7 @@ class CompetitionLevel {
       'notes': notes,
       'min_age': minAge,
       'max_age': maxAge,
+      if (ageOp != null) 'age_op': ageOp,
       'max_capacity': maxCapacity,
       'is_active': isActive,
       if (levelCode != null) 'level_code': levelCode,
@@ -124,6 +128,7 @@ class CompetitionLevel {
     Object? notes = _unset,
     Object? minAge = _unset,
     Object? maxAge = _unset,
+    Object? ageOp = _unset,
     Object? maxCapacity = _unset,
     bool? isActive,
     Object? levelCode = _unset,
@@ -151,6 +156,7 @@ class CompetitionLevel {
       notes: identical(notes, _unset) ? this.notes : notes as String?,
       minAge: identical(minAge, _unset) ? this.minAge : minAge as int?,
       maxAge: identical(maxAge, _unset) ? this.maxAge : maxAge as int?,
+      ageOp: identical(ageOp, _unset) ? this.ageOp : ageOp as String?,
       maxCapacity: identical(maxCapacity, _unset) ? this.maxCapacity : maxCapacity as int?,
       isActive: isActive ?? this.isActive,
       levelCode: identical(levelCode, _unset) ? this.levelCode : levelCode as String?,
@@ -171,6 +177,37 @@ class CompetitionLevel {
       thirdPrize: identical(thirdPrize, _unset) ? this.thirdPrize : thirdPrize as String?,
       prizes: identical(prizes, _unset) ? this.prizes : prizes as String?,
     );
+  }
+
+  bool ageMatches(int age) {
+    final op = ageOp;
+    if (op != null && op != 'all') {
+      switch (op) {
+        case 'gt':  return minAge != null && age > minAge!;
+        case 'gte': return minAge != null && age >= minAge!;
+        case 'lt':  return maxAge != null && age < maxAge!;
+        case 'lte': return maxAge != null && age <= maxAge!;
+        case 'range': return (minAge == null || age >= minAge!) && (maxAge == null || age <= maxAge!);
+      }
+    }
+    return (minAge == null || age >= minAge!) && (maxAge == null || age <= maxAge!);
+  }
+
+  String get ageDescription {
+    final op = ageOp;
+    if (op != null && op != 'all') {
+      switch (op) {
+        case 'gt':  return 'السن > $minAge';
+        case 'gte': return 'السن ≥ $minAge';
+        case 'lt':  return 'السن < $maxAge';
+        case 'lte': return 'السن ≤ $maxAge';
+        case 'range': return 'من $minAge إلى $maxAge سنة';
+      }
+    }
+    if (minAge != null && maxAge != null) return 'من $minAge إلى $maxAge سنة';
+    if (minAge != null) return 'السن ≥ $minAge';
+    if (maxAge != null) return 'السن ≤ $maxAge';
+    return 'جميع الأعمار';
   }
 
   int get totalMaxPoints {
