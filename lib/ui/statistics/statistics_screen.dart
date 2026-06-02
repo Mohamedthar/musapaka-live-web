@@ -874,12 +874,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       return const Center(child: Text('لا توجد نتائج', style: TextStyle(fontFamily: 'Cairo', fontSize: 14, color: Color(0xFF595959))));
     }
 
-    final table = Table(
+    final tableContent = Table(
       defaultVerticalAlignment: TableCellVerticalAlignment.middle,
       columnWidths: const {
         0: FixedColumnWidth(52),
-        1: FlexColumnWidth(3),
-        2: FixedColumnWidth(130),
+        1: FlexColumnWidth(2.5),
+        2: FixedColumnWidth(120),
         3: FixedColumnWidth(130),
         4: FixedColumnWidth(120),
       },
@@ -897,22 +897,21 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         ...stats.asMap().entries.map((e) {
           final i = e.key;
           final m = e.value;
-          final isTop = i < 3;
           return TableRow(
             decoration: BoxDecoration(
-              color: _memorizerRowBg(i),
+              color: _memRowBg(i),
               border: i < stats.length - 1 ? Border(bottom: BorderSide(color: Colors.grey.shade100)) : null,
             ),
             children: [
-              _mc(Center(child: Text('${i + 1}', style: TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700, color: isTop ? Colors.amber.shade800 : Colors.grey.shade500))), center: true),
+              _mc(Center(child: Text('${i + 1}', style: TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700, color: i < 3 ? Colors.amber.shade800 : Colors.grey.shade500))), center: true),
               _mc(Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                Text(m.name, style: TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF03121C))),
+                Text(m.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.w700, color: _primary)),
                 if (m.phone != null && m.phone!.isNotEmpty)
-                  Text('📞 ${m.phone}', style: TextStyle(fontFamily: 'Cairo', fontSize: 10, color: Colors.grey.shade400)),
+                  Text('📞 ${m.phone}', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
               ])),
-              _mc(Center(child: Text('${m.totalStudents}', style: TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.w900, color: _primary))), center: true),
-              _mc(Center(child: _buildMemorizerBadge(m.winnersCount, Colors.amber.shade700, Colors.amber.withValues(alpha: 0.1))), center: true),
-              _mc(Center(child: _buildMemorizerBadge(m.top3Count, Colors.indigo.shade700, Colors.indigo.withValues(alpha: 0.1))), center: true),
+              _mc(Center(child: _buildMemNumBadge(m.totalStudents, _primary.withValues(alpha: 0.12), _primary)), center: true),
+              _mc(Center(child: _buildMemNumBadge(m.winnersCount, Colors.amber.withValues(alpha: 0.12), Colors.amber.shade700))),
+              _mc(Center(child: _buildMemNumBadge(m.top3Count, Colors.indigo.withValues(alpha: 0.1), Colors.indigo.shade700))),
             ],
           );
         }),
@@ -922,14 +921,19 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Container(
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade100), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10)]),
-        child: ClipRRect(borderRadius: BorderRadius.circular(16), child: table),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade100),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10)],
+        ),
+        child: ClipRRect(borderRadius: BorderRadius.circular(16), child: tableContent),
       ),
     );
   }
 
-  Color _memorizerRowBg(int index) {
-    if (index == 0) return Colors.amber.withValues(alpha: 0.06);
+  Color _memRowBg(int index) {
+    if (index == 0) return Colors.amber.withValues(alpha: 0.04);
     if (index == 1) return Colors.blueGrey.withValues(alpha: 0.04);
     if (index == 2) return Colors.brown.withValues(alpha: 0.04);
     return index % 2 == 0 ? Colors.white : const Color(0xFFF9FBFF);
@@ -939,7 +943,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return TableCell(
       child: Container(
         alignment: center ? Alignment.center : Alignment.centerRight,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
         child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Cairo', color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w700)),
       ),
     );
@@ -949,17 +953,21 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return TableCell(
       verticalAlignment: TableCellVerticalAlignment.middle,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: center ? child : child,
       ),
     );
   }
 
-  Widget _buildMemorizerBadge(int count, Color color, Color bg) {
+  Widget _buildMemNumBadge(int count, Color bgColor, Color fgColor) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8), border: Border.all(color: color.withValues(alpha: 0.3))),
-      child: Text('$count', style: TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.w900, color: count > 0 ? color : Colors.grey.shade300)),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: fgColor.withValues(alpha: 0.25)),
+      ),
+      child: Text('$count', style: TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w900, color: count > 0 ? fgColor : Colors.grey.shade300)),
     );
   }
 
