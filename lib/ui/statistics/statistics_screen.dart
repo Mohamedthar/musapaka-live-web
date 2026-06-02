@@ -1010,7 +1010,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   // Main table header cell
   static Widget _mh2(String label, double? width, {int? flex, bool center = false}) {
-    final child = Text(label, style: const TextStyle(fontFamily: 'Cairo', color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w700));
+    final child = Text(label, style: const TextStyle(fontFamily: 'Cairo', color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w700));
     if (width != null) return SizedBox(width: width, child: center ? Center(child: child) : child);
     return Expanded(flex: flex ?? 1, child: center ? Center(child: child) : child);
   }
@@ -1021,7 +1021,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     if (badge != null) {
       child = badge;
     } else {
-      child = Text(text ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: center ? TextAlign.center : null, style: TextStyle(fontFamily: 'Cairo', fontSize: small ? 12 : 13, fontWeight: bold ? FontWeight.w700 : FontWeight.w500, color: color ?? const Color(0xFF1E293B)));
+      child = Text(text ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: center ? TextAlign.center : null, style: TextStyle(fontFamily: 'Cairo', fontSize: small ? 13 : 14, fontWeight: bold ? FontWeight.w700 : FontWeight.w500, color: color ?? const Color(0xFF1E293B)));
     }
     if (center) child = Center(child: child);
     if (width != null) return SizedBox(width: width, child: child);
