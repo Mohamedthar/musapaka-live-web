@@ -316,15 +316,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildActiveContent(bool isMobile) {
     switch (_activeSection) {
       case 'dates':
-        return KeyedSubtree(key: const ValueKey('dates'), child: _buildRegistrationDatesSection());
-      case 'schedule':
-        return KeyedSubtree(key: const ValueKey('schedule'), child: _buildSchedule(isMobile));
-      case 'faqs':
-        return KeyedSubtree(key: const ValueKey('faqs'), child: _buildFaqsSection());
+        return KeyedSubtree(key: const ValueKey('dates'), child: Column(children: [
+          _buildRegistrationDatesSection(),
+          const SizedBox(height: 24),
+          _buildSchedule(isMobile),
+        ]));
       case 'backup':
-        return KeyedSubtree(key: const ValueKey('backup'), child: _buildBackupSection());
+        return KeyedSubtree(key: const ValueKey('backup'), child: Column(children: [
+          _buildBackupSection(),
+          const SizedBox(height: 24),
+          _buildFaqsSection(),
+        ]));
       default:
-        return KeyedSubtree(key: const ValueKey('dates'), child: _buildRegistrationDatesSection());
+        return KeyedSubtree(key: const ValueKey('dates'), child: Column(children: [
+          _buildRegistrationDatesSection(),
+          const SizedBox(height: 24),
+          _buildSchedule(isMobile),
+        ]));
     }
   }
 

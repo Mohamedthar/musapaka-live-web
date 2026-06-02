@@ -242,25 +242,13 @@ class _DashboardSidebarState extends State<DashboardSidebar>
                           if (isSettings && showLabels) ...[
                             _subItem(
                               icon: Icons.calendar_today_rounded,
-                              label: 'المواعيد واللجان',
+                              label: 'المواعيد وجدول الفترات',
                               isActive: widget.settingsSection == 'dates',
                               onTap: () => widget.onSettingsSectionChanged('dates'),
                             ),
                             _subItem(
-                              icon: Icons.view_timeline_rounded,
-                              label: 'جدول الفترات',
-                              isActive: widget.settingsSection == 'schedule',
-                              onTap: () => widget.onSettingsSectionChanged('schedule'),
-                            ),
-                            _subItem(
-                              icon: Icons.help_outline_rounded,
-                              label: 'الأسئلة الشائعة',
-                              isActive: widget.settingsSection == 'faqs',
-                              onTap: () => widget.onSettingsSectionChanged('faqs'),
-                            ),
-                            _subItem(
                               icon: Icons.backup_rounded,
-                              label: 'النسخ الاحتياطي',
+                              label: 'النسخ الاحتياطي والأسئلة الشائعة',
                               isActive: widget.settingsSection == 'backup',
                               onTap: () => widget.onSettingsSectionChanged('backup'),
                             ),
