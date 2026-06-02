@@ -138,7 +138,8 @@ export default function LevelsClient({ initialLevels, initialError }: Props) {
                       whileHover={{ y: -4 }}
                       className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden border border-outline-variant/10">
                       <div className="bg-primary px-4 py-3 flex items-center gap-2.5 relative overflow-hidden">
-                        <div className="absolute inset-0 islamic-pattern opacity-10" />
+                        <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-secondary-fixed opacity-[0.12] pointer-events-none" />
+                        <div className="absolute right-8 -bottom-4 w-16 h-16 rounded-full bg-secondary-fixed opacity-[0.08] pointer-events-none" />
                         <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-secondary-fixed to-[#fed65b] text-on-secondary-fixed flex items-center justify-center font-black text-sm shrink-0 shadow-sm">
                           {codeNum || level.level_code}
                         </span>
@@ -151,8 +152,8 @@ export default function LevelsClient({ initialLevels, initialError }: Props) {
                           </span>
                         )}
                       </div>
-                      <div className="p-4 flex-1 flex flex-col gap-3 relative">
-                        <div className="absolute inset-0 islamic-pattern opacity-[0.08] pointer-events-none" />
+                      <div className="p-4 flex-1 flex flex-col gap-3 relative bg-[linear-gradient(135deg,rgba(115,92,0,0.06)_0%,transparent_40%,transparent_100%)]">
+                        <div className="absolute left-0 bottom-0 w-28 h-28 rounded-full bg-primary opacity-[0.04] -translate-x-1/2 translate-y-1/2 pointer-events-none" />
                         <p className="text-sm font-bold text-primary leading-relaxed relative z-[1]">{level.content}</p>
                         {level.prizes && (
                           <div className="bg-gradient-to-br from-secondary-fixed/[0.12] to-transparent rounded-xl p-3.5 border border-secondary-fixed/20 relative z-[1]">
