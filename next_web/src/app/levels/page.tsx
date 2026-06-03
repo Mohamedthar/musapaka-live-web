@@ -1,4 +1,4 @@
-import { getSupabase } from '@/lib/supabase';
+import { getAdminClient } from '@/lib/supabase-admin';
 import LevelsClient from './client-page';
 
 export const revalidate = 3600;
@@ -8,7 +8,7 @@ export default async function LevelsPage() {
   let error = null;
 
   try {
-    const supabase = getSupabase();
+    const supabase = getAdminClient();
     const { data, error: supabaseError } = await supabase
       .from('competition_levels')
       .select('*')

@@ -1,7 +1,6 @@
 'use client';
 /* Deployment trigger: 2026-05-19T23:36:27Z */
 import React, { useState, useEffect, useMemo } from 'react';
-import { getSupabase } from '@/lib/supabase';
 import { CheckCircle2, ChevronLeft, ChevronRight, ShieldCheck, ArrowLeft, Send, CalendarX, Download, Printer, FileText } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
@@ -90,13 +89,17 @@ export default function RegisterPage() {
         return;
       }
       setIsCheckingName(true);
-      const { data } = await getSupabase()
-        .from('students')
-        .select('id')
-        .eq('name', formData.name.trim())
-        .maybeSingle();
-
-      setNameExists(!!data);
+      try {
+        const res = await fetch('/api/check-duplicate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: formData.name.trim() }),
+        });
+        const d = await res.json();
+        setNameExists(!!d.name_exists);
+      } catch {
+        setNameExists(false);
+      }
       setIsCheckingName(false);
     }, 800);
 
@@ -110,13 +113,17 @@ export default function RegisterPage() {
         return;
       }
       setIsCheckingId(true);
-      const { data } = await getSupabase()
-        .from('students')
-        .select('id')
-        .eq('national_id', formData.nationalId.trim())
-        .maybeSingle();
-
-      setIdExists(!!data);
+      try {
+        const res = await fetch('/api/check-duplicate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ national_id: formData.nationalId.trim() }),
+        });
+        const d = await res.json();
+        setIdExists(!!d.national_id_exists);
+      } catch {
+        setIdExists(false);
+      }
       setIsCheckingId(false);
     }, 500);
 
@@ -141,22 +148,24 @@ export default function RegisterPage() {
       }
 
       try {
-        const { count: studentCount, error: countErr } = await getSupabase()
-          .from('students')
-          .select('*', { count: 'exact', head: true });
+        const [settingsRes, levelsRes] = await Promise.all([
+          fetch('/api/settings'),
+          fetch('/api/levels'),
+        ]);
 
-        if (countErr) {
-          console.error("Error fetching student count:", countErr);
-        }
-        const count = studentCount ?? 0;
+        const settingsJson = await settingsRes.json();
+        const levelsJson = await levelsRes.json();
 
-        const { data } = await getSupabase()
-          .from('app_settings')
-          .select('is_registration_open, registration_start_date, registration_end_date, exam_schedule')
-          .eq('id', 1)
-          .single();
-          
-        if (data) {
+        if (settingsJson.settings) {
+          const data = settingsJson.settings;
+          const totalStud = settingsJson.settings.total_students;
+          const lvlCounts = settingsJson.settings.level_counts || {};
+
+          if (totalStud !== undefined && lvlCounts) {
+            Object.assign(countsMap, lvlCounts);
+            setLevelCounts(countsMap);
+          }
+
           let totalCap = 0;
           if (data.exam_schedule && Array.isArray(data.exam_schedule)) {
             for (const slot of data.exam_schedule as Array<Record<string, unknown>>) {
@@ -167,6 +176,8 @@ export default function RegisterPage() {
             }
           }
 
+          const count = totalStud ?? 0;
+
           if (totalCap > 0 && count >= totalCap) {
             setIsWaitlistMode(false);
             setRegistrationAllowed(false);
@@ -176,33 +187,18 @@ export default function RegisterPage() {
             setCapacityFull(false);
           }
         }
-      } catch (err) {
-        console.error("Error loading settings:", err);
-      }
 
-      try {
-        const { data: stdLevels } = await getSupabase().from('students').select('level');
-        stdLevels?.forEach(s => {
-          countsMap[s.level] = (countsMap[s.level] || 0) + 1;
-        });
-        setLevelCounts(countsMap);
-      } catch (err) {
-        console.error("Error loading level counts:", err);
-      }
-
-      try {
-        const { data: lvls } = await getSupabase().from('competition_levels').select('*').eq('is_active', true).order('level_code');
-        if (lvls?.length) {
-          setLevels(lvls);
+        if (levelsJson.levels?.length) {
+          setLevels(levelsJson.levels);
           const preselected = searchParams.get('level');
-          if (preselected && lvls.some(l => l.title === preselected)) {
+          if (preselected && levelsJson.levels.some((l: { title: string }) => l.title === preselected)) {
             setFormData(p => ({ ...p, level: preselected }));
           } else {
             setFormData(p => ({ ...p, level: '', selectedRewaya: '' }));
           }
         }
       } catch (err) {
-        console.error("Error loading levels:", err);
+        console.error("Error loading data:", err);
       }
     };
     load();
@@ -293,34 +289,19 @@ export default function RegisterPage() {
   };
 
   const uploadToCloudinary = async (fileOrBlob: File | Blob) => {
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
-
-    if (!cloudName || !uploadPreset) {
-      console.error('Cloudinary configuration is missing');
-      throw new Error('إعدادات السحابة غير صحيحة. يرجى التواصل مع الإدارة.');
-    }
-
     const fd = new FormData();
     fd.append('file', fileOrBlob);
-    fd.append('upload_preset', uploadPreset);
 
-    try {
-      const r = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-        method: 'POST',
-        body: fd
-      });
+    const r = await fetch('/api/upload', {
+      method: 'POST',
+      body: fd,
+    });
 
-      const res = await r.json();
-      if (!r.ok) {
-        console.error('Cloudinary upload error:', res);
-        throw new Error(res.error?.message || 'فشل في الرفع');
-      }
-      return res.secure_url;
-    } catch (err) {
-      console.error('Upload failed:', err);
-      throw err;
+    const res = await r.json();
+    if (!r.ok) {
+      throw new Error(res.error || 'فشل في رفع الصورة');
     }
+    return res.url;
   };
 
   const nextStep = () => {

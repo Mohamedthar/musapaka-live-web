@@ -2,12 +2,23 @@ import { NextResponse } from 'next/server';
 
 function getAllowedOrigins(): string[] {
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/+$/, '');
-  return [siteUrl].filter(Boolean) as string[];
+  const extraOrigins = (process.env.EXTRA_CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
+  return [siteUrl, ...extraOrigins].filter(Boolean) as string[];
+}
+
+function originMatches(allowed: string, origin: string): boolean {
+  try {
+    const a = new URL(allowed);
+    const o = new URL(origin);
+    return a.hostname === o.hostname && a.protocol === o.protocol && a.port === o.port;
+  } catch {
+    return allowed === origin;
+  }
 }
 
 export function getCorsHeaders(origin: string | null) {
   const allowed = getAllowedOrigins();
-  const allowedOrigin = (origin && allowed.includes(origin)) ? origin : (allowed[0] || '');
+  const allowedOrigin = (origin && allowed.some((a) => originMatches(a, origin))) ? origin : (allowed[0] || '');
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -66,12 +77,22 @@ export function validateCsrf(request: Request): boolean {
 
   if (!origin && !referer) return false;
 
+  const allowed = getAllowedOrigins();
+
   if (origin) {
-    return getAllowedOrigins().some((allowed) => origin.startsWith(allowed));
+    return allowed.some((a) => originMatches(a, origin));
   }
 
   if (referer) {
-    return getAllowedOrigins().some((allowed) => referer.startsWith(allowed));
+    return allowed.some((a) => {
+      try {
+        const r = new URL(referer);
+        const al = new URL(a);
+        return r.hostname === al.hostname && r.protocol === al.protocol && r.port === al.port;
+      } catch {
+        return referer.startsWith(a);
+      }
+    });
   }
 
   return false;

@@ -1,4 +1,4 @@
-import { getPublicClient } from '@/lib/supabase-public';
+import { getAdminClient } from '@/lib/supabase-admin';
 import { jsonResponse, optionsResponse, checkRateLimit, getClientIp, validateCsrf } from '@/lib/api-utils';
 
 export { optionsResponse as OPTIONS };
@@ -6,7 +6,7 @@ export { optionsResponse as OPTIONS };
 export async function GET(request: Request) {
   const origin = request.headers.get('origin');
   try {
-    const supabase = getPublicClient();
+    const supabase = getAdminClient();
     const { data: settings, error } = await supabase.rpc('public_get_registration_status');
 
     if (error) {
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       return jsonResponse({ error: 'الرقم القومي يجب أن يتكون من 14 رقماً' }, 400, origin);
     }
 
-    const supabase = getPublicClient();
+    const supabase = getAdminClient();
     const { data, error } = await supabase.rpc('public_lookup_result', {
       p_national_id: String(nationalId),
     });

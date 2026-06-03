@@ -5,7 +5,6 @@ import { Trophy, BookOpen, ChevronDown, RefreshCw } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { motion } from 'framer-motion';
-import { getSupabase } from '@/lib/supabase';
 import { LevelCardSkeleton } from '@/components/SkeletonLoader';
 import type { CompetitionLevel } from '@/lib/database.types';
 
@@ -36,15 +35,10 @@ export default function LevelsClient({ initialLevels, initialError }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const supabase = getSupabase();
-      const { data, error: supabaseError } = await supabase
-        .from('competition_levels')
-        .select('*')
-        .eq('is_active', true)
-        .order('level_code');
-
-      if (supabaseError) throw supabaseError;
-      if (data) setLevels(data);
+      const res = await fetch('/api/levels');
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'فشل في تحميل المستويات');
+      if (json.levels) setLevels(json.levels);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'فشل في تحميل المستويات');
     } finally {

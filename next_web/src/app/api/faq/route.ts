@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getPublicClient } from '@/lib/supabase-public';
+import { getAdminClient } from '@/lib/supabase-admin';
 
 const DEFAULT_FAQS = [
   { q: 'كيف أعرف أن تسجيلي تم بنجاح؟', a: 'بعد إتمام التسجيل ستظهر لك استمارة إلكترونية برقم تسجيل خاص، كما يمكنك الاستعلام في أي وقت من بوابة الاستعلامات.' },
@@ -10,7 +10,7 @@ const DEFAULT_FAQS = [
 
 export async function GET() {
   try {
-    const supabase = getPublicClient();
+    const supabase = getAdminClient();
 
     const timeout = new Promise<{ data: { faqs: { q: string; a: string }[] } | null; error: null }>((resolve) => {
       setTimeout(() => resolve({ data: null, error: null }), 2500);

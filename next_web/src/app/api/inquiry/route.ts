@@ -1,4 +1,4 @@
-import { getPublicClient } from '@/lib/supabase-public';
+import { getAdminClient } from '@/lib/supabase-admin';
 import { jsonResponse, optionsResponse, checkRateLimit, getClientIp, validateCsrf } from '@/lib/api-utils';
 
 export { optionsResponse as OPTIONS };
@@ -10,21 +10,25 @@ export async function POST(request: Request) {
       return jsonResponse({ error: 'طلب غير مصرح به' }, 403, origin);
     }
     const body = await request.json();
-    const { nationalId } = body;
+    const { nationalId, phone } = body;
 
     const ip = getClientIp(request);
     if (!checkRateLimit(ip, 10)) {
       return jsonResponse({ error: 'طلبات كثيرة جداً. حاول بعد دقيقة.' }, 429, origin);
     }
 
-    if (!nationalId || nationalId.length !== 14) {
+    if (!nationalId || String(nationalId).length !== 14) {
       return jsonResponse({ error: 'الرقم القومي يجب أن يتكون من 14 رقماً' }, 400, origin);
     }
 
-    const supabase = getPublicClient();
+    if (!phone || !/^(010|011|012|015)\d{8}$/.test(String(phone).trim())) {
+      return jsonResponse({ error: 'رقم الهاتف المصري غير صحيح' }, 400, origin);
+    }
+
+    const supabase = getAdminClient();
 
     const [studentRes, levelsRes] = await Promise.all([
-      supabase.rpc('public_lookup_student', { p_national_id: nationalId }),
+      supabase.rpc('public_lookup_student', { p_national_id: String(nationalId), p_phone: String(phone).trim() }),
       supabase
         .from('competition_levels')
         .select('id, title, content, is_active, total_points, has_rewaya, rewaya_max_score, has_tajweed, tajweed_max_score, has_voice, voice_max_score, has_meaning, meaning_max_score')
@@ -40,7 +44,7 @@ export async function POST(request: Request) {
 
     const student = Array.isArray(studentData) ? studentData[0] : studentData;
     if (!student) {
-      return jsonResponse({ error: 'لم يُعثر على متسابق بهذا الرقم القومي. تأكد من البيانات المُدخلة أو تواصل مع الإدارة.' }, 404, origin);
+      return jsonResponse({ error: 'لم يُعثر على متسابق بهذا الرقم القومي ورقم الهاتف. تأكد من البيانات المُدخلة أو تواصل مع الإدارة.' }, 404, origin);
     }
 
     return jsonResponse({
