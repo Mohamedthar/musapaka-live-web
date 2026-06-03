@@ -6,6 +6,11 @@ export { optionsResponse as OPTIONS };
 export async function GET(request: Request) {
   const origin = request.headers.get('origin');
   try {
+    const ip = getClientIp(request);
+    if (!checkRateLimit(ip, 30)) {
+      return jsonResponse({ error: 'طلبات كثيرة جداً' }, 429, origin);
+    }
+
     const supabase = getAdminClient();
     const { data: settings, error } = await supabase.rpc('public_get_registration_status');
 

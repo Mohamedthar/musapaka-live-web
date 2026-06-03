@@ -1,6 +1,5 @@
-import { NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { checkRateLimit, getClientIp } from '@/lib/api-utils';
+import { jsonResponse, checkRateLimit, getClientIp } from '@/lib/api-utils';
 
 const DEFAULT_FAQS = [
   { q: 'كيف أعرف أن تسجيلي تم بنجاح؟', a: 'بعد إتمام التسجيل ستظهر لك استمارة إلكترونية برقم تسجيل خاص، كما يمكنك الاستعلام في أي وقت من بوابة الاستعلامات.' },
@@ -10,9 +9,10 @@ const DEFAULT_FAQS = [
 ];
 
 export async function GET(request: Request) {
+  const origin = request.headers.get('origin');
   const ip = getClientIp(request);
   if (!checkRateLimit(ip, 30)) {
-    return NextResponse.json({ error: 'طلبات كثيرة جداً' }, { status: 429 });
+    return jsonResponse({ data: DEFAULT_FAQS }, 200, origin, 60);
   }
 
   try {
@@ -32,20 +32,14 @@ export async function GET(request: Request) {
     const { data, error } = result as { data: { faqs: { q: string; a: string }[] } | null; error: Error | null };
 
     if (error) {
-      return NextResponse.json({ data: DEFAULT_FAQS }, {
-        headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
-      });
+      return jsonResponse({ data: DEFAULT_FAQS }, 200, origin, 60);
     }
 
     const faqs = (data?.faqs as { q: string; a: string }[]) ?? [];
-    const result_faqs = faqs.length > 0 ? faqs : DEFAULT_FAQS;
+    const resultFaqs = faqs.length > 0 ? faqs : DEFAULT_FAQS;
 
-    return NextResponse.json({ data: result_faqs }, {
-      headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
-    });
+    return jsonResponse({ data: resultFaqs }, 200, origin, 60);
   } catch {
-    return NextResponse.json({ data: DEFAULT_FAQS }, {
-      headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
-    });
+    return jsonResponse({ data: DEFAULT_FAQS }, 200, origin, 60);
   }
 }
