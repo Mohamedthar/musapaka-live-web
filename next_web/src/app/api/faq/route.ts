@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
+import { checkRateLimit, getClientIp } from '@/lib/api-utils';
 
 const DEFAULT_FAQS = [
   { q: 'كيف أعرف أن تسجيلي تم بنجاح؟', a: 'بعد إتمام التسجيل ستظهر لك استمارة إلكترونية برقم تسجيل خاص، كما يمكنك الاستعلام في أي وقت من بوابة الاستعلامات.' },
@@ -8,7 +9,12 @@ const DEFAULT_FAQS = [
   { q: 'ما هي معايير التقييم في المسابقة؟', a: 'يتم التقييم على: الحفظ وجودة التلاوة، أحكام التجويد، حسن الصوت والأداء، ومعاني الكلمات حسب المستوى.' },
 ];
 
-export async function GET() {
+export async function GET(request: Request) {
+  const ip = getClientIp(request);
+  if (!checkRateLimit(ip, 30)) {
+    return NextResponse.json({ error: 'طلبات كثيرة جداً' }, { status: 429 });
+  }
+
   try {
     const supabase = getAdminClient();
 

@@ -12,6 +12,25 @@ const ALLOWED_TYPES = new Set([
   'image/heif',
 ]);
 
+const MAGIC_BYTES: Record<string, number[][]> = {
+  'image/jpeg': [[0xFF, 0xD8, 0xFF]],
+  'image/png': [[0x89, 0x50, 0x4E, 0x47]],
+  'image/webp': [[0x52, 0x49, 0x46, 0x46]],
+  'image/heic': [[0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x68, 0x65, 0x69, 0x63]],
+  'image/heif': [[0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x68, 0x65, 0x69, 0x63]],
+};
+
+async function validateMagicBytes(file: File): Promise<boolean> {
+  const buffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  const signatures = MAGIC_BYTES[file.type] || MAGIC_BYTES['image/jpeg'];
+
+  return signatures.some((sig) => {
+    if (sig.length > bytes.length) return false;
+    return sig.every((b, i) => bytes[i] === b);
+  });
+}
+
 export async function POST(request: Request) {
   const origin = request.headers.get('origin');
   try {
@@ -42,6 +61,11 @@ export async function POST(request: Request) {
 
     if (!ALLOWED_TYPES.has(file.type)) {
       return jsonResponse({ error: 'نوع الملف غير مدعوم. الأنواع المدعومة: JPEG, PNG, WebP' }, 400, origin);
+    }
+
+    const validBytes = await validateMagicBytes(file);
+    if (!validBytes) {
+      return jsonResponse({ error: 'الملف تالف أو نوعه غير حقيقي' }, 400, origin);
     }
 
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME;

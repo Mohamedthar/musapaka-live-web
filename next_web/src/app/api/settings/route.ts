@@ -1,11 +1,16 @@
 import { getAdminClient } from '@/lib/supabase-admin';
-import { jsonResponse, optionsResponse } from '@/lib/api-utils';
+import { jsonResponse, optionsResponse, checkRateLimit, getClientIp } from '@/lib/api-utils';
 
 export { optionsResponse as OPTIONS };
 
 export async function GET(request: Request) {
   const origin = request.headers.get('origin');
   try {
+    const ip = getClientIp(request);
+    if (!checkRateLimit(ip, 30)) {
+      return jsonResponse({ error: 'طلبات كثيرة جداً' }, 429, origin);
+    }
+
     const supabase = getAdminClient();
 
     const [settingsRes, countRes, levelCountsRes] = await Promise.all([

@@ -1,13 +1,17 @@
 import { getAdminClient } from '@/lib/supabase-admin';
-import { jsonResponse, optionsResponse, checkRateLimit, getClientIp } from '@/lib/api-utils';
+import { jsonResponse, optionsResponse, checkRateLimit, getClientIp, validateCsrf } from '@/lib/api-utils';
 
 export { optionsResponse as OPTIONS };
 
 export async function POST(request: Request) {
   const origin = request.headers.get('origin');
   try {
+    if (!validateCsrf(request)) {
+      return jsonResponse({ error: 'طلب غير مصرح به' }, 403, origin);
+    }
+
     const ip = getClientIp(request);
-    if (!checkRateLimit(ip, 20)) {
+    if (!checkRateLimit(ip, 10)) {
       return jsonResponse({ error: 'طلبات كثيرة جداً. حاول بعد دقيقة.' }, 429, origin);
     }
 

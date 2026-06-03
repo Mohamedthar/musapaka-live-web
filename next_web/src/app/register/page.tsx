@@ -138,7 +138,14 @@ export default function RegisterPage() {
       if (saved) {
         try {
           const draft = JSON.parse(saved);
-          if (draft.formData) setFormData(draft.formData);
+          const safe: Partial<typeof formData> = {};
+          if (draft.name) safe.name = draft.name;
+          if (draft.age) safe.age = draft.age;
+          if (draft.memorizerName) safe.memorizerName = draft.memorizerName;
+          if (draft.memorizerPhone) safe.memorizerPhone = draft.memorizerPhone;
+          if (draft.memorizerAddress) safe.memorizerAddress = draft.memorizerAddress;
+          if (draft.location) safe.location = draft.location;
+          setFormData(p => ({ ...p, ...safe }));
           if (draft.branchName) setBranchName(draft.branchName);
           if (draft.memorizationAmount !== undefined) setMemorizationAmount(draft.memorizationAmount);
           if (draft.gender) setFormData((p: typeof formData) => ({ ...p, gender: draft.gender }));
@@ -209,7 +216,12 @@ export default function RegisterPage() {
     if (typeof window === 'undefined') return;
     try {
       const draft = {
-        formData,
+        name: formData.name,
+        age: formData.age,
+        memorizerName: formData.memorizerName,
+        memorizerPhone: formData.memorizerPhone,
+        memorizerAddress: formData.memorizerAddress,
+        location: formData.location,
         branchName,
         memorizationAmount,
         gender: formData.gender,
