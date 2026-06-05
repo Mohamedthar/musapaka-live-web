@@ -57,7 +57,7 @@ supabase/test_ip.sql
 .env*.local.*
 
 node_modules/
-/package-lock.json
-/package.json
 
 .env
+ANALYSIS_REPORT.md
+تقرير_الفحص_الشامل.md

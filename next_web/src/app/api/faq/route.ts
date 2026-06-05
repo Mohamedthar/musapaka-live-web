@@ -1,5 +1,5 @@
-import { getAdminClient } from '@/lib/supabase-admin';
-import { jsonResponse, checkRateLimit, getClientIp } from '@/lib/api-utils';
+import { getSupabase } from '@/lib/supabase';
+import { jsonResponse, optionsResponse, checkRateLimit, getClientIp } from '@/lib/api-utils';
 
 const DEFAULT_FAQS = [
   { q: 'كيف أعرف أن تسجيلي تم بنجاح؟', a: 'بعد إتمام التسجيل ستظهر لك استمارة إلكترونية برقم تسجيل خاص، كما يمكنك الاستعلام في أي وقت من بوابة الاستعلامات.' },
@@ -7,6 +7,8 @@ const DEFAULT_FAQS = [
   { q: 'كيف أعرف موعد اختباري؟', a: 'بعد اكتمال التسجيل، يتم تحديد الموعد تلقائياً ويظهر في بوابة الاستعلام عن الاستمارة برقمك القومي ورقم هاتفك.' },
   { q: 'ما هي معايير التقييم في المسابقة؟', a: 'يتم التقييم على: الحفظ وجودة التلاوة، أحكام التجويد، حسن الصوت والأداء، ومعاني الكلمات حسب المستوى.' },
 ];
+
+export { optionsResponse as OPTIONS };
 
 export async function GET(request: Request) {
   const origin = request.headers.get('origin');
@@ -16,7 +18,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const supabase = getAdminClient();
+    const supabase = getSupabase();
 
     const timeout = new Promise<{ data: { faqs: { q: string; a: string }[] } | null; error: null }>((resolve) => {
       setTimeout(() => resolve({ data: null, error: null }), 2500);

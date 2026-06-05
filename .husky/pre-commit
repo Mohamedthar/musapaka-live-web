@@ -1,1 +1,1 @@
-npx lint-staged
+cd next_web && npx lint-staged

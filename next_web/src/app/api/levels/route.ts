@@ -1,4 +1,4 @@
-import { getAdminClient } from '@/lib/supabase-admin';
+import { getSupabase } from '@/lib/supabase';
 import { jsonResponse, optionsResponse, checkRateLimit, getClientIp } from '@/lib/api-utils';
 
 export { optionsResponse as OPTIONS };
@@ -11,7 +11,7 @@ export async function GET(request: Request) {
       return jsonResponse({ error: 'طلبات كثيرة جداً' }, 429, origin);
     }
 
-    const supabase = getAdminClient();
+    const supabase = getSupabase();
     const { data, error } = await supabase
       .from('competition_levels')
       .select('*')

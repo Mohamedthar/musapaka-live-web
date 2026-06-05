@@ -262,7 +262,7 @@ export async function POST(request: Request) {
       if (insertErr.code === '23514') {
         return jsonResponse({ error: 'بيانات غير صالحة. تحقق من الحقول.' }, 400, origin);
       }
-      return jsonResponse({ error: insertErr.message }, 500, origin);
+      return jsonResponse({ error: 'حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى.' }, 500, origin);
     }
 
     // Re-fetch the student to ensure we get trigger-assigned values (exam_date, exam_hour, student_code)

@@ -1,62 +1,162 @@
--- =============================================
--- Quran Contest Management - Database Setup (Safe Migration Version)
--- This script is safe to run multiple times without losing data.
--- =============================================
+-- =================================================================================================
+-- مسابقة القرآن الكريم — Database Schema
+-- =================================================================================================
+-- يحتوي هذا الملف على كامل هيكل قاعدة البيانات:
+--   • الجداول + البيانات الابتدائية
+--   • القيود (CHECK, UNIQUE, FK, NOT NULL)
+--   • الفهارس (عادية, مركبة, جزئية)
+--   • أمان الصفوف (RLS Policies)
+--   • المحفزات (Triggers)
+--   • الدوال الداخلية (Internal Functions)
+--   • دوال الـ API العامة (Public API)
+--   • دوال الحفل (Ceremony)
+--
+-- الملف آمن للتشغيل المتكرر (Idempotent): جميع الأوامر تستخدم IF NOT EXISTS / CREATE OR REPLACE.
+-- =================================================================================================
 
--- 1. Create students table if not exists
+
+-- =================================================================================================
+-- القسم الأول: الجداول — Tables
+-- =================================================================================================
+
+-- -------------------------------------------------------------------
+-- 1.1 المشتركون — Students
+-- -------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS students (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
-    age INTEGER NOT NULL,
-    phone TEXT NOT NULL,
-    level TEXT NOT NULL,
-    score DOUBLE PRECISION,
-    national_id TEXT,
-    gender TEXT,
-    memorizer_name TEXT,
-    memorizer_phone TEXT,
-    memorizer_address TEXT,
-    location TEXT,
-    profile_image_url TEXT,
+    id                  SERIAL PRIMARY KEY,
+    name                TEXT NOT NULL,
+    age                 INTEGER NOT NULL,
+    phone               TEXT NOT NULL,
+    national_id         TEXT,
+    gender              TEXT,
+    level               TEXT NOT NULL,
+    level_id            INTEGER,
+    score               DOUBLE PRECISION,
+    rewaya_score        DOUBLE PRECISION,
+    tajweed_score       DOUBLE PRECISION,
+    voice_score         DOUBLE PRECISION,
+    meaning_score       DOUBLE PRECISION,
+    memorizer_name      TEXT,
+    memorizer_phone     TEXT,
+    memorizer_address   TEXT,
+    location            TEXT,
+    profile_image_url   TEXT,
     birth_certificate_url TEXT,
-    registration_ip TEXT,
+    birth_date          DATE,
+    selected_rewaya     TEXT,
+    branch_name         TEXT,
+    memorization_amount INTEGER DEFAULT 0,
+    registration_ip     TEXT,
+    student_code        TEXT,
+    ceremony_code       TEXT,
+    exam_date           DATE,
+    exam_hour           INTEGER,
+    is_waitlisted       BOOLEAN DEFAULT false,
+    notes               TEXT,
+    created_at          TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at          TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- -------------------------------------------------------------------
+-- 1.2 المدراء — Admins
+-- -------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS admins (
+    id         UUID PRIMARY KEY,
+    name       TEXT NOT NULL,
+    phone      TEXT NOT NULL UNIQUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Ensure all columns exist for students (Migration support)
-ALTER TABLE students ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
-ALTER TABLE students ADD COLUMN IF NOT EXISTS score DOUBLE PRECISION;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS national_id TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS gender TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS memorizer_name TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS location TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS profile_image_url TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS birth_certificate_url TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS birth_date DATE;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS memorizer_phone TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS memorizer_address TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS selected_rewaya TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS rewaya_score DOUBLE PRECISION;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS tajweed_score DOUBLE PRECISION;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS voice_score DOUBLE PRECISION;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS meaning_score DOUBLE PRECISION;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS registration_ip TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS branch_name TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS memorization_amount INTEGER DEFAULT 0;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS is_waitlisted BOOLEAN DEFAULT false;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS ceremony_code TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS level_id INTEGER;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS exam_date DATE;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS exam_hour INTEGER;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS student_code TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS notes TEXT;
-CREATE INDEX IF NOT EXISTS idx_students_level_id ON students(level_id);
--- 2. Add/Update constraints safely
-DO $$ 
-BEGIN 
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'national_id_format') THEN
-        ALTER TABLE students ADD CONSTRAINT national_id_format CHECK (national_id IS NULL OR national_id ~ '^\d{14}$');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'admins_id_fkey') THEN
+        ALTER TABLE admins ADD CONSTRAINT admins_id_fkey
+            FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE;
     END IF;
+END $$;
+
+-- -------------------------------------------------------------------
+-- 1.3 مستويات المسابقة — Competition Levels
+-- -------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS competition_levels (
+    id                   SERIAL PRIMARY KEY,
+    title                TEXT NOT NULL,
+    content              TEXT NOT NULL,
+    notes                TEXT,
+    min_age              INTEGER,
+    max_age              INTEGER,
+    max_capacity         INTEGER,
+    branches             TEXT[] DEFAULT '{}',
+    require_custom_amount BOOLEAN DEFAULT false,
+    is_active            BOOLEAN DEFAULT TRUE,
+    total_points         INTEGER DEFAULT 100,
+    has_rewaya           BOOLEAN DEFAULT FALSE,
+    rewaya_max_score     INTEGER DEFAULT 100,
+    available_rewayas    JSONB DEFAULT '[]'::jsonb,
+    has_tajweed          BOOLEAN DEFAULT FALSE,
+    tajweed_max_score    INTEGER DEFAULT 100,
+    has_voice            BOOLEAN DEFAULT FALSE,
+    voice_max_score      INTEGER DEFAULT 100,
+    has_meaning          BOOLEAN DEFAULT FALSE,
+    meaning_max_score    INTEGER DEFAULT 100,
+    max_score            INTEGER DEFAULT 100,
+    first_prize          TEXT,
+    second_prize         TEXT,
+    third_prize          TEXT,
+    prizes               TEXT,
+    level_code           CHAR(1),
+    created_at           TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at           TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- -------------------------------------------------------------------
+-- 1.4 إعدادات التطبيق — App Settings
+-- -------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS app_settings (
+    id                       SERIAL PRIMARY KEY,
+    title                    TEXT NOT NULL DEFAULT 'مسابقة القرآن الكريم',
+    description              TEXT NOT NULL DEFAULT 'أكبر مسابقة قرآنية محلية تهدف إلى تشجيع الأجيال على حفظ كتاب الله وتجويده.',
+    total_prizes             TEXT NOT NULL DEFAULT '50,000+',
+    committees_count         INTEGER NOT NULL DEFAULT 3,
+    is_registration_open     BOOLEAN NOT NULL DEFAULT true,
+    registration_start_date  DATE,
+    registration_end_date    DATE,
+    is_result_query_open     BOOLEAN NOT NULL DEFAULT false,
+    result_query_open_date   TIMESTAMPTZ,
+    is_ceremony_query_open   BOOLEAN NOT NULL DEFAULT false,
+    ceremony_query_open_date TIMESTAMPTZ,
+    competition_title        TEXT,
+    exam_period_start        DATE,
+    exam_period_end          DATE,
+    exam_schedule            JSONB NOT NULL DEFAULT '[]'::jsonb,
+    timeline                 JSONB NOT NULL DEFAULT '[]'::jsonb,
+    faqs                     JSONB NOT NULL DEFAULT '[]'::jsonb,
+    updated_at               TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+INSERT INTO app_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+
+-- -------------------------------------------------------------------
+-- 1.5 بيانات البداية — Seed Data
+-- -------------------------------------------------------------------
+INSERT INTO competition_levels (title, content, notes, min_age, max_age, max_capacity)
+SELECT 'المستوى الأول', 'القرآن الكريم كاملاً مع التجويد', 'للجميع', NULL, NULL, NULL
+WHERE NOT EXISTS (SELECT 1 FROM competition_levels WHERE title = 'المستوى الأول');
+
+INSERT INTO competition_levels (title, content, notes, min_age, max_age, max_capacity)
+SELECT 'المستوى الثاني', 'نصف القرآن الكريم', 'فوق 18 عاماً', 18, NULL, NULL
+WHERE NOT EXISTS (SELECT 1 FROM competition_levels WHERE title = 'المستوى الثاني');
+
+
+-- =================================================================================================
+-- القسم الثاني: قيود التكامل — Constraints
+-- =================================================================================================
+
+-- -------------------------------------------------------------------
+-- 2.1 قيود جدول الطلاب
+-- -------------------------------------------------------------------
+DO $$
+BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'students_phone_unique') THEN
         ALTER TABLE students ADD CONSTRAINT students_phone_unique UNIQUE (phone);
     END IF;
@@ -65,6 +165,9 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'students_name_unique') THEN
         ALTER TABLE students ADD CONSTRAINT students_name_unique UNIQUE (name);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'national_id_format') THEN
+        ALTER TABLE students ADD CONSTRAINT national_id_format CHECK (national_id IS NULL OR national_id ~ '^\d{14}$');
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'students_age_check') THEN
         ALTER TABLE students ADD CONSTRAINT students_age_check CHECK (age BETWEEN 5 AND 100);
@@ -83,42 +186,116 @@ BEGIN
     END IF;
 END $$;
 
--- FOREIGN KEY: level_id (INTEGER) - preferred, faster
+-- -------------------------------------------------------------------
+-- 2.2 المفاتيح الأجنبية
+-- -------------------------------------------------------------------
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_students_level_id') THEN
         ALTER TABLE students ADD CONSTRAINT fk_students_level_id
-            FOREIGN KEY (level_id) REFERENCES competition_levels(id)
-            ON DELETE RESTRICT;
+            FOREIGN KEY (level_id) REFERENCES competition_levels(id) ON DELETE RESTRICT;
     END IF;
-END $$;
-
--- FOREIGN KEY: level (TEXT) - backward compatibility
-DO $$
-BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_students_level') THEN
         ALTER TABLE students ADD CONSTRAINT fk_students_level
-            FOREIGN KEY (level) REFERENCES competition_levels(title)
-            ON DELETE RESTRICT;
+            FOREIGN KEY (level) REFERENCES competition_levels(title) ON DELETE RESTRICT;
     END IF;
 END $$;
 
--- 3. Enable RLS
+-- -------------------------------------------------------------------
+-- 2.3 memorizer_name NOT NULL (مع فحص أمان للبيانات القديمة)
+-- -------------------------------------------------------------------
+DO $$
+DECLARE null_count INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO null_count FROM students WHERE memorizer_name IS NULL;
+    IF null_count = 0 THEN
+        ALTER TABLE students ALTER COLUMN memorizer_name SET NOT NULL;
+    END IF;
+END $$;
+
+-- -------------------------------------------------------------------
+-- 2.4 قيود جدول المستويات
+-- -------------------------------------------------------------------
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'competition_levels_title_unique') THEN
+        ALTER TABLE competition_levels ADD CONSTRAINT competition_levels_title_unique UNIQUE (title);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'levels_age_range_valid') THEN
+        ALTER TABLE competition_levels ADD CONSTRAINT levels_age_range_valid
+            CHECK (max_age IS NULL OR min_age IS NULL OR max_age >= min_age);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'levels_max_capacity_non_negative') THEN
+        ALTER TABLE competition_levels ADD CONSTRAINT levels_max_capacity_non_negative
+            CHECK (max_capacity IS NULL OR max_capacity >= 0);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'levels_level_code_format') THEN
+        ALTER TABLE competition_levels ADD CONSTRAINT levels_level_code_format
+            CHECK (level_code IS NULL OR level_code ~ '^[A-Z]$');
+    END IF;
+END $$;
+
+-- -------------------------------------------------------------------
+-- 2.5 قيد app_settings
+-- -------------------------------------------------------------------
+ALTER TABLE app_settings DROP CONSTRAINT IF EXISTS exam_schedule_structure_check;
+ALTER TABLE app_settings ADD CONSTRAINT exam_schedule_structure_check CHECK (
+    exam_schedule IS NULL OR jsonb_typeof(exam_schedule) = 'array'
+);
+
+
+-- =================================================================================================
+-- القسم الثالث: الفهارس — Indexes
+-- =================================================================================================
+
+-- -------------------------------------------------------------------
+-- 3.1 فهارس الطلاب — أساسية
+-- -------------------------------------------------------------------
+CREATE INDEX IF NOT EXISTS idx_students_level              ON students(level);
+CREATE INDEX IF NOT EXISTS idx_students_level_id           ON students(level_id);
+CREATE INDEX IF NOT EXISTS idx_students_created_at         ON students(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_students_phone              ON students(phone);
+CREATE INDEX IF NOT EXISTS idx_students_national_id        ON students(national_id);
+CREATE INDEX IF NOT EXISTS idx_students_name               ON students(name);
+CREATE INDEX IF NOT EXISTS idx_students_registration_ip    ON students(registration_ip);
+
+-- -------------------------------------------------------------------
+-- 3.2 فهارس الطلاب — أداء
+-- -------------------------------------------------------------------
+CREATE INDEX IF NOT EXISTS idx_students_score_desc         ON students(score DESC NULLS LAST);
+CREATE INDEX IF NOT EXISTS idx_students_level_gender       ON students(level, gender);
+CREATE INDEX IF NOT EXISTS idx_students_exam_date_hour     ON students(exam_date, exam_hour);
+
+-- -------------------------------------------------------------------
+-- 3.3 فهارس الطلاب — مركبة (Composite)
+-- -------------------------------------------------------------------
+CREATE INDEX IF NOT EXISTS idx_students_nid_phone          ON students(national_id, phone);
+CREATE INDEX IF NOT EXISTS idx_students_nid_code           ON students(national_id, student_code);
+CREATE INDEX IF NOT EXISTS idx_students_reg_ip_created     ON students(registration_ip, created_at);
+
+-- -------------------------------------------------------------------
+-- 3.4 فهارس الطلاب — جزئية (Partial) + فريدة
+-- -------------------------------------------------------------------
+CREATE INDEX IF NOT EXISTS idx_students_ceremony_code      ON students(ceremony_code) WHERE ceremony_code IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_students_student_code ON students(student_code) WHERE student_code IS NOT NULL;
+
+-- -------------------------------------------------------------------
+-- 3.5 فهارس المستويات
+-- -------------------------------------------------------------------
+CREATE INDEX IF NOT EXISTS idx_levels_title                ON competition_levels(title);
+CREATE INDEX IF NOT EXISTS idx_levels_active               ON competition_levels(is_active) WHERE is_active = TRUE;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_levels_code          ON competition_levels(level_code);
+
+
+-- =================================================================================================
+-- القسم الرابع: أمان الصفوف — Row Level Security
+-- =================================================================================================
+
+-- -------------------------------------------------------------------
+-- 4.1 RLS — Students
+-- -------------------------------------------------------------------
 ALTER TABLE students ENABLE ROW LEVEL SECURITY;
 
--- 4. Helper functions (Replaceable)
-CREATE OR REPLACE FUNCTION is_admin() 
-RETURNS BOOLEAN AS $$
-BEGIN
-  RETURN EXISTS (
-    SELECT 1 FROM public.admins WHERE id = auth.uid()
-  );
-END;
-$$ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public;
-
--- 5. Policies (Drop and Recreate to ensure they match latest logic)
--- Public insert removed for security; registration goes through the API (service_role_key).
--- Only authenticated admins can insert/select/update/delete directly (via the Flutter app).
 DROP POLICY IF EXISTS "Allow public insert" ON students;
 
 DROP POLICY IF EXISTS "Allow admin insert" ON students;
@@ -133,65 +310,59 @@ CREATE POLICY "Allow admin update" ON students FOR UPDATE USING (is_admin()) WIT
 DROP POLICY IF EXISTS "Allow admin delete" ON students;
 CREATE POLICY "Allow admin delete" ON students FOR DELETE USING (is_admin());
 
--- 6. Indexes (Safe)
-CREATE INDEX IF NOT EXISTS idx_students_level ON students(level);
-CREATE INDEX IF NOT EXISTS idx_students_created_at ON students(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_students_phone ON students(phone);
-CREATE INDEX IF NOT EXISTS idx_students_national_id ON students(national_id);
-CREATE INDEX IF NOT EXISTS idx_students_name ON students(name);
-CREATE INDEX IF NOT EXISTS idx_students_registration_ip ON students(registration_ip);
+-- -------------------------------------------------------------------
+-- 4.2 RLS — Admins
+-- -------------------------------------------------------------------
+ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
 
--- 7. Functions & Triggers
-DROP FUNCTION IF EXISTS get_student_stats();
-CREATE FUNCTION get_student_stats()
-RETURNS TABLE (
-    total_students BIGINT,
-    avg_score NUMERIC
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        COUNT(*) as total_students,
-        AVG(score) FILTER (WHERE score IS NOT NULL) as avg_score
-    FROM students;
-END;
-$$ LANGUAGE plpgsql;
+DROP POLICY IF EXISTS "Allow public insert to admins" ON admins;
+DROP POLICY IF EXISTS "Allow admin insert to admins" ON admins;
+CREATE POLICY "Allow admin insert to admins" ON admins FOR INSERT WITH CHECK (is_admin());
 
-CREATE OR REPLACE FUNCTION get_student_status(p_national_id TEXT, p_student_code TEXT)
-RETURNS jsonb AS $$
-DECLARE
-  res jsonb;
-BEGIN
-  SELECT jsonb_build_object(
-    'name', s.name,
-    'level', s.level,
-    'level_content', c.content,
-    'score', s.score,
-    'rewaya_score', s.rewaya_score,
-    'tajweed_score', s.tajweed_score,
-    'voice_score', s.voice_score,
-    'meaning_score', s.meaning_score,
-    'created_at', s.created_at,
-    'student_code', s.student_code,
-    'location', s.location,
-    'age', s.age,
-    'gender', s.gender,
-    'birth_date', s.birth_date,
-    'profile_image_url', s.profile_image_url,
-    'exam_date', s.exam_date,
-    'exam_hour', s.exam_hour
-  ) INTO res
-  FROM students s
-  LEFT JOIN competition_levels c ON c.title = s.level
-  WHERE s.national_id = p_national_id AND s.student_code = p_student_code
-  LIMIT 1;
-  
-  RETURN res;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+DROP POLICY IF EXISTS "Allow admin select from admins" ON admins;
+CREATE POLICY "Allow admin select from admins" ON admins FOR SELECT USING (is_admin());
 
-GRANT EXECUTE ON FUNCTION get_student_status TO anon, authenticated;
+DROP POLICY IF EXISTS "Allow admin update" ON admins;
+CREATE POLICY "Allow admin update" ON admins FOR UPDATE USING (is_admin()) WITH CHECK (is_admin());
 
+DROP POLICY IF EXISTS "Allow admin delete" ON admins;
+CREATE POLICY "Allow admin delete" ON admins FOR DELETE USING (is_admin());
+
+-- -------------------------------------------------------------------
+-- 4.3 RLS — Competition Levels
+-- -------------------------------------------------------------------
+ALTER TABLE competition_levels ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow public select from levels" ON competition_levels;
+CREATE POLICY "Allow public select from levels" ON competition_levels FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow admin manage levels" ON competition_levels;
+CREATE POLICY "Allow admin manage levels" ON competition_levels FOR ALL USING (is_admin());
+
+-- -------------------------------------------------------------------
+-- 4.4 RLS — App Settings
+-- -------------------------------------------------------------------
+ALTER TABLE app_settings ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow public select from settings" ON app_settings;
+CREATE POLICY "Allow public select from settings" ON app_settings FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "admins_update_app_settings" ON app_settings;
+CREATE POLICY "admins_update_app_settings" ON app_settings
+    FOR UPDATE USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+GRANT SELECT ON TABLE public.app_settings TO anon, authenticated;
+
+
+-- =================================================================================================
+-- القسم الخامس: المحفزات — Triggers
+-- =================================================================================================
+
+-- -------------------------------------------------------------------
+-- 5.1 تحديث تلقائي لـ updated_at
+-- -------------------------------------------------------------------
+
+-- 5.1.1 طالب
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -202,164 +373,40 @@ $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS update_students_updated_at ON students;
 CREATE TRIGGER update_students_updated_at
-    BEFORE UPDATE ON students
-    FOR EACH ROW
+    BEFORE UPDATE ON students FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- 8. Admins table
-CREATE TABLE IF NOT EXISTS admins (
-    id UUID PRIMARY KEY,
-    name TEXT NOT NULL,
-    phone TEXT NOT NULL UNIQUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-DO $$
+-- 5.1.2 إعدادات
+CREATE OR REPLACE FUNCTION update_app_settings_updated_at()
+RETURNS TRIGGER AS $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'admins_id_fkey') THEN
-        ALTER TABLE admins ADD CONSTRAINT admins_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE;
-    END IF;
-END $$;
+    NEW.updated_at := NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
+DROP TRIGGER IF EXISTS trg_app_settings_updated_at ON app_settings;
+CREATE TRIGGER trg_app_settings_updated_at
+    BEFORE UPDATE ON app_settings FOR EACH ROW
+    EXECUTE FUNCTION update_app_settings_updated_at();
 
-DROP POLICY IF EXISTS "Allow public insert to admins" ON admins;
-CREATE POLICY "Allow admin insert to admins" ON admins FOR INSERT WITH CHECK (is_admin());
-
-DROP POLICY IF EXISTS "Allow admin select from admins" ON admins;
-CREATE POLICY "Allow admin select from admins" ON admins FOR SELECT USING (is_admin());
-
--- 9. Competition Levels table
-CREATE TABLE IF NOT EXISTS competition_levels (
-    id SERIAL PRIMARY KEY,
-    title TEXT NOT NULL,
-    content TEXT NOT NULL,
-    notes TEXT,
-    min_age INTEGER,
-    max_age INTEGER,
-    max_capacity INTEGER,
-    branches TEXT[] DEFAULT '{}',
-    require_custom_amount BOOLEAN DEFAULT false,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Migration for new columns in competition_levels
-ALTER TABLE competition_levels ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
-ALTER TABLE competition_levels ADD COLUMN IF NOT EXISTS total_points INTEGER DEFAULT 100;
-ALTER TABLE competition_levels ADD COLUMN IF NOT EXISTS has_rewaya BOOLEAN DEFAULT FALSE;
-ALTER TABLE competition_levels ADD COLUMN IF NOT EXISTS rewaya_max_score INTEGER DEFAULT 100;
-ALTER TABLE competition_levels ADD COLUMN IF NOT EXISTS available_rewayas JSONB DEFAULT '[]'::jsonb;
-ALTER TABLE competition_levels ADD COLUMN IF NOT EXISTS has_tajweed BOOLEAN DEFAULT FALSE;
-ALTER TABLE competition_levels ADD COLUMN IF NOT EXISTS tajweed_max_score INTEGER DEFAULT 100;
-ALTER TABLE competition_levels ADD COLUMN IF NOT EXISTS has_voice BOOLEAN DEFAULT FALSE;
-ALTER TABLE competition_levels ADD COLUMN IF NOT EXISTS voice_max_score INTEGER DEFAULT 100;
-ALTER TABLE competition_levels ADD COLUMN IF NOT EXISTS has_meaning BOOLEAN DEFAULT FALSE;
-ALTER TABLE competition_levels ADD COLUMN IF NOT EXISTS meaning_max_score INTEGER DEFAULT 100;
-
--- Prizes
-ALTER TABLE competition_levels ADD COLUMN IF NOT EXISTS first_prize TEXT;
-ALTER TABLE competition_levels ADD COLUMN IF NOT EXISTS second_prize TEXT;
-ALTER TABLE competition_levels ADD COLUMN IF NOT EXISTS third_prize TEXT;
-ALTER TABLE competition_levels ADD COLUMN IF NOT EXISTS prizes TEXT;
-
-DO $$
+-- 5.1.3 مستوى
+CREATE OR REPLACE FUNCTION trigger_update_timestamp_competition_levels()
+RETURNS TRIGGER AS $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'competition_levels_title_unique') THEN
-        ALTER TABLE competition_levels ADD CONSTRAINT competition_levels_title_unique UNIQUE (title);
-    END IF;
-END $$;
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-ALTER TABLE competition_levels ENABLE ROW LEVEL SECURITY;
+DROP TRIGGER IF EXISTS trg_levels_updated_at ON competition_levels;
+CREATE TRIGGER trg_levels_updated_at
+    BEFORE UPDATE ON competition_levels FOR EACH ROW
+    EXECUTE FUNCTION trigger_update_timestamp_competition_levels();
 
-DROP POLICY IF EXISTS "Allow public select from levels" ON competition_levels;
-CREATE POLICY "Allow public select from levels" ON competition_levels FOR SELECT USING (true);
-
-DROP POLICY IF EXISTS "Allow admin manage levels" ON competition_levels;
-CREATE POLICY "Allow admin manage levels" ON competition_levels FOR ALL USING (is_admin());
-
--- 10. Sample Data (Only inserts if not exists)
-INSERT INTO competition_levels (title, content, notes, min_age, max_age, max_capacity) 
-SELECT 'المستوى الأول', 'القرآن الكريم كاملاً مع التجويد', 'للجميع', NULL, NULL, NULL
-WHERE NOT EXISTS (SELECT 1 FROM competition_levels WHERE title = 'المستوى الأول');
-
-INSERT INTO competition_levels (title, content, notes, min_age, max_age, max_capacity) 
-SELECT 'المستوى الثاني', 'نصف القرآن الكريم', 'فوق 18 عاماً', 18, NULL, NULL
-WHERE NOT EXISTS (SELECT 1 FROM competition_levels WHERE title = 'المستوى الثاني');
-
--- =========================================================
--- 11. App Settings Table
--- =========================================================
-CREATE TABLE IF NOT EXISTS app_settings (
-    id SERIAL PRIMARY KEY,
-    title TEXT NOT NULL DEFAULT 'مسابقة القرآن الكريم',
-    description TEXT NOT NULL DEFAULT 'أكبر مسابقة قرآنية محلية تهدف إلى تشجيع الأجيال على حفظ كتاب الله وتجويده.',
-    total_prizes TEXT NOT NULL DEFAULT '50,000+',
-    committees_count INTEGER NOT NULL DEFAULT 3,
-    
-    -- Registration Control
-    is_registration_open BOOLEAN NOT NULL DEFAULT true,
-    registration_start_date DATE,
-    registration_end_date DATE,
-    
-    -- Result Query Control
-    is_result_query_open BOOLEAN NOT NULL DEFAULT false,
-    
-    -- Ceremony Query Control
-    is_ceremony_query_open BOOLEAN NOT NULL DEFAULT false,
-    
-    -- Exam Scheduling
-    exam_period_start DATE,
-    exam_period_end DATE,
-    exam_schedule JSONB NOT NULL DEFAULT '[]'::jsonb,
-    
-    -- UI Information (managed via admin panel)
-    timeline JSONB NOT NULL DEFAULT '[]'::jsonb,
-
-    -- FAQs (managed via admin panel)
-    faqs JSONB NOT NULL DEFAULT '[]'::jsonb,
-    
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Ensure only one row exists
-INSERT INTO app_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
-
--- RLS
-ALTER TABLE app_settings ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Allow public select from settings" ON app_settings;
-CREATE POLICY "Allow public select from settings" ON app_settings FOR SELECT USING (true);
-
-DROP POLICY IF EXISTS "admins_update_app_settings" ON app_settings;
-CREATE POLICY "admins_update_app_settings" ON app_settings
-    FOR UPDATE
-    USING (public.is_admin())
-    WITH CHECK (public.is_admin());
-
-GRANT SELECT ON TABLE public.app_settings TO anon, authenticated;
-
--- =========================================================
--- 12. نظام الجدولة والأكواد التلقائية (Automation & Logic)
--- =========================================================
-
--- إضافة أعمدة التحكم إذا لم تكن موجودة
-ALTER TABLE competition_levels ADD COLUMN IF NOT EXISTS level_code CHAR(1);
-ALTER TABLE students ADD COLUMN IF NOT EXISTS student_code TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS exam_date DATE;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS exam_hour INTEGER;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS notes TEXT;
-
--- إنشاء الفهارس لضمان السرعة ومنع التكرار
-CREATE UNIQUE INDEX IF NOT EXISTS idx_levels_code ON competition_levels(level_code);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_students_student_code ON students(student_code);
-CREATE INDEX IF NOT EXISTS idx_students_exam_schedule ON students(exam_date, exam_hour);
-
--- قيد فحص هيكل الجدول
-ALTER TABLE app_settings DROP CONSTRAINT IF EXISTS exam_schedule_structure_check;
-ALTER TABLE app_settings ADD CONSTRAINT exam_schedule_structure_check CHECK (
-    exam_schedule IS NULL OR jsonb_typeof(exam_schedule) = 'array'
-);
-
--- 12.1 نظام توليد أكواد المستويات (A, B, C...)
+-- -------------------------------------------------------------------
+-- 5.2 توليد كود المستوى (A, B, C...)
+-- -------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION assign_level_code()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -370,11 +417,9 @@ BEGIN
     WHERE NOT EXISTS (
         SELECT 1 FROM competition_levels WHERE ASCII(level_code) = c.code
     );
-    
-    IF v_code_ascii IS NULL THEN 
-        RAISE EXCEPTION 'وصلت للحد الأقصى للمستويات (26 مستوى - A إلى Z)'; 
+    IF v_code_ascii IS NULL THEN
+        RAISE EXCEPTION 'وصلت للحد الأقصى للمستويات (26 مستوى - A إلى Z)';
     END IF;
-    
     NEW.level_code := CHR(v_code_ascii);
     RETURN NEW;
 END;
@@ -383,53 +428,47 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS trg_assign_level_code ON competition_levels;
 CREATE TRIGGER trg_assign_level_code
     BEFORE INSERT ON competition_levels
-    FOR EACH ROW
-    WHEN (NEW.level_code IS NULL)
+    FOR EACH ROW WHEN (NEW.level_code IS NULL)
     EXECUTE FUNCTION assign_level_code();
 
--- 12.2 نظام تعيين مواعيد الاختبارات (LIFO Scheduling)
+-- -------------------------------------------------------------------
+-- 5.3 جدولة مواعيد الاختبارات — FIFO Scheduling
+-- -------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION assign_exam_slot()
 RETURNS TRIGGER AS $$
 DECLARE
-    schedule_json JSONB;
-    slot JSONB;
-    v_date DATE;
-    v_start_hour INT;
-    v_end_hour INT;
+    schedule_json  JSONB;
+    slot           JSONB;
+    v_date         DATE;
+    v_start_hour   INT;
+    v_end_hour     INT;
     v_students_per_hour INT;
     v_current_hour INT;
-    assigned BOOLEAN := FALSE;
-    slot_count INT;
-    v_exam_period_start DATE;
-    v_exam_period_end DATE;
+    assigned       BOOLEAN := FALSE;
+    slot_count     INT;
 BEGIN
-    -- Use advisory lock keyed on a constant to serialize exam slot assignment
-    -- This is more granular than a full table lock
     PERFORM pg_advisory_xact_lock(987654321);
-    
-    SELECT exam_schedule, exam_period_start, exam_period_end 
-    INTO schedule_json, v_exam_period_start, v_exam_period_end 
-    FROM app_settings WHERE id = 1 LIMIT 1;
-    
+    SELECT exam_schedule INTO schedule_json FROM app_settings WHERE id = 1 LIMIT 1;
+
     IF schedule_json IS NULL OR jsonb_array_length(schedule_json) = 0 THEN
         NEW.notes := COALESCE(NEW.notes || E'\n', '') || 'تنبيه: لم يتم تحديد ميعاد (لا يوجد جدول)';
         RETURN NEW;
     END IF;
 
-    -- FIFO: fill earliest slots first
-    FOR slot IN 
+    FOR slot IN
         SELECT value FROM jsonb_array_elements(schedule_json)
         ORDER BY (value->>'date')::DATE ASC, (value->>'start_hour')::INT ASC
     LOOP
-        v_date := (slot->>'date')::DATE;
-
-        v_start_hour := (slot->>'start_hour')::INT;
-        v_end_hour := (slot->>'end_hour')::INT;
+        v_date              := (slot->>'date')::DATE;
+        v_start_hour        := (slot->>'start_hour')::INT;
+        v_end_hour          := (slot->>'end_hour')::INT;
         v_students_per_hour := (slot->>'students_per_hour')::INT;
+        v_current_hour      := v_end_hour - 1;
 
-        v_current_hour := v_end_hour - 1;
         WHILE v_current_hour >= v_start_hour LOOP
-            SELECT COUNT(*) INTO slot_count FROM students WHERE exam_date = v_date AND exam_hour = v_current_hour;
+            SELECT COUNT(*) INTO slot_count
+            FROM students WHERE exam_date = v_date AND exam_hour = v_current_hour;
+
             IF slot_count < v_students_per_hour THEN
                 NEW.exam_date := v_date;
                 NEW.exam_hour := v_current_hour;
@@ -450,43 +489,38 @@ $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trigger_assign_exam_slot ON students;
 CREATE TRIGGER trigger_assign_exam_slot
-    BEFORE INSERT ON students
-    FOR EACH ROW
+    BEFORE INSERT ON students FOR EACH ROW
     EXECUTE FUNCTION assign_exam_slot();
 
--- 12.3 نظام توليد أكواد الطلاب (A1001)
+-- -------------------------------------------------------------------
+-- 5.4 توليد كود الطالب — Student Code (مثال: A1001)
+-- -------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION generate_student_code()
 RETURNS TRIGGER AS $$
 DECLARE
-    v_level_code  CHAR(1);
-    v_gender_num  CHAR(1);
-    v_seq         INTEGER;
-    v_prefix      TEXT;
+    v_level_code CHAR(1);
+    v_gender_num CHAR(1);
+    v_seq        INTEGER;
+    v_prefix     TEXT;
 BEGIN
-    -- Use advisory lock for concurrent code generation safety
     PERFORM pg_advisory_xact_lock(987654322);
-
     SELECT level_code INTO v_level_code FROM competition_levels WHERE title = NEW.level LIMIT 1;
     IF v_level_code IS NULL THEN v_level_code := 'X'; END IF;
 
     v_gender_num := CASE WHEN NEW.gender = 'ذكر' THEN '1' WHEN NEW.gender = 'أنثى' THEN '0' ELSE '9' END;
     v_prefix := v_level_code || v_gender_num;
 
-    -- Find the smallest gap in sequential numbers using existing codes only
     SELECT COALESCE(
         (SELECT e.seq + 1
          FROM (
              SELECT SUBSTRING(student_code, 3)::int AS seq
-             FROM students
-             WHERE student_code LIKE v_prefix || '___'
+             FROM students WHERE student_code LIKE v_prefix || '___'
              UNION ALL SELECT 0
          ) e
          WHERE NOT EXISTS (
-             SELECT 1 FROM students
-             WHERE student_code = v_prefix || LPAD((e.seq + 1)::TEXT, 3, '0')
+             SELECT 1 FROM students WHERE student_code = v_prefix || LPAD((e.seq + 1)::TEXT, 3, '0')
          )
-         ORDER BY e.seq
-         LIMIT 1),
+         ORDER BY e.seq LIMIT 1),
         1
     ) INTO v_seq;
 
@@ -498,118 +532,21 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS trg_generate_student_code ON students;
 CREATE TRIGGER trg_generate_student_code
     BEFORE INSERT ON students
-    FOR EACH ROW
-    WHEN (NEW.student_code IS NULL)
+    FOR EACH ROW WHEN (NEW.student_code IS NULL)
     EXECUTE FUNCTION generate_student_code();
 
--- 12.3b مزامنة level_id تلقائياً عند الإدراج أو تغيير level
-CREATE OR REPLACE FUNCTION sync_level_id()
-RETURNS TRIGGER AS $$
-BEGIN
-    SELECT id INTO NEW.level_id
-    FROM competition_levels
-    WHERE title = NEW.level
-    LIMIT 1;
-    
-    IF NEW.level_id IS NULL THEN
-        RAISE EXCEPTION 'المستوى "%" غير موجود في جدول competition_levels', NEW.level;
-    END IF;
-    
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS trg_sync_level_id ON students;
-CREATE TRIGGER trg_sync_level_id
-    BEFORE INSERT OR UPDATE OF level ON students
-    FOR EACH ROW
-    EXECUTE FUNCTION sync_level_id();
-
--- 12.4 نظام التحقق من سعة المستوى (Max Capacity Check)
-CREATE OR REPLACE FUNCTION check_level_capacity()
-RETURNS TRIGGER AS $$
-DECLARE
-    v_capacity INTEGER;
-    v_current INTEGER;
-BEGIN
-    PERFORM pg_advisory_xact_lock(987654325);
-
-    SELECT max_capacity INTO v_capacity FROM competition_levels WHERE title = NEW.level;
-    IF v_capacity IS NOT NULL THEN
-        SELECT COUNT(*) INTO v_current FROM students WHERE level = NEW.level;
-        IF v_current >= v_capacity THEN
-            RAISE EXCEPTION 'المستوى المطلوب ممتلئ تماماً بالحد الأقصى للمتسابقين';
-        END IF;
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS trg_check_level_capacity ON students;
-CREATE TRIGGER trg_check_level_capacity
-    BEFORE INSERT ON students
-    FOR EACH ROW
-    EXECUTE FUNCTION check_level_capacity();
-
--- 12.5 نظام الإحصائيات المتقدم المحدث (Advanced get_student_stats)
-CREATE OR REPLACE FUNCTION get_student_stats(
-    p_level TEXT DEFAULT NULL,
-    p_gender TEXT DEFAULT NULL,
-    p_start_date DATE DEFAULT NULL,
-    p_end_date DATE DEFAULT NULL
-)
-RETURNS TABLE (
-    total_students BIGINT,
-    avg_score NUMERIC,
-    male_count BIGINT,
-    female_count BIGINT,
-    highest_score NUMERIC
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        COUNT(*)::BIGINT,
-        COALESCE(AVG(score), 0)::NUMERIC,
-        COUNT(CASE WHEN gender = 'ذكر' THEN 1 END)::BIGINT,
-        COUNT(CASE WHEN gender = 'أنثى' THEN 1 END)::BIGINT,
-        COALESCE(MAX(score), 0)::NUMERIC
-    FROM students
-    WHERE 
-        (p_level IS NULL OR level = p_level) AND
-        (p_gender IS NULL OR gender = p_gender) AND
-        (p_start_date IS NULL OR created_at::DATE >= p_start_date) AND
-        (p_end_date IS NULL OR created_at::DATE <= p_end_date);
-END;
-$$ LANGUAGE plpgsql;
-
--- 12.6 Cascade Delete students when a competition level is deleted
-CREATE OR REPLACE FUNCTION cascade_delete_level_students()
-RETURNS TRIGGER AS $$
-BEGIN
-    DELETE FROM students WHERE level = OLD.title;
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS trg_cascade_delete_level ON competition_levels;
-CREATE TRIGGER trg_cascade_delete_level
-    BEFORE DELETE ON competition_levels
-    FOR EACH ROW
-    EXECUTE FUNCTION cascade_delete_level_students();
-
--- 12.6b إعادة توليد كود الطالب عند تغيير المستوى أو النوع
--- عند تغيير المستوى: الكود القديم يصبح متاحاً لأول طالب يسجل بعده،
--- والطالب يحصل على كود جديد من المستوى الجديد (آخر رقم تسلسلي).
+-- -------------------------------------------------------------------
+-- 5.5 إعادة توليد الكود عند تغيير المستوى أو النوع
+-- -------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION regenerate_student_code_on_level_change()
 RETURNS TRIGGER AS $$
 DECLARE
-    v_level_code  CHAR(1);
-    v_gender_num  CHAR(1);
-    v_seq         INTEGER;
-    v_prefix      TEXT;
+    v_level_code CHAR(1);
+    v_gender_num CHAR(1);
+    v_seq        INTEGER;
+    v_prefix     TEXT;
 BEGIN
     PERFORM pg_advisory_xact_lock(987654323);
-
     SELECT level_code INTO v_level_code FROM competition_levels WHERE title = NEW.level LIMIT 1;
     IF v_level_code IS NULL THEN v_level_code := 'X'; END IF;
 
@@ -620,18 +557,14 @@ BEGIN
         (SELECT e.seq + 1
          FROM (
              SELECT SUBSTRING(student_code, 3)::int AS seq
-             FROM students
-             WHERE student_code LIKE v_prefix || '___'
-               AND id != OLD.id
+             FROM students WHERE student_code LIKE v_prefix || '___' AND id != OLD.id
              UNION ALL SELECT 0
          ) e
          WHERE NOT EXISTS (
              SELECT 1 FROM students
-             WHERE student_code = v_prefix || LPAD((e.seq + 1)::TEXT, 3, '0')
-               AND id != OLD.id
+             WHERE student_code = v_prefix || LPAD((e.seq + 1)::TEXT, 3, '0') AND id != OLD.id
          )
-         ORDER BY e.seq
-         LIMIT 1),
+         ORDER BY e.seq LIMIT 1),
         1
     ) INTO v_seq;
 
@@ -647,76 +580,460 @@ CREATE TRIGGER trg_regenerate_student_code_on_level_change
     WHEN (NEW.level IS DISTINCT FROM OLD.level OR NEW.gender IS DISTINCT FROM OLD.gender)
     EXECUTE FUNCTION regenerate_student_code_on_level_change();
 
--- 12.7 Secure function to retrieve a lost student_code
-CREATE OR REPLACE FUNCTION retrieve_student_code(p_national_id TEXT, p_phone TEXT)
+-- -------------------------------------------------------------------
+-- 5.6 مزامنة level_id تلقائياً من level (نص)
+-- -------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION sync_level_id()
+RETURNS TRIGGER AS $$
+BEGIN
+    SELECT id INTO NEW.level_id FROM competition_levels WHERE title = NEW.level LIMIT 1;
+
+    IF NEW.level_id IS NULL THEN
+        RAISE EXCEPTION 'المستوى "%" غير موجود في جدول competition_levels', NEW.level;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_sync_level_id ON students;
+CREATE TRIGGER trg_sync_level_id
+    BEFORE INSERT OR UPDATE OF level ON students
+    FOR EACH ROW
+    EXECUTE FUNCTION sync_level_id();
+
+-- -------------------------------------------------------------------
+-- 5.7 فحص سعة المستوى — مع دعم قائمة الانتظار
+-- -------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION check_level_capacity()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_capacity INTEGER;
+    v_current  INTEGER;
+BEGIN
+    PERFORM pg_advisory_xact_lock(987654325);
+    SELECT max_capacity INTO v_capacity FROM competition_levels WHERE title = NEW.level;
+
+    IF v_capacity IS NOT NULL THEN
+        SELECT COUNT(*) INTO v_current FROM students WHERE level = NEW.level AND NOT is_waitlisted;
+        IF v_current >= v_capacity THEN
+            NEW.is_waitlisted := TRUE;
+            RETURN NEW;
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_check_level_capacity ON students;
+CREATE TRIGGER trg_check_level_capacity
+    BEFORE INSERT ON students FOR EACH ROW
+    EXECUTE FUNCTION check_level_capacity();
+
+-- -------------------------------------------------------------------
+-- 5.8 حذف متسلسل للطلاب عند حذف المستوى
+-- -------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION cascade_delete_level_students()
+RETURNS TRIGGER AS $$
+BEGIN
+    DELETE FROM students WHERE level = OLD.title;
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_cascade_delete_level ON competition_levels;
+CREATE TRIGGER trg_cascade_delete_level
+    BEFORE DELETE ON competition_levels FOR EACH ROW
+    EXECUTE FUNCTION cascade_delete_level_students();
+
+
+-- =================================================================================================
+-- القسم السادس: الدوال الداخلية — Internal Functions
+-- =================================================================================================
+
+-- -------------------------------------------------------------------
+-- 6.1 التحقق من المدير
+-- -------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN EXISTS (SELECT 1 FROM public.admins WHERE id = auth.uid());
+END;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public;
+
+-- -------------------------------------------------------------------
+-- 6.2 إحصائيات أساسية (بدون فلاتر)
+-- -------------------------------------------------------------------
+DROP FUNCTION IF EXISTS get_student_stats();
+CREATE FUNCTION get_student_stats()
+RETURNS TABLE (total_students BIGINT, avg_score NUMERIC) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT COUNT(*)::BIGINT, AVG(score) FILTER (WHERE score IS NOT NULL)::NUMERIC
+    FROM students;
+END;
+$$ LANGUAGE plpgsql;
+
+GRANT EXECUTE ON FUNCTION get_student_stats() TO authenticated;
+
+-- -------------------------------------------------------------------
+-- 6.3 إحصائيات متقدمة (مع فلاتر)
+-- -------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION get_student_stats(
+    p_level      TEXT DEFAULT NULL,
+    p_gender     TEXT DEFAULT NULL,
+    p_start_date DATE DEFAULT NULL,
+    p_end_date   DATE DEFAULT NULL
+)
 RETURNS TABLE (
-    student_code TEXT,
-    name TEXT
-) SECURITY DEFINER AS $$
+    total_students BIGINT,
+    avg_score      NUMERIC,
+    male_count     BIGINT,
+    female_count   BIGINT,
+    highest_score  NUMERIC
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        COUNT(*)::BIGINT,
+        COALESCE(AVG(score), 0)::NUMERIC,
+        COUNT(CASE WHEN gender = 'ذكر' THEN 1 END)::BIGINT,
+        COUNT(CASE WHEN gender = 'أنثى' THEN 1 END)::BIGINT,
+        COALESCE(MAX(score), 0)::NUMERIC
+    FROM students
+    WHERE
+        (p_level IS NULL OR level = p_level) AND
+        (p_gender IS NULL OR gender = p_gender) AND
+        (p_start_date IS NULL OR created_at::DATE >= p_start_date) AND
+        (p_end_date IS NULL OR created_at::DATE <= p_end_date);
+END;
+$$ LANGUAGE plpgsql;
+
+GRANT EXECUTE ON FUNCTION get_student_stats(TEXT, TEXT, DATE, DATE) TO authenticated;
+
+-- -------------------------------------------------------------------
+-- 6.4 حالة طالب كاملة — get_student_status
+-- -------------------------------------------------------------------
+DROP FUNCTION IF EXISTS get_student_status(TEXT, TEXT);
+CREATE OR REPLACE FUNCTION get_student_status(p_national_id TEXT, p_student_code TEXT)
+RETURNS TABLE (
+    id                  INTEGER,
+    name                TEXT,
+    level               TEXT,
+    student_code        TEXT,
+    ceremony_code       TEXT,
+    exam_date           DATE,
+    exam_hour           INTEGER,
+    score               NUMERIC,
+    rewaya_score        NUMERIC,
+    tajweed_score       NUMERIC,
+    voice_score         NUMERIC,
+    meaning_score       NUMERIC,
+    profile_image_url   TEXT,
+    age                 INTEGER,
+    gender              TEXT,
+    phone               TEXT,
+    national_id         TEXT,
+    birth_certificate_url TEXT,
+    memorizer_name      TEXT,
+    memorizer_phone     TEXT,
+    memorizer_address   TEXT,
+    location            TEXT,
+    selected_rewaya     TEXT,
+    level_code          TEXT,
+    first_prize         TEXT,
+    second_prize        TEXT,
+    third_prize         TEXT
+)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        s.id, s.name, s.level, s.student_code, s.ceremony_code,
+        s.exam_date, s.exam_hour, s.score, s.rewaya_score, s.tajweed_score,
+        s.voice_score, s.meaning_score, s.profile_image_url, s.age, s.gender,
+        s.phone, s.national_id, s.birth_certificate_url,
+        s.memorizer_name, s.memorizer_phone, s.memorizer_address,
+        s.location, s.selected_rewaya,
+        cl.level_code, cl.first_prize, cl.second_prize, cl.third_prize
+    FROM students s
+    LEFT JOIN competition_levels cl ON cl.id = s.level_id
+    WHERE s.national_id = p_national_id AND s.student_code = p_student_code;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION get_student_status(TEXT, TEXT) TO authenticated;
+
+-- -------------------------------------------------------------------
+-- 6.5 استرجاع كود الطالب المفقود
+-- -------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION retrieve_student_code(p_national_id TEXT, p_phone TEXT)
+RETURNS TABLE (student_code TEXT, name TEXT)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
 BEGIN
     RETURN QUERY
     SELECT s.student_code::TEXT, s.name::TEXT
     FROM students s
     WHERE s.national_id = p_national_id AND s.phone = p_phone;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
-GRANT EXECUTE ON FUNCTION retrieve_student_code(TEXT, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION retrieve_student_code(TEXT, TEXT) TO authenticated;
 
--- =============================================
--- 13. Performance Indexes
--- =============================================
-CREATE INDEX IF NOT EXISTS idx_students_score_desc ON students(score DESC NULLS LAST);
-CREATE INDEX IF NOT EXISTS idx_students_level_gender ON students(level, gender);
-CREATE INDEX IF NOT EXISTS idx_students_ceremony_code ON students(ceremony_code) WHERE ceremony_code IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_students_exam_date_hour ON students(exam_date, exam_hour);
-CREATE INDEX IF NOT EXISTS idx_students_national_id ON students(national_id);
-CREATE INDEX IF NOT EXISTS idx_students_student_code ON students(student_code);
-CREATE INDEX IF NOT EXISTS idx_levels_active ON competition_levels(is_active) WHERE is_active = TRUE;
-CREATE INDEX IF NOT EXISTS idx_levels_title ON competition_levels(title);
 
--- =============================================
--- 14. Competition Levels Integrity Constraints
--- =============================================
-DO $$
+-- =================================================================================================
+-- القسم السابع: دوال الـ API العامة — Public API Functions
+-- =================================================================================================
+-- تستخدم من واجهة Next.js للاستعلامات العامة
+
+-- -------------------------------------------------------------------
+-- 7.1 البحث عن طالب — public_lookup_student
+-- -------------------------------------------------------------------
+DROP FUNCTION IF EXISTS public_lookup_student(TEXT);
+DROP FUNCTION IF EXISTS public_lookup_student(TEXT, TEXT);
+CREATE OR REPLACE FUNCTION public_lookup_student(p_national_id TEXT, p_phone TEXT DEFAULT NULL)
+RETURNS TABLE (
+    id                INTEGER,
+    name              TEXT,
+    level             TEXT,
+    student_code      TEXT,
+    ceremony_code     TEXT,
+    exam_date         DATE,
+    exam_hour         INTEGER,
+    score             NUMERIC,
+    profile_image_url TEXT,
+    age               INTEGER,
+    gender            TEXT,
+    phone             TEXT,
+    national_id       TEXT,
+    memorizer_name    TEXT,
+    level_code        TEXT
+)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'levels_age_range_valid') THEN
-        ALTER TABLE competition_levels ADD CONSTRAINT levels_age_range_valid
-            CHECK (max_age IS NULL OR min_age IS NULL OR max_age >= min_age);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'levels_max_capacity_non_negative') THEN
-        ALTER TABLE competition_levels ADD CONSTRAINT levels_max_capacity_non_negative
-            CHECK (max_capacity IS NULL OR max_capacity >= 0);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'levels_level_code_format') THEN
-        ALTER TABLE competition_levels ADD CONSTRAINT levels_level_code_format
-            CHECK (level_code IS NULL OR level_code ~ '^[A-Z]$');
-    END IF;
-END $$;
-
--- =============================================
--- 15. App Settings Updated At Auto-Trigger
--- =============================================
-CREATE OR REPLACE FUNCTION update_app_settings_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at := NOW();
-    RETURN NEW;
+    RETURN QUERY
+    SELECT
+        s.id, s.name, s.level, s.student_code, s.ceremony_code,
+        s.exam_date, s.exam_hour, s.score, s.profile_image_url,
+        s.age, s.gender, s.phone, s.national_id, s.memorizer_name,
+        cl.level_code
+    FROM students s
+    LEFT JOIN competition_levels cl ON cl.id = s.level_id
+    WHERE s.national_id = p_national_id
+      AND (p_phone IS NULL OR s.phone = p_phone);
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
-DROP TRIGGER IF EXISTS trg_app_settings_updated_at ON app_settings;
-CREATE TRIGGER trg_app_settings_updated_at
-    BEFORE UPDATE ON app_settings
-    FOR EACH ROW
-    EXECUTE FUNCTION update_app_settings_updated_at();
+REVOKE EXECUTE ON FUNCTION public_lookup_student(TEXT, TEXT) FROM anon;
+GRANT EXECUTE ON FUNCTION public_lookup_student(TEXT, TEXT) TO authenticated;
 
--- =============================================
--- 16. Add NOT NULL constraint for memorizer_name
--- =============================================
-DO $$
+-- -------------------------------------------------------------------
+-- 7.2 نتيجة طالب — public_lookup_result
+-- -------------------------------------------------------------------
+DROP FUNCTION IF EXISTS public_lookup_result(TEXT, TEXT);
+CREATE OR REPLACE FUNCTION public_lookup_result(p_national_id TEXT, p_phone TEXT)
+RETURNS TABLE (
+    id                INTEGER,
+    name              TEXT,
+    level             TEXT,
+    student_code      TEXT,
+    ceremony_code     TEXT,
+    exam_date         DATE,
+    exam_hour         INTEGER,
+    score             NUMERIC,
+    rewaya_score      NUMERIC,
+    tajweed_score     NUMERIC,
+    voice_score       NUMERIC,
+    meaning_score     NUMERIC,
+    profile_image_url TEXT,
+    age               INTEGER,
+    gender            TEXT,
+    level_code        TEXT,
+    first_prize       TEXT,
+    second_prize      TEXT,
+    third_prize       TEXT,
+    max_score         NUMERIC
+)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'students_memorizer_name_not_null') THEN
-        ALTER TABLE students ALTER COLUMN memorizer_name SET NOT NULL;
+    RETURN QUERY
+    SELECT
+        s.id, s.name, s.level, s.student_code, s.ceremony_code,
+        s.exam_date, s.exam_hour, s.score, s.rewaya_score, s.tajweed_score,
+        s.voice_score, s.meaning_score, s.profile_image_url, s.age, s.gender,
+        cl.level_code, cl.first_prize, cl.second_prize, cl.third_prize, cl.max_score
+    FROM students s
+    LEFT JOIN competition_levels cl ON cl.id = s.level_id
+    WHERE s.national_id = p_national_id AND s.phone = p_phone;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public_lookup_result(TEXT, TEXT) TO anon, authenticated;
+
+-- -------------------------------------------------------------------
+-- 7.3 استعلام الحفل — public_lookup_ceremony
+-- -------------------------------------------------------------------
+DROP FUNCTION IF EXISTS public_lookup_ceremony(TEXT, TEXT);
+CREATE OR REPLACE FUNCTION public_lookup_ceremony(p_national_id TEXT, p_phone TEXT)
+RETURNS TABLE (
+    id                INTEGER,
+    name              TEXT,
+    level             TEXT,
+    ceremony_code     TEXT,
+    profile_image_url TEXT,
+    age               INTEGER,
+    student_code      TEXT,
+    exam_date         DATE,
+    exam_hour         INTEGER,
+    level_code        TEXT,
+    first_prize       TEXT,
+    second_prize      TEXT,
+    third_prize       TEXT
+)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE v_is_open BOOLEAN;
+BEGIN
+    SELECT is_ceremony_query_open INTO v_is_open FROM app_settings WHERE id = 1;
+    IF v_is_open IS NOT TRUE THEN
+        RAISE EXCEPTION 'الاستعلام عن الحفل غير متاح حالياً.';
     END IF;
-END $$;
+
+    RETURN QUERY
+    SELECT
+        s.id, s.name, s.level, s.ceremony_code, s.profile_image_url,
+        s.age, s.student_code, s.exam_date, s.exam_hour,
+        cl.level_code, cl.first_prize, cl.second_prize, cl.third_prize
+    FROM students s
+    LEFT JOIN competition_levels cl ON cl.id = s.level_id
+    WHERE s.national_id = p_national_id
+      AND s.phone = p_phone
+      AND s.ceremony_code IS NOT NULL;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public_lookup_ceremony(TEXT, TEXT) TO anon, authenticated;
+
+-- -------------------------------------------------------------------
+-- 7.4 حالة التسجيل — public_get_registration_status
+-- -------------------------------------------------------------------
+DROP FUNCTION IF EXISTS public_get_registration_status();
+CREATE OR REPLACE FUNCTION public_get_registration_status()
+RETURNS TABLE (
+    is_open                BOOLEAN,
+    start_date             TIMESTAMPTZ,
+    end_date               TIMESTAMPTZ,
+    is_result_query_open   BOOLEAN,
+    is_ceremony_query_open BOOLEAN,
+    result_query_open_date TIMESTAMPTZ,
+    ceremony_query_open_date TIMESTAMPTZ,
+    competition_title      TEXT
+)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        s.is_registration_open, s.registration_start_date, s.registration_end_date,
+        s.is_result_query_open, s.is_ceremony_query_open,
+        s.result_query_open_date, s.ceremony_query_open_date,
+        s.competition_title
+    FROM app_settings s WHERE s.id = 1;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public_get_registration_status() TO anon, authenticated;
+
+-- -------------------------------------------------------------------
+-- 7.5 استعلام حضور الحفل (للإدارة) — query_ceremony_attendance
+-- -------------------------------------------------------------------
+DROP FUNCTION IF EXISTS query_ceremony_attendance(TEXT, TEXT);
+CREATE OR REPLACE FUNCTION query_ceremony_attendance(p_national_id TEXT, p_phone TEXT DEFAULT NULL)
+RETURNS TABLE (
+    student_id    INTEGER,
+    student_name  TEXT,
+    student_level TEXT,
+    student_image TEXT,
+    ceremony_code TEXT
+)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE v_is_open BOOLEAN;
+BEGIN
+    SELECT is_ceremony_query_open INTO v_is_open FROM app_settings WHERE id = 1;
+
+    IF v_is_open IS NOT TRUE THEN
+        RAISE EXCEPTION 'الاستعلام عن حضور الحفل غير متاح حالياً.';
+    END IF;
+
+    RETURN QUERY
+    SELECT s.id, s.name, s.level, s.profile_image_url, s.ceremony_code
+    FROM students s
+    WHERE s.national_id = p_national_id
+      AND (p_phone IS NULL OR s.phone = p_phone)
+      AND s.ceremony_code IS NOT NULL;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION query_ceremony_attendance(TEXT, TEXT) TO authenticated;
+
+
+-- =================================================================================================
+-- القسم الثامن: دوال الحفل — Ceremony Functions
+-- =================================================================================================
+
+-- -------------------------------------------------------------------
+-- 8.1 توليد أكواد الحفل — generate_all_ceremony_codes
+-- -------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION generate_all_ceremony_codes()
+RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+    student_rec RECORD;
+    first_letter TEXT;
+    seq_num      INTEGER;
+    level_seq    RECORD;
+BEGIN
+    IF NOT is_admin() THEN
+        RAISE EXCEPTION 'غير مصرح لك بتنفيذ هذا الإجراء.';
+    END IF;
+
+    PERFORM pg_advisory_xact_lock(987654321);
+
+    FOR level_seq IN
+        SELECT ls.level, COALESCE(ls.min_age, 0) AS min_age,
+               ROW_NUMBER() OVER (ORDER BY COALESCE(ls.min_age, 0), ls.level) AS rn
+        FROM (
+            SELECT DISTINCT s.level, cl.min_age
+            FROM students s
+            JOIN competition_levels cl ON cl.id = s.level_id
+        ) ls
+        ORDER BY COALESCE(ls.min_age, 0), ls.level
+    LOOP
+        seq_num := 1;
+        FOR student_rec IN
+            SELECT s.id, s.age FROM students s
+            WHERE s.level = level_seq.level
+            ORDER BY s.id
+        LOOP
+            first_letter := CASE
+                WHEN student_rec.age >= 18 THEN 'S'
+                WHEN level_seq.rn <= 9 THEN CHR(ASCII('A') + level_seq.rn - 1)
+                ELSE 'Z'
+            END;
+
+            UPDATE students
+            SET ceremony_code = first_letter || LPAD(seq_num::TEXT, 4, '0')
+            WHERE id = student_rec.id;
+
+            seq_num := seq_num + 1;
+        END LOOP;
+    END LOOP;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION generate_all_ceremony_codes() TO authenticated;

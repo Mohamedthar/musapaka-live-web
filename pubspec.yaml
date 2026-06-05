@@ -17,15 +17,12 @@ dependencies:
   intl: ^0.20.2
   supabase_flutter: ^2.12.4
   shared_preferences: ^2.5.5
-  flutter_svg: ^2.2.4
   file_picker: ^11.0.2
   image: ^4.8.0
-  csv: ^8.0.0
   printing: ^5.14.3
   pdf: ^3.12.0
-  fl_chart: ^1.2.0
   syncfusion_flutter_xlsio: ^33.2.5
-  syncfusion_officechart: 33.2.5
+  syncfusion_officechart: ^33.2.5
   path_provider: ^2.1.5
   path: ^1.9.1
 
@@ -50,7 +47,6 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
   assets:
-    - assets/svg/
     - assets/images/
   fonts:
     - family: Cairo

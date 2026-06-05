@@ -210,7 +210,7 @@ class BackupService {
   Future<File?> saveToCustomLocation() async {
     final file = await createBackup(includeImages: false);
     try {
-      await Process.run('explorer', [await _backupDir]);
+      await Process.run('explorer.exe', [await _backupDir]);
     } catch (_) {}
     return file;
   }
@@ -219,7 +219,7 @@ class BackupService {
     final backups = await listExistingBackups();
     if (backups.isEmpty) return null;
     try {
-      await Process.run('explorer', [await _backupDir]);
+      await Process.run('explorer.exe', [await _backupDir]);
     } catch (_) {}
     return null;
   }
@@ -255,11 +255,12 @@ class BackupService {
 
   Future<bool> deleteBackup(String path) async {
     try {
-      final info = BackupInfo.fromFile(File(path));
-      await File(path).delete();
+      final file = File(path);
+      final info = BackupInfo.fromFile(file);
+      final backupData = jsonDecode(await file.readAsString(encoding: utf8)) as Map<String, dynamic>;
+      await file.delete();
       if (info.imageCount > 0) {
-        final jsonData = jsonDecode(await File(path).readAsString(encoding: utf8)) as Map<String, dynamic>;
-        final folder = jsonData['images_folder'] as String?;
+        final folder = backupData['images_folder'] as String?;
         if (folder != null) {
           final imgDir = Directory('${await _imagesDir}/$folder');
           if (await imgDir.exists()) await imgDir.delete(recursive: true);

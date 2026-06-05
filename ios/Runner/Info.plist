@@ -65,5 +65,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>يحتاج التطبيق للوصول إلى الكاميرا لالتقاط صورة شخصية</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>يحتاج التطبيق للوصول إلى مكتبة الصور لاختيار صورة شخصية أو شهادة ميلاد</string>
 </dict>
 </plist>
