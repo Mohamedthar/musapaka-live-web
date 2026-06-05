@@ -26,8 +26,8 @@ export const metadata: Metadata = {
   title: "مسابقة القرآن الكريم",
   description: "الموقع الرسمي للتسجيل في مسابقة القرآن الكريم",
   icons: {
-    icon: "/logo_musapaka.jpeg",
-    apple: "/logo_musapaka.jpeg",
+    icon: "/icon.png",
+    apple: "/icon.png",
   },
   openGraph: {
     title: "مسابقة القرآن الكريم",
