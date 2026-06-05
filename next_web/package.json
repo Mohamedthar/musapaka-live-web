@@ -14,8 +14,7 @@
     "test:watch": "vitest"
   },
   "lint-staged": {
-    "*.{ts,tsx}": ["eslint --fix", "prettier --write"],
-    "*.{css,md,json}": ["prettier --write"]
+    "*.{ts,tsx}": ["eslint --fix"]
   },
   "dependencies": {
     "@marsidev/react-turnstile": "^1.5.2",
