@@ -134,6 +134,26 @@ export async function POST(request: Request) {
     }
 
     // 3. Sanitize and Extract Data (Security: Prevent Mass Assignment)
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const profileUrl = body.profile_image_url || null;
+    const birthCertUrl = body.birth_certificate_url || null;
+
+    if (!profileUrl || !birthCertUrl) {
+      return jsonResponse({ error: 'الصورة الشخصية وشهادة الميلاد مطلوبتان' }, 400, origin);
+    }
+
+    if (cloudName) {
+      const validCloudUrl = (url: string) =>
+        url.startsWith(`https://res.cloudinary.com/${cloudName}/`) ||
+        url.startsWith(`https://res-console.cloudinary.com/${cloudName}/`);
+      if (!validCloudUrl(profileUrl)) {
+        return jsonResponse({ error: 'رابط الصورة الشخصية غير صالح' }, 400, origin);
+      }
+      if (!validCloudUrl(birthCertUrl)) {
+        return jsonResponse({ error: 'رابط شهادة الميلاد غير صالح' }, 400, origin);
+      }
+    }
+
     const studentData = {
       name,
       phone,
@@ -141,8 +161,8 @@ export async function POST(request: Request) {
       level,
       age,
       gender: gender || null,
-      profile_image_url: body.profile_image_url || null,
-      birth_certificate_url: body.birth_certificate_url || null,
+      profile_image_url: profileUrl,
+      birth_certificate_url: birthCertUrl,
       memorizer_name: memorizerName,
       memorizer_phone: body.memorizer_phone?.trim() || null,
       memorizer_address: body.memorizer_address?.trim() || null,

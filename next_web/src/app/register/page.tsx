@@ -389,14 +389,19 @@ export default function RegisterPage() {
     try {
       const [profileUrl, birthUrl] = await (async () => {
             const [profileBlob, birthBlob] = await Promise.all([
-              profileImage ? compressImage(profileImage).catch(() => null) : Promise.resolve(null),
-              birthCertImage ? compressImage(birthCertImage).catch(() => null) : Promise.resolve(null),
+              profileImage ? compressImage(profileImage) : Promise.resolve(null),
+              birthCertImage ? compressImage(birthCertImage) : Promise.resolve(null),
             ]);
 
             const [pUrl, bUrl] = await Promise.all([
-              profileBlob ? uploadToCloudinary(profileBlob).catch(() => null) : Promise.resolve(null),
-              birthBlob ? uploadToCloudinary(birthBlob).catch(() => null) : Promise.resolve(null),
+              profileBlob ? uploadToCloudinary(profileBlob) : Promise.resolve(null),
+              birthBlob ? uploadToCloudinary(birthBlob) : Promise.resolve(null),
             ]);
+
+            if (!pUrl || !bUrl) {
+              throw new Error('فشل رفع الصور — يرجى المحاولة مرة أخرى');
+            }
+
             return [pUrl, bUrl];
           })();
 
