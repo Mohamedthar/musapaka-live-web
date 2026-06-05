@@ -21,10 +21,7 @@ export async function GET(request: Request) {
     const st = settings as Record<string, unknown> | null;
     return jsonResponse({
       is_ceremony_query_open: !!(st as Record<string, unknown> | null)?.is_ceremony_query_open,
-      registration_start_date: (st as Record<string, unknown> | null)?.registration_start_date ?? null,
-      registration_end_date: (st as Record<string, unknown> | null)?.registration_end_date ?? null,
       ceremony_query_open_date: (st as Record<string, unknown> | null)?.ceremony_query_open_date ?? null,
-      ceremony_query_close_date: (st as Record<string, unknown> | null)?.ceremony_query_close_date ?? null,
     }, 200, origin, 60);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';

@@ -27,7 +27,6 @@ interface Step5SuccessProps {
   examSlot: string;
   profilePreview: string | null;
   studentCode: string;
-  isWaitlistMode: boolean;
   branchName: string;
   memorizationAmount: number | null;
   onNewSearch?: () => void;
@@ -40,7 +39,6 @@ export default function Step5Success({
   examSlot,
   profilePreview,
   studentCode,
-  isWaitlistMode,
   branchName,
   onNewSearch
 }: Step5SuccessProps) {
@@ -230,15 +228,6 @@ export default function Step5Success({
             </button>
           </div>
         </div>
-
-        {isWaitlistMode ? (
-          <div className="w-full max-w-[800px] mx-auto bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl mb-6 print:hidden text-center shadow-sm">
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-xs font-extrabold">تم وضعك في قائمة الانتظار</span>
-            </div>
-            <p className="text-[11px] font-bold text-amber-700 mt-1">لقد اكتمل العدد الأساسي للمسابقة. سنتواصل معك في حال توفر مقعد لك.</p>
-          </div>
-        ) : null}
 
         {/* ── RECEIPT ── */}
         <div className="w-full flex justify-center mb-8 print:mb-0">

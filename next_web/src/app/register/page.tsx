@@ -16,31 +16,6 @@ import Step2Level from './components/Step3Level';
 import Step3Review from './components/Step4Review';
 import Step4Success from './components/Step5Success';
 
-/** Avoid UTC midnight shifting the calendar day */
-function parseLocalDateOnly(iso: string) {
-  const part = iso.split('T')[0] ?? iso;
-  const [y, m, d] = part.split('-').map(Number);
-  return new Date(y, m - 1, d);
-}
-
-function isRegistrationOpenAllowed(row: {
-  is_registration_open?: boolean | null;
-  registration_start_date?: string | null;
-  registration_end_date?: string | null;
-}) {
-  if (row.is_registration_open === false) return false;
-  const today = new Date();
-  const t0 = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  if (row.registration_start_date) {
-    const s = parseLocalDateOnly(row.registration_start_date);
-    if (t0 < s) return false;
-  }
-  if (row.registration_end_date) {
-    const e = parseLocalDateOnly(row.registration_end_date);
-    if (t0 > e) return false;
-  }
-  return true;
-}
 
 export default function RegisterPage() {
   const searchParams = useSearchParams();
@@ -49,7 +24,6 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [registrationAllowed, setRegistrationAllowed] = useState(true);
-  const [isWaitlistMode, setIsWaitlistMode] = useState(false);
   const [capacityFull, setCapacityFull] = useState(false);
 
   const [step, setStep] = useState(1);
@@ -165,33 +139,30 @@ export default function RegisterPage() {
 
         if (settingsJson.settings) {
           const data = settingsJson.settings;
-          const totalStud = settingsJson.settings.total_students;
-          const lvlCounts = settingsJson.settings.level_counts || {};
+          const status = settingsJson.status;
 
-          if (totalStud !== undefined && lvlCounts) {
-            Object.assign(countsMap, lvlCounts);
-            setLevelCounts(countsMap);
-          }
+          const totalStud = status?.total_students ?? 0;
+          const totalSlots = status?.total_slots ?? 0;
+          const filledSlots = status?.filled_slots ?? 0;
 
-          let totalCap = 0;
-          if (data.exam_schedule && Array.isArray(data.exam_schedule)) {
-            for (const slot of data.exam_schedule as Array<Record<string, unknown>>) {
-              const s = (slot.start_hour as number) || 8;
-              const e = (slot.end_hour as number) || 13;
-              const bg = (slot.students_per_hour as number) || 4;
-              totalCap += (e - s) * bg;
+          if (status) {
+            const hasSlots = status.has_available_slots === true;
+            const isOpen = status.is_registration_open === true;
+
+            if (!isOpen) {
+              setRegistrationAllowed(false);
+              setCapacityFull(false);
+            } else if (!hasSlots) {
+              setRegistrationAllowed(false);
+              setCapacityFull(true);
+            } else {
+              setRegistrationAllowed(true);
+              setCapacityFull(false);
             }
           }
 
-          const count = totalStud ?? 0;
-
-          if (totalCap > 0 && count >= totalCap) {
-            setIsWaitlistMode(false);
-            setRegistrationAllowed(false);
-            setCapacityFull(true);
-          } else {
-            setRegistrationAllowed(isRegistrationOpenAllowed(data));
-            setCapacityFull(false);
+          if (settingsJson.level_counts) {
+            setLevelCounts(settingsJson.level_counts);
           }
         }
 
@@ -592,12 +563,12 @@ export default function RegisterPage() {
           )}
         </div>
         <h2 className="text-xl font-black text-primary mb-3">
-          {capacityFull ? 'آسف.. الطاقة الاستيعابية ممتلئة' : 'التسجيل مغلق حالياً'}
+          {capacityFull ? 'التسجيل مغلق مؤقتاً' : 'التسجيل مغلق حالياً'}
         </h2>
         <p className="text-on-surface-variant text-xs sm:text-sm leading-relaxed mb-8 font-semibold">
           {capacityFull 
-            ? 'تم الوصول إلى الحد الأقصى للطاقة الاستيعابية للمسابقة حالياً. سيتم فتح باب التسجيل مرة أخرى في أقرب وقت ممكن.'
-            : 'نعتذر إليكم، باب التسجيل مغلق حالياً حسب المواعيد المحددة. يرجى متابعة الإعلانات الرسمية للمواعيد القادمة.'}
+            ? 'اكتملت جميع المواعيد المتاحة حالياً. سيتم فتح التسجيل مجدداً فور توفر مواعيد اختبار جديدة.'
+            : 'نعتذر إليكم، باب التسجيل مغلق حالياً. يرجى متابعة الإعلانات الرسمية للمواعيد القادمة.'}
         </p>
         <Link href="/" className="inline-flex items-center justify-center gap-2 px-6 py-2.5 w-full rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary-container active:scale-95 transition-all shadow-sm">
           <ArrowLeft size={14} /> العودة للصفحة الرئيسية
@@ -630,13 +601,7 @@ export default function RegisterPage() {
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
               className="bg-white rounded-2xl border border-primary/10 p-8 sm:p-10 max-w-md w-full text-center shadow-lg"
             >
-              {isWaitlistMode && (
-                <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl mb-5 text-center text-xs font-bold leading-relaxed">
-                  <p className="text-xs font-extrabold">تم وضعك في قائمة الانتظار</p>
-                  <p className="text-[11px] font-bold text-amber-700 mt-1">لقد اكتمل العدد الأساسي للمسابقة. سنتواصل معك في حال توفر مقعد لك.</p>
-                </div>
-              )}
-
+              
               <div className="w-16 h-16 bg-secondary-fixed/30 rounded-full flex items-center justify-center mx-auto mb-5">
                 <CheckCircle2 size={36} className="text-secondary" />
               </div>
@@ -697,7 +662,6 @@ export default function RegisterPage() {
             examSlot={examSlot}
             profilePreview={profilePreview}
             studentCode={studentCode}
-            isWaitlistMode={isWaitlistMode}
             branchName={branchName}
             memorizationAmount={memorizationAmount}
           />

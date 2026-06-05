@@ -279,7 +279,6 @@ export default function FormInquiry() {
               formData={formData} levels={levels} getLevelContent={getLevelContent}
               examSlot={examSlot} profilePreview={studentData.profile_image_url || null}
               studentCode={studentData.student_code || ''}
-              isWaitlistMode={!studentData.exam_date || studentData.exam_hour === null}
               branchName={studentData.branch_name || ''}
               memorizationAmount={studentData.memorization_amount ?? null}
               onNewSearch={handleNewSearch}

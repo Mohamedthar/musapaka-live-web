@@ -13,8 +13,9 @@ export async function GET(request: Request) {
 
     const supabase = getAdminClient();
 
-    const [settingsRes, countRes, levelCountsRes] = await Promise.all([
+    const [settingsRes, statusRes, countRes, levelCountsRes] = await Promise.all([
       supabase.from('app_settings').select('*').eq('id', 1).single(),
+      supabase.rpc('public_get_registration_status').single(),
       supabase.from('students').select('id', { count: 'exact', head: true }),
       supabase.from('students').select('level'),
     ]);
@@ -29,6 +30,7 @@ export async function GET(request: Request) {
     return jsonResponse({
       success: true,
       settings: settingsRes.data,
+      status: statusRes.data,
       total_students: countRes.count ?? 0,
       level_counts: levelCounts,
     }, 200, origin, 30);
