@@ -727,6 +727,7 @@ RETURNS TABLE (
     tajweed_score       DOUBLE PRECISION,
     voice_score         DOUBLE PRECISION,
     meaning_score       DOUBLE PRECISION,
+    profile_image_url   TEXT,
     age                 INTEGER,
     gender              TEXT,
     phone               TEXT,
@@ -737,7 +738,7 @@ RETURNS TABLE (
     memorizer_address   TEXT,
     location            TEXT,
     selected_rewaya     TEXT,
-    level_code          TEXT,
+    level_code          CHAR(1),
     first_prize         TEXT,
     second_prize        TEXT,
     third_prize         TEXT
@@ -806,7 +807,7 @@ RETURNS TABLE (
     phone             TEXT,
     national_id       TEXT,
     memorizer_name    TEXT,
-    level_code        TEXT
+    level_code        CHAR(1)
 )
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
@@ -848,11 +849,11 @@ RETURNS TABLE (
     profile_image_url TEXT,
     age               INTEGER,
     gender            TEXT,
-    level_code        TEXT,
+    level_code        CHAR(1),
     first_prize       TEXT,
     second_prize      TEXT,
     third_prize       TEXT,
-    max_score         DOUBLE PRECISION
+    max_score         INTEGER
 )
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
@@ -886,7 +887,7 @@ RETURNS TABLE (
     student_code      TEXT,
     exam_date         DATE,
     exam_hour         INTEGER,
-    level_code        TEXT,
+    level_code        CHAR(1),
     first_prize       TEXT,
     second_prize      TEXT,
     third_prize       TEXT
