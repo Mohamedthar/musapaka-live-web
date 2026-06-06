@@ -1,13 +1,10 @@
-﻿import 'dart:convert';
-import 'dart:io';
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' as intl;
 
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/responsive.dart';
 import '../../data/models/exam_schedule_slot.dart';
 import '../../services/supabase_service.dart';
-import '../../services/backup_service.dart';
 import '../../ui/dashboard/widgets/stats_cards.dart';
 import 'models/day_block.dart';
 import 'widgets/section_card.dart';

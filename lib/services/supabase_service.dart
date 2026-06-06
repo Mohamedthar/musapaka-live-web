@@ -152,7 +152,7 @@ class SupabaseService {
           .select('id')
           .eq('level', levelTitle)
           .count(CountOption.exact);
-      return response.count ?? 0;
+      return response.count;
     } catch (e) {
       throw Exception('فشل في التحقق من عدد الطلاب: ${AppErrorHandler.extractMessage(e)}');
     }

@@ -9,7 +9,6 @@ import '../data/models/student.dart';
 import '../data/models/competition_level.dart';
 import '../data/models/exam_schedule_slot.dart';
 import '../services/supabase_service.dart';
-import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:intl/intl.dart';

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 
 class ConnectivityService {
   static final ConnectivityService _instance = ConnectivityService._();
