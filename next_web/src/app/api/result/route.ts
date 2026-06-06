@@ -71,6 +71,7 @@ export async function POST(request: Request) {
     const { data: levels } = levelsRes;
 
     if (error) {
+      console.error('[result] RPC error:', error);
       return jsonResponse({ error: 'حدث خطأ في قاعدة البيانات أثناء البحث' }, 500, origin);
     }
 
