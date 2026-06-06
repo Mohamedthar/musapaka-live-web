@@ -2,8 +2,8 @@
 -- Students can now search by national ID only.
 
 -- public_lookup_student — just national ID
-DROP FUNCTION IF EXISTS public_lookup_student(TEXT);
 DROP FUNCTION IF EXISTS public_lookup_student(TEXT, TEXT);
+DROP FUNCTION IF EXISTS public_lookup_student(TEXT);
 CREATE OR REPLACE FUNCTION public_lookup_student(p_national_id TEXT)
 RETURNS TABLE (
     id                INTEGER,
@@ -42,6 +42,7 @@ GRANT EXECUTE ON FUNCTION public_lookup_student(TEXT) TO authenticated;
 
 -- public_lookup_result — just national ID
 DROP FUNCTION IF EXISTS public_lookup_result(TEXT, TEXT);
+DROP FUNCTION IF EXISTS public_lookup_result(TEXT);
 CREATE OR REPLACE FUNCTION public_lookup_result(p_national_id TEXT)
 RETURNS TABLE (
     id                INTEGER,
@@ -84,6 +85,7 @@ GRANT EXECUTE ON FUNCTION public_lookup_result(TEXT) TO anon, authenticated;
 
 -- public_lookup_ceremony — just national ID
 DROP FUNCTION IF EXISTS public_lookup_ceremony(TEXT, TEXT);
+DROP FUNCTION IF EXISTS public_lookup_ceremony(TEXT);
 CREATE OR REPLACE FUNCTION public_lookup_ceremony(p_national_id TEXT)
 RETURNS TABLE (
     id                INTEGER,

@@ -831,6 +831,7 @@ GRANT EXECUTE ON FUNCTION public_lookup_student(TEXT) TO authenticated;
 -- 7.2 نتيجة طالب — public_lookup_result
 -- -------------------------------------------------------------------
 DROP FUNCTION IF EXISTS public_lookup_result(TEXT, TEXT);
+DROP FUNCTION IF EXISTS public_lookup_result(TEXT);
 CREATE OR REPLACE FUNCTION public_lookup_result(p_national_id TEXT)
 RETURNS TABLE (
     id                INTEGER,
@@ -875,6 +876,7 @@ GRANT EXECUTE ON FUNCTION public_lookup_result(TEXT) TO anon, authenticated;
 -- 7.3 استعلام الحفل — public_lookup_ceremony
 -- -------------------------------------------------------------------
 DROP FUNCTION IF EXISTS public_lookup_ceremony(TEXT, TEXT);
+DROP FUNCTION IF EXISTS public_lookup_ceremony(TEXT);
 CREATE OR REPLACE FUNCTION public_lookup_ceremony(p_national_id TEXT)
 RETURNS TABLE (
     id                INTEGER,
