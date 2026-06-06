@@ -849,6 +849,7 @@ RETURNS TABLE (
     profile_image_url TEXT,
     age               INTEGER,
     gender            TEXT,
+    selected_rewaya   TEXT,
     level_code        CHAR(1),
     first_prize       TEXT,
     second_prize      TEXT,
@@ -863,6 +864,7 @@ BEGIN
         s.id, s.name, s.level, s.student_code, s.ceremony_code,
         s.exam_date, s.exam_hour, s.score, s.rewaya_score, s.tajweed_score,
         s.voice_score, s.meaning_score, s.profile_image_url, s.age, s.gender,
+        s.selected_rewaya,
         cl.level_code, cl.first_prize, cl.second_prize, cl.third_prize, cl.max_score
     FROM students s
     LEFT JOIN competition_levels cl ON cl.id = s.level_id

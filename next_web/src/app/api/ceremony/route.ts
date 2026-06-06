@@ -12,16 +12,19 @@ export async function GET(request: Request) {
     }
 
     const supabase = getAdminClient();
-    const { data: settings, error } = await supabase.rpc('public_get_registration_status');
+    const { data: settings, error } = await supabase
+      .from('app_settings')
+      .select('is_ceremony_query_open, ceremony_query_open_date')
+      .eq('id', 1)
+      .single();
 
-    if (error) {
-      return jsonResponse({ error: 'حدث خطأ في قراءة الإعدادات' }, 500, origin);
+    if (error || !settings) {
+      return jsonResponse({ is_ceremony_query_open: false, ceremony_query_open_date: null }, 200, origin, 60);
     }
 
-    const st = settings as Record<string, unknown> | null;
     return jsonResponse({
-      is_ceremony_query_open: !!(st as Record<string, unknown> | null)?.is_ceremony_query_open,
-      ceremony_query_open_date: (st as Record<string, unknown> | null)?.ceremony_query_open_date ?? null,
+      is_ceremony_query_open: !!(settings as Record<string, unknown>).is_ceremony_query_open,
+      ceremony_query_open_date: (settings as Record<string, unknown>).ceremony_query_open_date ?? null,
     }, 200, origin, 60);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';

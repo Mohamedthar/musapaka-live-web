@@ -12,18 +12,21 @@ export async function GET(request: Request) {
     }
 
     const supabase = getAdminClient();
-    const { data: settings, error } = await supabase.rpc('public_get_registration_status');
+    const { data: settings, error } = await supabase
+      .from('app_settings')
+      .select('is_result_query_open, result_query_open_date')
+      .eq('id', 1)
+      .single();
 
-    if (error) {
-      return jsonResponse({ error: 'حدث خطأ في قراءة الإعدادات' }, 500, origin);
+    if (error || !settings) {
+      return jsonResponse({ is_result_query_open: false, result_query_open_date: null }, 200, origin, 60);
     }
 
-    const st = settings as Record<string, unknown> | null;
     return jsonResponse(
       {
         success: true,
-        is_result_query_open: !!(st as Record<string, unknown> | null)?.is_result_query_open,
-        result_query_open_date: (st as Record<string, unknown> | null)?.result_query_open_date ?? null,
+        is_result_query_open: !!(settings as Record<string, unknown>).is_result_query_open,
+        result_query_open_date: (settings as Record<string, unknown>).result_query_open_date ?? null,
       },
       200,
       origin,
@@ -55,30 +58,39 @@ export async function POST(request: Request) {
     }
 
     const supabase = getAdminClient();
-    const { data, error } = await supabase.rpc('public_lookup_result', {
-      p_national_id: String(nationalId),
-    });
+
+    const [studentRes, levelsRes] = await Promise.all([
+      supabase.rpc('public_lookup_result', { p_national_id: String(nationalId) }),
+      supabase
+        .from('competition_levels')
+        .select('id, title, content, is_active, total_points, has_rewaya, rewaya_max_score, has_tajweed, tajweed_max_score, has_voice, voice_max_score, has_meaning, meaning_max_score')
+        .eq('is_active', true),
+    ]);
+
+    const { data, error } = studentRes;
+    const { data: levels } = levelsRes;
 
     if (error) {
       return jsonResponse({ error: 'حدث خطأ في قاعدة البيانات أثناء البحث' }, 500, origin);
     }
 
-    const result = data as Record<string, unknown> | null;
-    if (!result) {
+    const student = Array.isArray(data) ? data[0] : data;
+    if (!student) {
       return jsonResponse({ error: 'لم يُعثر على متسابق بهذا الرقم القومي.' }, 404, origin);
     }
 
-    if (result.error) {
-      return jsonResponse(result, !!(result as Record<string, unknown>).closed ? 403 : 400, origin);
+    if (student.error) {
+      return jsonResponse(student, !!(student as Record<string, unknown>).closed ? 403 : 400, origin);
     }
 
-    // RPC returns flat object: extract level_info and restructure
-    const { level_info, ...studentData } = result as Record<string, unknown> & { level_info?: Record<string, unknown> };
+    const level = (levels as Array<Record<string, unknown>> | null)?.find(
+      l => l.title === (student as Record<string, unknown>).level
+    ) ?? null;
 
     return jsonResponse({
       success: true,
-      student: studentData,
-      level: level_info ?? {},
+      student,
+      level,
     }, 200, origin);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';
