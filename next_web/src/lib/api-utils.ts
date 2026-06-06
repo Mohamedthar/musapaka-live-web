@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server';
 function getAllowedOrigins(): string[] {
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/+$/, '');
   const extraOrigins = (process.env.EXTRA_CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
-  return [siteUrl, ...extraOrigins].filter(Boolean) as string[];
+  const localhostOrigins = ['http://localhost:3000', 'http://localhost:3001'];
+  return [...new Set([siteUrl, ...extraOrigins, ...localhostOrigins].filter(Boolean))] as string[];
 }
 
 function originMatches(allowed: string, origin: string): boolean {
