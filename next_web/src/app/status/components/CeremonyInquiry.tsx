@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  CreditCard, CalendarCheck, User, Search, AlertTriangle, Download, X, Layers, FileText, Hash, Sparkles
+  CreditCard, CalendarCheck, User, Search, AlertTriangle, Download, X, Layers, FileText, Hash, Sparkles, Phone
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ClosedState from '@/components/ClosedState';
@@ -16,6 +16,7 @@ interface CeremonyData {
 
 export default function CeremonyInquiry() {
   const [nationalId, setNationalId] = useState('');
+  const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState('');
@@ -54,9 +55,10 @@ export default function CeremonyInquiry() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!idValid) { setError('الرقم القومي يجب أن يتكون من 14 رقماً'); return; }
+    if (!phone || phone.length < 10) { setError('رقم الهاتف مطلوب'); return; }
     setError(''); setNotFound(false); setLoading(true); setSearched(true); setData(null);
     try {
-      const r = await fetch('/api/ceremony', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nationalId }) });
+      const r = await fetch('/api/ceremony', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nationalId, phone }) });
       const d = await r.json();
       if (!r.ok) {
         const msg = d.error || 'حدث خطأ';
@@ -69,7 +71,7 @@ export default function CeremonyInquiry() {
     finally { setLoading(false); }
   };
 
-  const handleReset = () => { setData(null); setSearched(false); setError(''); setNotFound(false); setNationalId(''); };
+  const handleReset = () => { setData(null); setSearched(false); setError(''); setNotFound(false); setNationalId(''); setPhone(''); };
 
 
   const captureTicket = async () => {
@@ -354,10 +356,20 @@ export default function CeremonyInquiry() {
               {searched && !idValid && <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="text-red-500 text-xs font-bold mt-1.5">الرقم القومي يجب أن يتكون من 14 رقماً</motion.p>}
             </AnimatePresence>
           </div>
+          <div>
+            <label className="block text-sm font-bold text-on-surface mb-2">رقم الهاتف<span className="text-red-400 mr-1">*</span></label>
+            <div className="relative">
+              <input type="text" inputMode="tel" maxLength={11} value={phone}
+                onChange={e => { setPhone(e.target.value.replace(/\D/g, '')); setSearched(false); setError(''); }}
+                placeholder="01xxxxxxxxx"
+                className="block w-full border rounded-xl py-3 pr-11 pl-3 text-sm font-bold outline-none transition-all border-outline-variant/30 bg-surface text-on-surface placeholder:text-on-surface-variant/30 hover:border-outline-variant/60 focus:border-primary focus:bg-white focus:shadow-sm focus:ring-2 focus:ring-primary/15" />
+              <Phone size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30" />
+            </div>
+          </div>
           <AnimatePresence>
             {error && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="bg-red-50/80 border border-red-200/60 rounded-xl px-4 py-3 shadow-sm"><p className="text-red-600 text-xs font-bold text-center">{error}</p></motion.div>}
           </AnimatePresence>
-          <button type="submit" disabled={loading || !idValid} className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm text-white bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
+          <button type="submit" disabled={loading || !idValid || !phone} className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm text-white bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
             {loading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Search size={16} /><span>استخراج بطاقة الدعوة</span></>}
           </button>
         </div>
