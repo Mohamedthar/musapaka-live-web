@@ -14,15 +14,15 @@ dependencies:
   http: ^1.1.0
   image_picker: ^1.0.7
   cached_network_image: ^3.3.1
-  intl: ^0.19.0
+  intl: ^0.20.2
   supabase_flutter: ^2.12.4
-  shared_preferences: ^2.3.0
+  shared_preferences: ^2.5.5
   file_picker: ^11.0.2
   image: ^4.8.0
   printing: ^5.14.3
-  pdf: ^3.11.0
-  syncfusion_flutter_xlsio: ^26.2.0
-  syncfusion_officechart: ^26.2.0
+  pdf: ^3.12.0
+  syncfusion_flutter_xlsio: ^33.2.5
+  syncfusion_officechart: ^33.2.5
   path_provider: ^2.1.5
   path: ^1.9.0
 
