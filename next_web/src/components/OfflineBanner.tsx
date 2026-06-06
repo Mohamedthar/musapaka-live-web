@@ -6,9 +6,9 @@ import { useOnline } from '@/hooks/useOnline';
 
 function useMounted() {
   return useSyncExternalStore(
+    () => () => {},
     () => true,
     () => false,
-    () => true,
   );
 }
 
