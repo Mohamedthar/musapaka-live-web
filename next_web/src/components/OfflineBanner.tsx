@@ -1,10 +1,19 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useSyncExternalStore } from 'react';
 import { WifiOff, X } from 'lucide-react';
 import { useOnline } from '@/hooks/useOnline';
 
+function useMounted() {
+  return useSyncExternalStore(
+    () => true,
+    () => false,
+    () => true,
+  );
+}
+
 export default function OfflineBanner() {
+  const mounted = useMounted();
   const { online, wasOffline, dismiss } = useOnline();
 
   useEffect(() => {
@@ -17,6 +26,8 @@ export default function OfflineBanner() {
       document.documentElement.style.setProperty('--online-banner-h', '0px');
     };
   }, [online]);
+
+  if (!mounted) return null;
 
   return (
     <>
