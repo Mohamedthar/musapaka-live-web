@@ -39,6 +39,7 @@ export async function POST(request: Request) {
     const { data: levels } = levelsRes;
 
     if (studentError) {
+      console.error('[inquiry] studentError:', studentError);
       return jsonResponse({ error: 'حدث خطأ في قاعدة البيانات أثناء البحث' }, 500, origin);
     }
 
@@ -53,6 +54,7 @@ export async function POST(request: Request) {
       levels: levels || [],
     }, 200, origin);
   } catch (error: unknown) {
+    console.error('[inquiry]', error);
     const message = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';
     return jsonResponse({ error: message }, 500, origin);
   }
