@@ -20,7 +20,7 @@ dependencies:
   file_picker: ^11.0.2
   image: ^4.8.0
   printing: ^5.14.3
-  pdf: ^3.12.0
+  pdf: ^3.11.0
   syncfusion_flutter_xlsio: ^33.2.5
   syncfusion_officechart: ^33.2.5
   path_provider: ^2.1.5
