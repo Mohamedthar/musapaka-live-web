@@ -24,6 +24,8 @@ export interface CompetitionLevel {
   second_prize?: string | null;
   third_prize?: string | null;
   prizes?: string | null;
+  age_op?: string | null;
+  birth_year_op?: string | null;
 }
 
 export interface StudentStatus {

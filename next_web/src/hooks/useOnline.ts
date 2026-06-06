@@ -1,31 +1,37 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export function useOnline() {
-  const [online, setOnline] = useState(true);
+  const [online, setOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [wasOffline, setWasOffline] = useState(false);
+  const wasOfflineRef = useRef(false);
 
   useEffect(() => {
     const goOnline = () => {
       setOnline(true);
-      if (wasOffline) setTimeout(() => setWasOffline(false), 3000);
+      if (wasOfflineRef.current) {
+        setTimeout(() => setWasOffline(false), 3000);
+      }
     };
     const goOffline = () => {
       setOnline(false);
+      wasOfflineRef.current = true;
       setWasOffline(true);
     };
 
-    setOnline(navigator.onLine);
     window.addEventListener('online', goOnline);
     window.addEventListener('offline', goOffline);
     return () => {
       window.removeEventListener('online', goOnline);
       window.removeEventListener('offline', goOffline);
     };
-  }, [wasOffline]);
+  }, []);
 
-  const dismiss = useCallback(() => setWasOffline(false), []);
+  const dismiss = useCallback(() => {
+    wasOfflineRef.current = false;
+    setWasOffline(false);
+  }, []);
 
   return { online, wasOffline, dismiss };
 }

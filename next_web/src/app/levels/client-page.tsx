@@ -19,7 +19,7 @@ export default function LevelsClient({ initialLevels, initialError }: Props) {
   const [error, setError] = useState<string | null>(initialError);
 
   const formatAge = (l: CompetitionLevel) => {
-    const op = (l as any).age_op || (l as any).birth_year_op;
+    const op = l.age_op || l.birth_year_op;
     if (op === 'gt') return `السن > ${l.min_age}`;
     if (op === 'gte') return `السن ≥ ${l.min_age}`;
     if (op === 'lt') return `السن < ${l.max_age}`;
