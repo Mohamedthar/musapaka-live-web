@@ -10,7 +10,7 @@ export async function POST(request: Request) {
       return jsonResponse({ error: 'طلب غير مصرح به' }, 403, origin);
     }
     const body = await request.json();
-    const { nationalId, phone } = body;
+    const { nationalId } = body;
 
     const ip = getClientIp(request);
     if (!checkRateLimit(ip, 10)) {
@@ -21,14 +21,10 @@ export async function POST(request: Request) {
       return jsonResponse({ error: 'الرقم القومي يجب أن يتكون من 14 رقماً' }, 400, origin);
     }
 
-    if (!phone || !/^(010|011|012|015)\d{8}$/.test(String(phone).trim())) {
-      return jsonResponse({ error: 'رقم الهاتف المصري غير صحيح' }, 400, origin);
-    }
-
     const supabase = getAdminClient();
 
     const [studentRes, levelsRes] = await Promise.all([
-      supabase.rpc('public_lookup_student', { p_national_id: String(nationalId), p_phone: String(phone).trim() }),
+      supabase.rpc('public_lookup_student', { p_national_id: String(nationalId) }),
       supabase
         .from('competition_levels')
         .select('id, title, content, is_active, total_points, has_rewaya, rewaya_max_score, has_tajweed, tajweed_max_score, has_voice, voice_max_score, has_meaning, meaning_max_score')

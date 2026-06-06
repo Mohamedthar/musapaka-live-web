@@ -48,19 +48,15 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { nationalId, phone } = body;
+    const { nationalId } = body;
 
     if (!nationalId || String(nationalId).length !== 14) {
       return jsonResponse({ error: 'الرقم القومي يجب أن يتكون من 14 رقماً' }, 400, origin);
-    }
-    if (!phone || String(phone).length < 10) {
-      return jsonResponse({ error: 'رقم الهاتف مطلوب' }, 400, origin);
     }
 
     const supabase = getAdminClient();
     const { data, error } = await supabase.rpc('public_lookup_result', {
       p_national_id: String(nationalId),
-      p_phone: String(phone),
     });
 
     if (error) {

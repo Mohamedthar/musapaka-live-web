@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CreditCard, Award, Search, AlertTriangle, Phone } from 'lucide-react';
+import { CreditCard, Award, Search, AlertTriangle } from 'lucide-react';
 import ClosedState from '@/components/ClosedState';
 
 interface StudentData {
@@ -19,7 +19,6 @@ interface LevelData {
 
 export default function ResultInquiry() {
   const [nationalId, setNationalId] = useState('');
-  const [phone, setPhone] = useState('');
   const [isOpen, setIsOpen] = useState<boolean | null>(null);
   const [timing, setTiming] = useState<{ openDate?: string | null; closeDate?: string | null } | undefined>();
   const [checkingStatus, setCheckingStatus] = useState(true);
@@ -40,10 +39,9 @@ export default function ResultInquiry() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (nationalId.length !== 14) { setError('الرقم القومي يجب أن يتكون من 14 رقماً'); return; }
-    if (!phone || phone.length < 10) { setError('رقم الهاتف مطلوب'); return; }
     setError(''); setNotFound(false); setLoading(true); setSearched(true); setStudent(null); setLevel(null);
     try {
-      const r = await fetch('/api/result', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nationalId, phone }) });
+      const r = await fetch('/api/result', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nationalId }) });
       const d = await r.json();
       if (!r.ok) {
         const msg = d.error || 'حدث خطأ';
@@ -56,7 +54,7 @@ export default function ResultInquiry() {
     finally { setLoading(false); }
   };
 
-  const handleReset = () => { setStudent(null); setLevel(null); setSearched(false); setError(''); setNotFound(false); setNationalId(''); setPhone(''); };
+  const handleReset = () => { setStudent(null); setLevel(null); setSearched(false); setError(''); setNotFound(false); setNationalId(''); };
 
   if (checkingStatus) {
     return <div className="flex items-center justify-center py-20"><div className="w-8 h-8 border-3 border-primary/25 border-t-primary rounded-full animate-spin" /></div>;
@@ -173,20 +171,10 @@ export default function ResultInquiry() {
               {searched && nationalId.length !== 14 && <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="text-red-500 text-xs font-bold mt-1.5">الرقم القومي يجب أن يتكون من 14 رقماً</motion.p>}
             </AnimatePresence>
           </div>
-          <div>
-            <label className="block text-sm font-bold text-on-surface mb-2">رقم الهاتف<span className="text-red-400 mr-1">*</span></label>
-            <div className="relative">
-              <input type="text" inputMode="tel" maxLength={11} value={phone}
-                onChange={e => { setPhone(e.target.value.replace(/\D/g, '')); setSearched(false); setError(''); }}
-                placeholder="01xxxxxxxxx"
-                className="block w-full border rounded-xl py-3 pr-11 pl-3 text-sm font-bold outline-none transition-all border-outline-variant/30 bg-surface text-on-surface placeholder:text-on-surface-variant/30 hover:border-outline-variant/60 focus:border-primary focus:bg-white focus:shadow-sm focus:ring-2 focus:ring-primary/15" />
-              <Phone size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30" />
-            </div>
-          </div>
           <AnimatePresence>
             {error && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="bg-red-50/80 border border-red-200/60 rounded-xl px-4 py-3 shadow-sm"><p className="text-red-600 text-xs font-bold text-center">{error}</p></motion.div>}
           </AnimatePresence>
-          <button type="submit" disabled={loading || nationalId.length !== 14 || !phone} className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm text-white bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
+          <button type="submit" disabled={loading || nationalId.length !== 14} className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm text-white bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
             {loading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Search size={16} /><span>استعلام عن النتيجة</span></>}
           </button>
         </div>

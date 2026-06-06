@@ -791,7 +791,7 @@ GRANT EXECUTE ON FUNCTION retrieve_student_code(TEXT, TEXT) TO authenticated;
 -- -------------------------------------------------------------------
 DROP FUNCTION IF EXISTS public_lookup_student(TEXT);
 DROP FUNCTION IF EXISTS public_lookup_student(TEXT, TEXT);
-CREATE OR REPLACE FUNCTION public_lookup_student(p_national_id TEXT, p_phone TEXT DEFAULT NULL)
+CREATE OR REPLACE FUNCTION public_lookup_student(p_national_id TEXT)
 RETURNS TABLE (
     id                INTEGER,
     name              TEXT,
@@ -820,19 +820,18 @@ BEGIN
         cl.level_code
     FROM students s
     LEFT JOIN competition_levels cl ON cl.id = s.level_id
-    WHERE s.national_id = p_national_id
-      AND (p_phone IS NULL OR s.phone = p_phone);
+    WHERE s.national_id = p_national_id;
 END;
 $$;
 
-REVOKE EXECUTE ON FUNCTION public_lookup_student(TEXT, TEXT) FROM anon;
-GRANT EXECUTE ON FUNCTION public_lookup_student(TEXT, TEXT) TO authenticated;
+REVOKE EXECUTE ON FUNCTION public_lookup_student(TEXT) FROM anon;
+GRANT EXECUTE ON FUNCTION public_lookup_student(TEXT) TO authenticated;
 
 -- -------------------------------------------------------------------
 -- 7.2 نتيجة طالب — public_lookup_result
 -- -------------------------------------------------------------------
 DROP FUNCTION IF EXISTS public_lookup_result(TEXT, TEXT);
-CREATE OR REPLACE FUNCTION public_lookup_result(p_national_id TEXT, p_phone TEXT)
+CREATE OR REPLACE FUNCTION public_lookup_result(p_national_id TEXT)
 RETURNS TABLE (
     id                INTEGER,
     name              TEXT,
@@ -866,17 +865,17 @@ BEGIN
         cl.level_code, cl.first_prize, cl.second_prize, cl.third_prize, cl.max_score
     FROM students s
     LEFT JOIN competition_levels cl ON cl.id = s.level_id
-    WHERE s.national_id = p_national_id AND s.phone = p_phone;
+    WHERE s.national_id = p_national_id;
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public_lookup_result(TEXT, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public_lookup_result(TEXT) TO anon, authenticated;
 
 -- -------------------------------------------------------------------
 -- 7.3 استعلام الحفل — public_lookup_ceremony
 -- -------------------------------------------------------------------
 DROP FUNCTION IF EXISTS public_lookup_ceremony(TEXT, TEXT);
-CREATE OR REPLACE FUNCTION public_lookup_ceremony(p_national_id TEXT, p_phone TEXT)
+CREATE OR REPLACE FUNCTION public_lookup_ceremony(p_national_id TEXT)
 RETURNS TABLE (
     id                INTEGER,
     name              TEXT,
@@ -909,12 +908,11 @@ BEGIN
     FROM students s
     LEFT JOIN competition_levels cl ON cl.id = s.level_id
     WHERE s.national_id = p_national_id
-      AND s.phone = p_phone
       AND s.ceremony_code IS NOT NULL;
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public_lookup_ceremony(TEXT, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public_lookup_ceremony(TEXT) TO anon, authenticated;
 
 -- -------------------------------------------------------------------
 -- 7.4 حالة التسجيل — public_get_registration_status

@@ -13,7 +13,6 @@ const Step5Success = dynamic(() => import('@/app/register/components/Step5Succes
 export default function FormInquiry() {
   const [mounted, setMounted] = useState(false);
   const [nationalId, setNationalId] = useState('');
-  const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState('');
@@ -25,13 +24,11 @@ export default function FormInquiry() {
   useEffect(() => { queueMicrotask(() => setMounted(true)); }, []);
 
   const idValid = nationalId.length === 14;
-  const phoneValid = /^(010|011|012|015)\d{8}$/.test(phone.trim());
-  const canSubmit = idValid && phoneValid && !loading;
+  const canSubmit = idValid && !loading;
 
   const handleInquiry = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!idValid) { setError('الرقم القومي يجب أن يتكون من 14 رقماً'); return; }
-    if (!phoneValid) { setError('رقم الهاتف المصري غير صحيح'); return; }
 
     setError('');
     setNotFound(false);
@@ -43,7 +40,7 @@ export default function FormInquiry() {
       const response = await fetch('/api/inquiry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nationalId, phone: phone.trim() }),
+        body: JSON.stringify({ nationalId }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -67,7 +64,6 @@ export default function FormInquiry() {
   const handleNewSearch = () => {
     setStudentData(null); setSearched(false); setError(''); setNotFound(false);
     setNationalId('');
-    setPhone('');
   };
 
   const captureElement = async (id: string): Promise<HTMLCanvasElement | null> => {
@@ -306,7 +302,7 @@ export default function FormInquiry() {
           استعلام الاستمارة وموعد الاختبار
         </h1>
         <p className="text-sm sm:text-base text-on-surface-variant/70 mt-2 font-semibold">
-          أدخل الرقم القومي ورقم الهاتف لعرض استمارة القبول وموعد الاختبار
+          أدخل الرقم القومي لعرض استمارة القبول وموعد الاختبار
         </p>
       </div>
 
@@ -321,7 +317,7 @@ export default function FormInquiry() {
           >
             <AlertTriangle size={20} className="mx-auto text-amber-500 mb-2" />
             <p className="text-amber-800 font-bold text-sm mb-0.5">لم يتم العثور على المتسابق</p>
-            <p className="text-amber-600 text-xs font-semibold">تأكد من صحة الرقم القومي ورقم الهاتف المدخل</p>
+            <p className="text-amber-600 text-xs font-semibold">تأكد من صحة الرقم القومي المدخل</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -359,41 +355,6 @@ export default function FormInquiry() {
                   className="text-red-500 text-xs font-bold mt-1.5"
                 >
                   الرقم القومي يجب أن يتكون من 14 رقماً
-                </motion.p>
-              )}
-            </AnimatePresence>
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-on-surface mb-2">
-              رقم الهاتف
-              <span className="text-red-400 mr-1">*</span>
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={11}
-                value={phone}
-                onChange={e => { setPhone(e.target.value.replace(/\D/g, '')); setSearched(false); setError(''); setNotFound(false); }}
-                placeholder="01xxxxxxxxx"
-                className={`block w-full min-w-0 border rounded-xl py-3 pr-11 pl-3 text-sm font-bold outline-none transition-all
-                  ${searched && !phoneValid
-                    ? 'border-red-300 bg-red-50 text-red-900'
-                    : 'border-outline-variant/30 bg-surface text-on-surface placeholder:text-on-surface-variant/30 hover:border-outline-variant/60 focus:border-primary focus:bg-white focus:shadow-sm focus:ring-2 focus:ring-primary/15'
-                  }`}
-              />
-              <svg className={`absolute right-4 top-1/2 -translate-y-1/2 ${searched && !phoneValid ? 'text-red-400' : 'text-on-surface-variant/30'}`} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            </div>
-            <AnimatePresence>
-              {searched && !phoneValid && phone.length > 0 && (
-                <motion.p
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  className="text-red-500 text-xs font-bold mt-1.5"
-                >
-                  رقم الهاتف المصري يجب أن يتكون من 11 رقماً ويبدأ بـ 010 أو 011 أو 012 أو 015
                 </motion.p>
               )}
             </AnimatePresence>
