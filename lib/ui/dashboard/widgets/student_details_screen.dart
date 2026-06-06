@@ -63,7 +63,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        AppTheme.showSnack(context, 'حدث خطأ: $e', color: AppTheme.errorColor);
+        AppTheme.showError(context, e, contextLabel: 'حفظ الدرجة');
       }
     } finally {
       setState(() => _isLoading = false);

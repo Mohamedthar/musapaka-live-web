@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/error/error_handler.dart';
 
 class AuthRepository {
   final SupabaseClient _client = Supabase.instance.client;
@@ -33,7 +34,7 @@ class AuthRepository {
     } on AuthException {
       rethrow;
     } catch (e) {
-      throw Exception('فشل تسجيل الدخول: $e');
+      throw Exception('فشل تسجيل الدخول: ${AppErrorHandler.extractMessage(e)}');
     }
   }
 

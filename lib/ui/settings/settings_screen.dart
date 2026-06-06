@@ -82,7 +82,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (!mounted) return;
       if (row != null) _apply(row);
     } catch (e) {
-      if (mounted) AppTheme.showSnack(context, 'تعذر تحميل الإعدادات: $e', color: AppTheme.errorColor);
+      if (mounted) AppTheme.showError(context, e, contextLabel: 'تحميل الإعدادات');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -187,7 +187,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await _load();
       if (mounted) AppTheme.showSnack(context, 'تم حفظ إعدادات النظام بنجاح ✓');
     } catch (e) {
-      if (mounted) AppTheme.showSnack(context, 'تعذر الحفظ: $e', color: AppTheme.errorColor);
+      if (mounted) AppTheme.showError(context, e, contextLabel: 'حفظ الإعدادات');
     } finally {
       if (mounted) setState(() => _saving = false);
     }

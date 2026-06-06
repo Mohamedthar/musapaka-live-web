@@ -50,7 +50,7 @@ class LevelsScreenState extends State<LevelsScreen> {
       final counts = await _service.getStudentsCountPerLevel();
       if (mounted) setState(() { _levels = levels; _studentCounts = counts; _isLoading = false; });
     } catch (e) {
-      if (mounted) { setState(() => _isLoading = false); _snack('خطأ: $e', Colors.red); }
+      if (mounted) { setState(() => _isLoading = false); _showError(e, 'تحميل المستويات'); }
     }
   }
 
@@ -64,6 +64,10 @@ class LevelsScreenState extends State<LevelsScreen> {
 
   void _snack(String msg, [Color color = Colors.green]) {
     AppTheme.showSnack(context, msg, color: color);
+  }
+
+  void _showError(dynamic e, [String? label]) {
+    AppTheme.showError(context, e, contextLabel: label);
   }
 
   void onToggleAddPanel() {
@@ -158,7 +162,7 @@ class LevelsScreenState extends State<LevelsScreen> {
         _selectedIds.clear();
         _load();
       } catch (e) {
-        _snack('خطأ أثناء الحذف: $e', Colors.red);
+        _showError(e, 'حذف المستوى');
       } finally {
         setState(() => _bulkDeleting = false);
       }
@@ -177,7 +181,7 @@ class LevelsScreenState extends State<LevelsScreen> {
       _selectedIds.clear();
       _load();
     } catch (e) {
-      _snack('خطأ أثناء التحديث: $e', Colors.red);
+      _showError(e, 'تحديث المستوى');
     } finally {
       setState(() => _bulkUpdating = false);
     }
@@ -273,7 +277,7 @@ class LevelsScreenState extends State<LevelsScreen> {
       final path = await exportService.saveFile(bytes, fileName, 'xlsx');
       if (path != null && mounted) _snack('تم تصدير Excel بنجاح ✓');
     } catch (e) {
-      if (mounted) _snack('خطأ في التصدير: $e', Colors.red);
+      if (mounted) _showError(e, 'تصدير Excel');
     }
   }
 
@@ -365,7 +369,7 @@ class LevelsScreenState extends State<LevelsScreen> {
       );
       await exportService.printPdf(bytes);
     } catch (e) {
-      if (mounted) _snack('خطأ في تصدير PDF: $e', Colors.red);
+      if (mounted) _showError(e, 'تصدير PDF');
     }
   }
 
@@ -399,7 +403,7 @@ class LevelsScreenState extends State<LevelsScreen> {
               _load();
               if (ctx.mounted) Navigator.pop(ctx);
               setState(() => _showSidePanel = false);
-            } catch (e) { _snack('خطأ: $e', Colors.red); }
+                    } catch (e) { _showError(e, 'حفظ المستوى'); }
             finally { if (mounted) setState(() => _isSaving = false); }
           },
           isSaving: _isSaving,
@@ -521,7 +525,7 @@ class LevelsScreenState extends State<LevelsScreen> {
                       _snack('تم الحفظ بنجاح');
                       _load();
                       setState(() => _showSidePanel = false);
-                    } catch (e) { _snack('خطأ: $e', Colors.red); }
+            } catch (e) { _showError(e, 'حفظ المستوى'); }
                     finally { setState(() => _isSaving = false); }
                   },
                   isSaving: _isSaving,

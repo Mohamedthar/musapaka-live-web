@@ -85,7 +85,7 @@ class _RegistrationFormContentState extends State<RegistrationFormContent> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoadingLevels = false);
-        AppTheme.showSnack(context, 'خطأ في تحميل المستويات: $e', color: AppTheme.errorColor);
+        AppTheme.showError(context, e, contextLabel: 'تحميل المستويات');
       }
     }
   }
@@ -321,7 +321,7 @@ class _RegistrationFormContentState extends State<RegistrationFormContent> {
         widget.onSuccess?.call(createdStudent);
       }
     } catch (e) {
-      if (mounted) AppTheme.showSnack(context, 'خطأ: $e', color: AppTheme.errorColor);
+      if (mounted) AppTheme.showError(context, e, contextLabel: 'تسجيل المتسابق');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/error/error_handler.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/utils/ranking_utils.dart';
@@ -127,7 +128,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = 'حدث خطأ أثناء تحميل البيانات: $e';
+        _error = AppErrorHandler.classify(e, context: 'تحميل البيانات').userMessage;
         _isLoading = false;
         _needsRecompute = true;
       });
@@ -271,8 +272,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        AppTheme.showSnack(context, 'خطأ أثناء التصدير: $e',
-            color: Colors.red);
+        AppTheme.showError(context, e, contextLabel: 'تصدير النتائج');
       }
     }
   }
@@ -297,11 +297,20 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   void _generateCeremonyCodes() async {
+    if (_allStudents.isEmpty) {
+      AppTheme.showSnack(context, 'لا يوجد طلاب مسجلين في النظام. قم بإضافة طلاب أولاً.', color: Colors.orange);
+      return;
+    }
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('تأكيد توليد الأكواد', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, color: _primary)),
-        content: const Text('هل أنت متأكد من رغبتك في توليد أكواد الحفل لجميع الطلاب المتفوقين (95% فأكثر)؟\nسيتم استبدال أي أكواد قديمة إن وجدت.', style: TextStyle(fontFamily: 'Cairo')),
+        content: const Text('سيتم توليد أكواد الحفل لجميع الطلاب حسب الترتيب:\n'
+            '• المستويات 1-9: الناجح (95%+) → منصة (S)\n'
+            '• المستويات 10-19: أول 3 مراكز → منصة (S)\n'
+            '• الصيغة: جنس-مستوى-مكان-رقم',
+            style: TextStyle(fontFamily: 'Cairo', fontSize: 13)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(
@@ -323,10 +332,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     try {
       await _service.generateCeremonyCodes();
       await _loadData();
-      if (mounted) AppTheme.showSnack(context, 'تم توليد الأكواد بنجاح!', color: Colors.green);
+      if (mounted) AppTheme.showSnack(context, 'تم توليد أكواد الحفل بنجاح!', color: Colors.green);
     } catch (e) {
       if (mounted) {
-        AppTheme.showSnack(context, 'خطأ: $e', color: Colors.red);
+        AppTheme.showError(context, e, contextLabel: 'توليد أكواد الحفل');
         setState(() => _isLoading = false);
       }
     }

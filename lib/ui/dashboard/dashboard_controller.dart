@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../../data/models/student.dart';
 import '../../data/models/competition_level.dart';
 import '../../services/supabase_service.dart';
+import '../../core/error/error_handler.dart';
 
 class DashboardController extends ChangeNotifier {
   final SupabaseService _service = SupabaseService();
@@ -30,7 +31,7 @@ class DashboardController extends ChangeNotifier {
       _students = results[0] as List<Student>;
       _levels = results[1] as List<CompetitionLevel>;
     } catch (e) {
-      _error = 'فشل في تحميل البيانات: $e';
+      _error = AppErrorHandler.classify(e, context: 'تحميل البيانات').userMessage;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -42,7 +43,7 @@ class DashboardController extends ChangeNotifier {
       _students = await _service.getAllStudents();
       notifyListeners();
     } catch (e) {
-      _error = 'فشل في تحديث الطلاب: $e';
+      _error = AppErrorHandler.classify(e, context: 'تحديث الطلاب').userMessage;
       notifyListeners();
     }
   }
@@ -52,7 +53,7 @@ class DashboardController extends ChangeNotifier {
       _levels = await _service.getLevels();
       notifyListeners();
     } catch (e) {
-      _error = 'فشل في تحديث المستويات: $e';
+      _error = AppErrorHandler.classify(e, context: 'تحديث المستويات').userMessage;
       notifyListeners();
     }
   }

@@ -731,7 +731,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
       if (mounted) AppTheme.showSnack(context, 'تم حذف المتسابقين بنجاح', color: Colors.red.shade700);
     } catch (e) {
-      if (mounted) AppTheme.showSnack(context, 'خطأ في الحذف: $e', color: AppTheme.errorColor);
+      if (mounted) AppTheme.showError(context, e, contextLabel: 'حذف المتسابقين');
     } finally {
     }
   }
@@ -761,7 +761,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (_exportFolderPath.isNotEmpty) Process.run('explorer.exe', [_exportFolderPath]);
       }
     } catch (e) {
-      if (mounted) AppTheme.showSnack(context, 'خطأ في التصدير: $e', color: AppTheme.errorColor);
+      if (mounted) AppTheme.showError(context, e, contextLabel: 'تصدير التقرير');
     }
   }
 
@@ -888,7 +888,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
       await exportService.printPdf(bytes);
     } catch (e) {
-      if (mounted) AppTheme.showSnack(context, 'خطأ في تصدير PDF: $e', color: AppTheme.errorColor);
+      if (mounted) AppTheme.showError(context, e, contextLabel: 'تصدير PDF');
     }
   }
 
@@ -906,7 +906,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (_exportFolderPath.isNotEmpty) Process.run('explorer.exe', [_exportFolderPath]);
       }
     } catch (e) {
-      if (mounted) AppTheme.showSnack(context, 'خطأ في الحفظ: $e', color: AppTheme.errorColor);
+      if (mounted) AppTheme.showError(context, e, contextLabel: 'حفظ التقرير');
     }
   }
 
@@ -929,7 +929,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (_exportFolderPath.isNotEmpty) Process.run('explorer.exe', [_exportFolderPath]);
       }
     } catch (e) {
-      if (mounted) AppTheme.showSnack(context, 'خطأ في الحفظ الجماعي: $e', color: AppTheme.errorColor);
+      if (mounted) AppTheme.showError(context, e, contextLabel: 'حفظ الاستمارات');
     }
   }
 

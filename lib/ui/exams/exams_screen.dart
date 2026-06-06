@@ -145,7 +145,7 @@ class _ExamsScreenState extends State<ExamsScreen> {
       widget.onRefresh();
     } catch (e) {
       if (!mounted) return;
-      AppTheme.showSnack(context, 'خطأ أثناء حفظ التقييم: $e', color: Colors.red);
+      AppTheme.showError(context, e, contextLabel: 'حفظ التقييم');
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }

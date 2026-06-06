@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/models/student.dart';
 import '../data/models/competition_level.dart';
 import '../core/constants/app_constants.dart';
+import '../core/error/error_handler.dart';
 
 class SupabaseService {
   final SupabaseClient _client = Supabase.instance.client;
@@ -22,7 +23,7 @@ class SupabaseService {
       final List<dynamic> data = await query;
       return data.map((json) => Student.fromJson(json)).toList();
     } catch (e) {
-      throw Exception('فشل في جلب البيانات: $e');
+      throw Exception('فشل في جلب البيانات: ${AppErrorHandler.extractMessage(e)}');
     }
   }
 
@@ -35,7 +36,7 @@ class SupabaseService {
           .single();
       return Student.fromJson(data);
     } catch (e) {
-      throw Exception('لم يتم العثور على الطالب أو فشل في الجلب: $e');
+      throw Exception('لم يتم العثور على الطالب أو فشل في الجلب: ${AppErrorHandler.extractMessage(e)}');
     }
   }
 
@@ -53,7 +54,7 @@ class SupabaseService {
       final data = await query;
       return (data as List).isNotEmpty;
     } catch (e) {
-      throw Exception('فشل في التحقق من الرقم القومي: $e');
+      throw Exception('فشل في التحقق من الرقم القومي: ${AppErrorHandler.extractMessage(e)}');
     }
   }
 
@@ -71,7 +72,7 @@ class SupabaseService {
       final data = await query;
       return (data as List).isNotEmpty;
     } catch (e) {
-      throw Exception('فشل في التحقق من الاسم: $e');
+      throw Exception('فشل في التحقق من الاسم: ${AppErrorHandler.extractMessage(e)}');
     }
   }
 
@@ -100,9 +101,9 @@ class SupabaseService {
         }
         throw Exception('بيانات مكررة - يرجى المحاولة مرة أخرى');
       }
-      throw Exception('فشل في انشاء الطالب: $e');
+      throw Exception('فشل في انشاء الطالب: ${AppErrorHandler.extractMessage(e)}');
     } catch (e) {
-      throw Exception('فشل في انشاء الطالب: $e');
+      throw Exception('فشل في انشاء الطالب: ${AppErrorHandler.extractMessage(e)}');
     }
   }
 
@@ -116,7 +117,7 @@ class SupabaseService {
           .single();
       return Student.fromJson(data);
     } catch (e) {
-      throw Exception('فشل في تحديث الطالب: $e');
+      throw Exception('فشل في تحديث الطالب: ${AppErrorHandler.extractMessage(e)}');
     }
   }
 
@@ -124,7 +125,7 @@ class SupabaseService {
     try {
       await _client.from(AppConstants.tableName).delete().eq('id', id);
     } catch (e) {
-      throw Exception('فشل في حذف الطالب: $e');
+      throw Exception('فشل في حذف الطالب: ${AppErrorHandler.extractMessage(e)}');
     }
   }
 
@@ -132,7 +133,7 @@ class SupabaseService {
     try {
       await _client.from(AppConstants.tableName).delete().inFilter('id', ids);
     } catch (e) {
-      throw Exception('فشل في الحذف الجماعي: $e');
+      throw Exception('فشل في الحذف الجماعي: ${AppErrorHandler.extractMessage(e)}');
     }
   }
 
@@ -140,7 +141,7 @@ class SupabaseService {
     try {
       await _client.from(AppConstants.tableName).update(updates).inFilter('id', ids);
     } catch (e) {
-      throw Exception('فشل في التحديث الجماعي: $e');
+      throw Exception('فشل في التحديث الجماعي: ${AppErrorHandler.extractMessage(e)}');
     }
   }
 
@@ -153,7 +154,7 @@ class SupabaseService {
           .count(CountOption.exact);
       return response.count ?? 0;
     } catch (e) {
-      throw Exception('فشل في التحقق من عدد الطلاب: $e');
+      throw Exception('فشل في التحقق من عدد الطلاب: ${AppErrorHandler.extractMessage(e)}');
     }
   }
 
@@ -171,7 +172,7 @@ class SupabaseService {
       }
       return counts;
     } catch (e) {
-      throw Exception('فشل في جلب عدد الطلاب لكل مستوى: $e');
+      throw Exception('فشل في جلب عدد الطلاب لكل مستوى: ${AppErrorHandler.extractMessage(e)}');
     }
   }
 
@@ -189,7 +190,7 @@ class SupabaseService {
       final data = await query;
       return (data as List).isNotEmpty;
     } catch (e) {
-      throw Exception('فشل في التحقق من اسم المستوى: $e');
+      throw Exception('فشل في التحقق من اسم المستوى: ${AppErrorHandler.extractMessage(e)}');
     }
   }
 
@@ -203,7 +204,7 @@ class SupabaseService {
           .order('id', ascending: true);
       return data.map((json) => CompetitionLevel.fromJson(json)).toList();
     } catch (e) {
-      throw Exception('فشل في جلب المستويات: $e');
+      throw Exception('فشل في جلب المستويات: ${AppErrorHandler.extractMessage(e)}');
     }
   }
 
@@ -216,7 +217,7 @@ class SupabaseService {
           .single();
       return CompetitionLevel.fromJson(data);
     } catch (e) {
-      throw Exception('فشل في اضافة المستوى: $e');
+      throw Exception('فشل في اضافة المستوى: ${AppErrorHandler.extractMessage(e)}');
     }
   }
 
@@ -233,7 +234,7 @@ class SupabaseService {
           .single();
       return CompetitionLevel.fromJson(result);
     } catch (e) {
-      throw Exception('فشل في تحديث المستوى: $e');
+      throw Exception('فشل في تحديث المستوى: ${AppErrorHandler.extractMessage(e)}');
     }
   }
 
@@ -241,7 +242,7 @@ class SupabaseService {
     try {
       await _client.from('competition_levels').delete().eq('id', id);
     } catch (e) {
-      throw Exception('فشل في حذف المستوى: $e');
+      throw Exception('فشل في حذف المستوى: ${AppErrorHandler.extractMessage(e)}');
     }
   }
 
@@ -249,7 +250,7 @@ class SupabaseService {
     try {
       await _client.from('competition_levels').delete().inFilter('id', ids);
     } catch (e) {
-      throw Exception('فشل في الحذف الجماعي للمستويات: $e');
+      throw Exception('فشل في الحذف الجماعي للمستويات: ${AppErrorHandler.extractMessage(e)}');
     }
   }
 
@@ -258,7 +259,7 @@ class SupabaseService {
       updates.remove('id');
       await _client.from('competition_levels').update(updates).inFilter('id', ids);
     } catch (e) {
-      throw Exception('فشل في التحديث الجماعي للمستويات: $e');
+      throw Exception('فشل في التحديث الجماعي للمستويات: ${AppErrorHandler.extractMessage(e)}');
     }
   }
 
@@ -272,7 +273,7 @@ class SupabaseService {
           .limit(1)
           .maybeSingle();
     } catch (e) {
-      throw Exception('فشل في جلب الإعدادات: $e');
+      throw Exception('فشل في جلب الإعدادات: ${AppErrorHandler.extractMessage(e)}');
     }
   }
 
@@ -286,7 +287,7 @@ class SupabaseService {
           .eq('id', 1)
           .select();
     } catch (e) {
-      throw Exception('فشل في حفظ الإعدادات: $e');
+      throw Exception('فشل في حفظ الإعدادات: ${AppErrorHandler.extractMessage(e)}');
     }
   }
 
@@ -296,8 +297,10 @@ class SupabaseService {
   Future<void> generateCeremonyCodes() async {
     try {
       await _client.rpc('generate_all_ceremony_codes');
+    } on PostgrestException catch (e) {
+      throw Exception(e.message);
     } catch (e) {
-      throw Exception('فشل في توليد أكواد الحفل: $e');
+      throw Exception('فشل في توليد أكواد الحفل');
     }
   }
 
@@ -314,7 +317,7 @@ class SupabaseService {
       if (e.toString().contains('الاستعلام عن حضور الحفل غير متاح')) {
         throw Exception('الاستعلام عن حضور الحفل غير متاح حالياً.');
       }
-      throw Exception('فشل في الاستعلام: $e');
+      throw Exception('فشل في الاستعلام: ${AppErrorHandler.extractMessage(e)}');
     }
   }
 }

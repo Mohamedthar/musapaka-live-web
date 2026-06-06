@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import '../error/error_handler.dart';
 
 class EnvConfig {
   static final Map<String, String> _values = {};
@@ -33,7 +34,7 @@ class EnvConfig {
 
       content = await foundFile.readAsString();
     } catch (e) {
-      throw Exception('فشل تحميل ملف البيئة .env: $e');
+      throw Exception('فشل تحميل ملف البيئة .env: ${AppErrorHandler.extractMessage(e)}');
     }
 
     for (final line in content.split('\n')) {

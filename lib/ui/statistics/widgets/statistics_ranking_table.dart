@@ -57,15 +57,15 @@ class StatisticsRankingTable extends StatelessWidget {
         final tableContent = Table(
           defaultVerticalAlignment: TableCellVerticalAlignment.middle,
           columnWidths: const {
-            0: FixedColumnWidth(52),   // #
-            1: FixedColumnWidth(140),  // الترتيب / المركز
+            0: FixedColumnWidth(44),   // #
+            1: FixedColumnWidth(120),  // الترتيب / المركز
             2: FlexColumnWidth(1.5),   // اسم المتسابق
-            3: FixedColumnWidth(100),  // كود الحفل
-            4: FixedColumnWidth(100),  // المحفوظ
+            3: FixedColumnWidth(140),  // كود الحفل
+            4: FixedColumnWidth(88),   // المحفوظ
             5: FlexColumnWidth(1.2),   // الهاتف
             6: FlexColumnWidth(1.5),   // الرقم القومي
-            7: FixedColumnWidth(140),  // الدرجة
-            8: FixedColumnWidth(120),  // النسبة
+            7: FixedColumnWidth(130),  // الدرجة
+            8: FixedColumnWidth(110),  // النسبة
           },
           children: [
             // ─── Header row (dark background, white text) ────────────────────
@@ -138,6 +138,7 @@ class StatisticsRankingTable extends StatelessWidget {
                   _td(
                     Text(
                       rs.student.ceremonyCode ?? '---',
+                      softWrap: false,
                       style: TextStyle(
                         fontFamily: 'monospace',
                         fontSize: 13,
@@ -304,6 +305,8 @@ class StatisticsRankingTable extends StatelessWidget {
                           ),
                           child: Text(
                             'كود الحفل: ${rs.student.ceremonyCode}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.bold, color: Colors.purple),
                           ),
                         ),
