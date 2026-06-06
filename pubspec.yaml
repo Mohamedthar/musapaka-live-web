@@ -21,8 +21,8 @@ dependencies:
   image: ^4.8.0
   printing: ^5.14.3
   pdf: ^3.11.0
-  syncfusion_flutter_xlsio: ^33.2.5
-  syncfusion_officechart: ^33.2.5
+  syncfusion_flutter_xlsio: ^26.2.0
+  syncfusion_officechart: ^26.2.0
   path_provider: ^2.1.5
   path: ^1.9.0
 
