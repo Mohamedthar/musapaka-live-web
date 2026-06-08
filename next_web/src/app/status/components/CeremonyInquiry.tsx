@@ -10,8 +10,10 @@ import ClosedState from '@/components/ClosedState';
 import confetti from 'canvas-confetti';
 
 interface CeremonyData {
-  name: string; gender: string; level: string; level_content: string;
-  ceremony_code: string; profile_image_url: string | null; is_eligible: boolean;
+  name: string; level: string; level_content: string;
+  ceremony_code: string; profile_image_url: string | null;
+  is_eligible: boolean; percentage: number;
+  total_score: number; max_score: number;
 }
 
 export default function CeremonyInquiry() {
@@ -237,7 +239,7 @@ export default function CeremonyInquiry() {
                 </div>
                 <h2 className="text-xl font-black text-slate-800 mb-2">نأسف، أنت غير مؤهل للحضور</h2>
                 <p className="text-sm font-bold text-slate-500 leading-relaxed">
-                  نسبتك أقل من 95% المطلوبة لحضور حفل التكريم.
+                  لم تحقق النسبة المطلوبة لحضور حفل التكريم.
                 </p>
               </div>
             </>

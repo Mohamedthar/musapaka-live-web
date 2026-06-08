@@ -58,19 +58,20 @@ export async function POST(request: Request) {
     });
 
     if (error) {
+      console.error('[ceremony] RPC error:', error);
       return jsonResponse({ error: 'حدث خطأ في قاعدة البيانات أثناء البحث' }, 500, origin);
     }
 
-    const result = data as Record<string, unknown> | null;
-    if (!result) {
+    const rows = data as Record<string, unknown>[] | null;
+    if (!rows || rows.length === 0) {
       return jsonResponse({ error: 'لم يُعثر على متسابق بهذا الرقم القومي.' }, 404, origin);
     }
 
-    if (result.error) {
-      return jsonResponse(result, !!(result as Record<string, unknown>).closed ? 403 : 400, origin);
+    if ((rows[0] as Record<string, unknown>).error) {
+      return jsonResponse(rows[0], !!(rows[0] as Record<string, unknown>).closed ? 403 : 400, origin);
     }
 
-    return jsonResponse({ success: true, student: result }, 200, origin);
+    return jsonResponse({ success: true, student: rows[0] }, 200, origin);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';
     return jsonResponse({ error: message }, 500, origin);
