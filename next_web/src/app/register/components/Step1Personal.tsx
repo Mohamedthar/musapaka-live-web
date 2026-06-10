@@ -110,42 +110,89 @@ export default function Step1Personal({
           />
 
           {/* تاريخ الميلاد + النوع */}
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 sm:col-span-2">
-          <div>
-            <label className="block text-sm font-bold text-primary mb-1.5">تاريخ الميلاد <span className="text-red-500">*</span></label>
-            <div className="relative">
-              <input
-                type="date"
-                value={formData.birthDate}
-                onChange={v => {
-                  setFormData((p) => ({ ...p, birthDate: v.target.value }));
-                  clearErr('birthDate');
-                }}
-                className={`w-full bg-white border-2 ${fieldErrors.birthDate ? 'border-amber-400' : 'border-primary/20'} rounded-xl py-[14px] px-3 sm:px-4 text-primary text-sm font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/8 transition-all shadow-sm`}
-                required
-              />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 sm:col-span-2">
+            <div>
+              <label className="block text-sm font-bold text-primary mb-1.5">تاريخ الميلاد <span className="text-red-500">*</span></label>
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                {/* اليوم */}
+                <div className="relative">
+                  <select
+                    value={formData.birthDate ? formData.birthDate.split('-')[2] : ''}
+                    onChange={e => {
+                      const parts = (formData.birthDate || '----').split('-');
+                      parts[2] = e.target.value.padStart(2, '0');
+                      setFormData((p) => ({ ...p, birthDate: parts.join('-') }));
+                      clearErr('birthDate');
+                    }}
+                    className={`w-full bg-white border-2 ${fieldErrors.birthDate ? 'border-amber-400' : 'border-primary/20'} rounded-xl py-[11px] px-1.5 sm:px-2 text-primary text-[13px] sm:text-sm font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/8 transition-all appearance-none shadow-sm cursor-pointer text-center`}
+                  >
+                    <option value="">اليوم</option>
+                    {Array.from({ length: 31 }, (_, i) => (
+                      <option key={i + 1} value={String(i + 1).padStart(2, '0')}>{i + 1}</option>
+                    ))}
+                  </select>
+                </div>
+                {/* الشهر */}
+                <div className="relative">
+                  <select
+                    value={formData.birthDate ? formData.birthDate.split('-')[1] : ''}
+                    onChange={e => {
+                      const parts = (formData.birthDate || '----').split('-');
+                      parts[1] = e.target.value.padStart(2, '0');
+                      setFormData((p) => ({ ...p, birthDate: parts.join('-') }));
+                      clearErr('birthDate');
+                    }}
+                    className={`w-full bg-white border-2 ${fieldErrors.birthDate ? 'border-amber-400' : 'border-primary/20'} rounded-xl py-[11px] px-1.5 sm:px-2 text-primary text-[13px] sm:text-sm font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/8 transition-all appearance-none shadow-sm cursor-pointer text-center`}
+                  >
+                    <option value="">الشهر</option>
+                    {['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'].map((m, i) => (
+                      <option key={i} value={String(i + 1).padStart(2, '0')}>{m}</option>
+                    ))}
+                  </select>
+                </div>
+                {/* السنة */}
+                <div className="relative">
+                  <select
+                    value={formData.birthDate ? formData.birthDate.split('-')[0] : ''}
+                    onChange={e => {
+                      const parts = (formData.birthDate || '----').split('-');
+                      parts[0] = e.target.value;
+                      setFormData((p) => ({ ...p, birthDate: parts.join('-') }));
+                      clearErr('birthDate');
+                    }}
+                    className={`w-full bg-white border-2 ${fieldErrors.birthDate ? 'border-amber-400' : 'border-primary/20'} rounded-xl py-[11px] px-1.5 sm:px-2 text-primary text-[13px] sm:text-sm font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/8 transition-all appearance-none shadow-sm cursor-pointer text-center`}
+                  >
+                    <option value="">السنة</option>
+                    {Array.from({ length: 80 }, (_, i) => {
+                      const y = new Date().getFullYear() - i;
+                      return <option key={y} value={y}>{y}</option>;
+                    })}
+                  </select>
+                </div>
+              </div>
+              {fieldErrors.birthDate && <p className="text-[11px] font-bold text-amber-600 mt-1 mr-1">{fieldErrors.birthDate}</p>}
             </div>
-            {fieldErrors.birthDate && <p className="text-[11px] font-bold text-amber-600 mt-1 mr-1">{fieldErrors.birthDate}</p>}
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-primary mb-1.5">النوع</label>
-            <div className="relative">
-              <select
-                value={formData.gender}
-                onChange={e => {
-                  setFormData((p) => ({ ...p, gender: e.target.value }));
-                  clearErr('gender');
-                }}
-                className={`w-full bg-white border-2 ${fieldErrors.gender ? 'border-amber-400' : 'border-primary/20'} rounded-xl py-[14px] px-3 sm:px-4 text-primary text-sm font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/8 transition-all appearance-none shadow-sm`}
-              >
-                <option value="" disabled>-- اختر النوع --</option>
-                <option value="ذكر">ذكر</option>
-                <option value="أنثى">أنثى</option>
-              </select>
-              <ChevronDown size={14} className="sm:size-[16px] absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-primary/30 pointer-events-none" />
+
+            {/* النوع */}
+            <div>
+              <label className="block text-sm font-bold text-primary mb-1.5">النوع</label>
+              <div className="relative">
+                <select
+                  value={formData.gender}
+                  onChange={e => {
+                    setFormData((p) => ({ ...p, gender: e.target.value }));
+                    clearErr('gender');
+                  }}
+                  className={`w-full bg-white border-2 ${fieldErrors.gender ? 'border-amber-400' : 'border-primary/20'} rounded-xl py-[11px] px-3 sm:px-4 text-primary text-sm font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/8 transition-all appearance-none shadow-sm`}
+                >
+                  <option value="" disabled>-- اختر النوع --</option>
+                  <option value="ذكر">ذكر</option>
+                  <option value="أنثى">أنثى</option>
+                </select>
+                <ChevronDown size={14} className="sm:size-[16px] absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-primary/30 pointer-events-none" />
+              </div>
+              {fieldErrors.gender && <p className="text-[11px] font-bold text-amber-600 mt-1 mr-1">{fieldErrors.gender}</p>}
             </div>
-            {fieldErrors.gender && <p className="text-[11px] font-bold text-amber-600 mt-1 mr-1">{fieldErrors.gender}</p>}
-          </div>
           </div>
         </div>
       </div>
