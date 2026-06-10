@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/repositories/auth_repository.dart';
+import '../../core/utils/app_logger.dart';
 import '../shared/widgets/hero_branding.dart';
 import '../dashboard/dashboard_screen.dart';
 import '../../core/utils/validators.dart';
@@ -44,7 +45,8 @@ class _CreateAdminScreenState extends State<CreateAdminScreen> {
       } else {
         setState(() => _isChecking = false);
       }
-    } catch (_) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to check existing admins', error: e, stack: stackTrace);
       if (mounted) setState(() => _isChecking = false);
     }
   }
@@ -79,7 +81,8 @@ class _CreateAdminScreenState extends State<CreateAdminScreen> {
           : 'خطأ: ${e.message}');
     } on PostgrestException catch (e) {
       setState(() => _errorMessage = 'خطأ في قاعدة البيانات: ${e.message}');
-    } catch (_) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Unexpected error during admin creation', error: e, stack: stackTrace);
       setState(() => _errorMessage = 'حدث خطأ غير متوقع. حاول مرة أخرى.');
     } finally {
       if (mounted) setState(() => _isLoading = false);

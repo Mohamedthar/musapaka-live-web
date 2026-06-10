@@ -14,7 +14,7 @@ interface StudentData {
 interface LevelData {
   content: string; total_points: number; has_rewaya: boolean; rewaya_max_score: number;
   has_tajweed: boolean; tajweed_max_score: number; has_voice: boolean; voice_max_score: number;
-  has_meaning: boolean; meaning_max_score: number;
+  has_meaning: boolean; meaning_max_score: number; passing_percentage: number;
 }
 
 export default function ResultInquiry() {
@@ -70,7 +70,8 @@ export default function ResultInquiry() {
     if (level.has_meaning && (level.meaning_max_score ?? 0) > 0) { max += level.meaning_max_score!; total += student.meaning_score ?? 0; }
     const pct = max > 0 ? (total / max) * 100 : 0;
     let grade = 'لم يجتز';
-    if (pct >= 95) grade = 'ممتاز مع مرتبة الشرف';
+    const passingPct = level.passing_percentage ?? 95;
+    if (pct >= passingPct) grade = 'ممتاز مع مرتبة الشرف';
     else if (pct >= 90) grade = 'ممتاز';
     else if (pct >= 80) grade = 'جيد جداً';
     else if (pct >= 70) grade = 'جيد';

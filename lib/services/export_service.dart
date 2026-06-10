@@ -12,6 +12,7 @@ import '../data/models/competition_level.dart';
 import '../core/theme/app_theme.dart';
 import '../core/utils/ranking_utils.dart';
 import '../core/utils/filter_utils.dart';
+import '../core/utils/app_logger.dart';
 
 class ExportService {
   static const _headerBg = '#03121C';
@@ -536,7 +537,8 @@ class ExportService {
         bytes: bytes,
       );
       return path;
-    } catch (_) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to save file: $fileName', error: e, stack: stackTrace);
       return null;
     }
   }

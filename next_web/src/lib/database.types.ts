@@ -24,6 +24,8 @@ export interface CompetitionLevel {
   second_prize?: string | null;
   third_prize?: string | null;
   prizes?: string | null;
+  max_score?: number | null;
+  passing_percentage?: number | null;
   age_op?: string | null;
   birth_year_op?: string | null;
 }
@@ -32,6 +34,7 @@ export interface StudentStatus {
   name: string;
   phone?: string;
   national_id?: string;
+  birth_date?: string;
   age?: number;
   gender?: string;
   memorizer_name?: string;
@@ -80,7 +83,7 @@ export interface RegistrationFormData {
   name: string;
   phone: string;
   nationalId: string;
-  age: string;
+  birthDate: string;
   memorizerName: string;
   memorizerPhone: string;
   memorizerAddress: string;

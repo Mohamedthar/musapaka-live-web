@@ -122,7 +122,7 @@ export default function LevelsClient({ initialLevels, initialError }: Props) {
                 {levels.map((level, i) => {
                   const individualPrizes = [level.first_prize, level.second_prize, level.third_prize];
                   const hasIndividualPrizes = individualPrizes.some(Boolean);
-                  const codeNum = String(level.level_code).replace(/\D/g, '');
+                  const codeNum = (level.level_code?.toString() ?? '').replace(/\D/g, '');
                   return (
                     <motion.div key={level.id ?? i}
                       initial={{ opacity: 0, y: 20 }}

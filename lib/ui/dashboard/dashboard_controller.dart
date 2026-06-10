@@ -1,3 +1,6 @@
+// TODO: This controller is currently unused but serves as the intended state
+// management layer for DashboardScreen. It should be wired into
+// DashboardScreen in a future refactoring to separate business logic from UI.
 import 'package:flutter/foundation.dart';
 import '../../data/models/student.dart';
 import '../../data/models/competition_level.dart';

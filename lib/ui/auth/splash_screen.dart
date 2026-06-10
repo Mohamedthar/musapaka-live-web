@@ -63,15 +63,13 @@ class _SplashScreenState extends State<SplashScreen> {
       }
     } catch (e) {
       if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تعذر الاتصال بالخادم. تحقق من اتصالك بالإنترنت وحاول مرة أخرى.')),
+      );
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
       );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تعذر الاتصال بالخادم. تحقق من اتصالك بالإنترنت وحاول مرة أخرى.')),
-        );
-      }
     }
   }
 

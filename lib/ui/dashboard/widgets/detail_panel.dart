@@ -6,6 +6,7 @@ import '../../../core/utils/validators.dart';
 import '../../../data/models/student.dart';
 import '../../../data/models/competition_level.dart';
 import '../../../data/models/exam_schedule_slot.dart';
+import '../../shared/widgets/gender_safe_image.dart';
 
 
 class StudentDetailPanel extends StatelessWidget {
@@ -121,7 +122,9 @@ class StudentDetailPanel extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
               // Profile Image
-              Container(
+              GenderSafeImage(
+                gender: student.gender,
+                image: Container(
                 width: 90,
                 height: 90,
                 decoration: BoxDecoration(
@@ -149,6 +152,7 @@ class StudentDetailPanel extends StatelessWidget {
                         child: const Icon(Icons.person,
                             size: 40, color: Colors.grey),
                       ),
+                ),
               ),
               const SizedBox(height: 10),
               Text(student.name,
@@ -506,16 +510,16 @@ class StudentDetailPanel extends StatelessWidget {
                 const SizedBox(height: 12),
                 Row(children: [
                   if (Validator.isValidImageUrl(student.profileImageUrl))
-                    Expanded(
+                      Expanded(
                         child: _docCard(
-                            student.profileImageUrl!, 'الصورة الشخصية')),
+                            student.profileImageUrl!, 'الصورة الشخصية', student.gender)),
                   if (Validator.isValidImageUrl(student.profileImageUrl) &&
                       Validator.isValidImageUrl(student.birthCertificateUrl))
                     const SizedBox(width: 12),
                   if (Validator.isValidImageUrl(student.birthCertificateUrl))
                     Expanded(
                         child: _docCard(
-                            student.birthCertificateUrl!, 'شهادة الميلاد')),
+                            student.birthCertificateUrl!, 'شهادة الميلاد', student.gender)),
                 ]),
               ],
             ]),
@@ -695,9 +699,11 @@ class StudentDetailPanel extends StatelessWidget {
         ]),
       );
 
-  Widget _docCard(String url, String label) =>
+  Widget _docCard(String url, String label, String? gender) =>
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(
+        GenderSafeImage(
+          gender: gender,
+          image: Container(
           height: 100,
           width: double.infinity,
           decoration: BoxDecoration(
@@ -735,6 +741,7 @@ class StudentDetailPanel extends StatelessWidget {
                   ),
                 ),
               )),
+          ),
         ),
         const SizedBox(height: 6),
         Text(label,

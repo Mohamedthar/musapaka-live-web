@@ -1,5 +1,6 @@
 import '../../data/models/student.dart';
 import '../../data/models/competition_level.dart';
+import 'app_logger.dart';
 
 class RankedStudent {
   final Student student;
@@ -8,6 +9,7 @@ class RankedStudent {
   final String rankTitle;
   final double percentage;
   final int maxLevelScore;
+  final int passingPercentage;
 
   RankedStudent({
     required this.student,
@@ -16,6 +18,7 @@ class RankedStudent {
     required this.rankTitle,
     required this.percentage,
     required this.maxLevelScore,
+    required this.passingPercentage,
   });
 }
 
@@ -37,22 +40,33 @@ class RankingUtils {
     }
   }
 
-  static int getLevelMaxScore(String levelName, List<CompetitionLevel> levels) {
-    String normalizeArabic(String text) {
-      return text
-        .replaceAll('ي', 'ى').replaceAll('أ', 'ا').replaceAll('إ', 'ا')
-        .replaceAll('آ', 'ا').replaceAll('ة', 'ه')
-        .replaceAll('المستو', 'المستوى')
-        .trim();
-    }
+  static String _normalizeArabic(String text) {
+    return text
+      .replaceAll('ي', 'ى').replaceAll('أ', 'ا').replaceAll('إ', 'ا')
+      .replaceAll('آ', 'ا').replaceAll('ة', 'ه')
+      .replaceAll('المستو', 'المستوى')
+      .trim();
+  }
 
-    final normalized = normalizeArabic(levelName);
+  static int getLevelPassingPercentage(String levelName, List<CompetitionLevel> levels) {
+    final normalized = _normalizeArabic(levelName);
     try {
-      return levels.firstWhere((l) => normalizeArabic(l.title) == normalized).totalMaxPoints;
+      return levels.firstWhere((l) => _normalizeArabic(l.title) == normalized).passingPercentage ?? 95;
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to get passing percentage for level: $levelName', error: e, stack: stackTrace);
+      return 95;
+    }
+  }
+
+  static int getLevelMaxScore(String levelName, List<CompetitionLevel> levels) {
+    final normalized = _normalizeArabic(levelName);
+    try {
+      return levels.firstWhere((l) => _normalizeArabic(l.title) == normalized).totalMaxPoints;
     } catch (_) {
       try {
-        return levels.firstWhere((l) => normalizeArabic(l.title).contains(normalized) || normalized.contains(normalizeArabic(l.title))).totalMaxPoints;
-      } catch (_) {
+        return levels.firstWhere((l) => _normalizeArabic(l.title).contains(normalized) || normalized.contains(_normalizeArabic(l.title))).totalMaxPoints;
+      } catch (e, stackTrace) {
+        AppLogger.error('Failed to get max score for level: $levelName', error: e, stack: stackTrace);
         return 100;
       }
     }
@@ -66,7 +80,8 @@ class RankingUtils {
     final tempScored = scoredStudents.map((s) {
       final maxScore = getLevelMaxScore(s.level, levels);
       final percentage = maxScore > 0 ? (s.totalScore! / maxScore) * 100 : 0.0;
-      return _TempScored(s, percentage, maxScore, s.memorizationAmount);
+      final passingPct = getLevelPassingPercentage(s.level, levels);
+      return _TempScored(s, percentage, maxScore, s.memorizationAmount, passingPct);
     }).toList();
 
     tempScored.sort((a, b) {
@@ -98,6 +113,7 @@ class RankingUtils {
           rankTitle: finalTitle,
           percentage: ts.percentage,
           maxLevelScore: ts.maxScore,
+          passingPercentage: ts.passingPct,
         ));
       }
     }
@@ -132,5 +148,6 @@ class _TempScored {
   final double percentage;
   final int maxScore;
   final int? memorizationAmount;
-  _TempScored(this.student, this.percentage, this.maxScore, this.memorizationAmount);
+  final int passingPct;
+  _TempScored(this.student, this.percentage, this.maxScore, this.memorizationAmount, this.passingPct);
 }

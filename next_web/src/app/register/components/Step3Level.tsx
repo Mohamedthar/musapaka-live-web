@@ -36,7 +36,7 @@ export default function Step3Level({
   const filteredLevels = useMemo(() => {
     if (studentAge === null) return levels;
     return levels.filter(l => {
-      if (l.min_age != null && studentAge <= l.min_age) return false;
+      if (l.min_age != null && studentAge < l.min_age) return false;
       if (l.max_age != null && studentAge > l.max_age) return false;
       return true;
     });

@@ -82,10 +82,10 @@ export default function Step4Review({
             <span className="w-2 h-2 rounded-full bg-primary/40" />
             تم تجاوز التحقق الأمني (وضع التطوير)
           </div>
-        ) : (
+        ) : process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
           <>
             <Turnstile
-              siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+              siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
               options={{ appearance: 'always' }}
               onSuccess={(token) => { setTurnstileToken(token); setTurnstileError(false); }}
               onExpire={() => { setTurnstileToken(null); setTurnstileError(true); }}
@@ -97,6 +97,11 @@ export default function Step4Review({
               </p>
             )}
           </>
+        ) : (
+          <div className="flex items-center gap-2 px-5 py-2.5 bg-primary/[0.03] border-2 border-primary/15 rounded-xl text-xs font-bold text-primary/60">
+            <span className="w-2 h-2 rounded-full bg-primary/40" />
+            تم تجاوز التحقق الأمني (وضع التطوير)
+          </div>
         )}
       </div>
     </div>

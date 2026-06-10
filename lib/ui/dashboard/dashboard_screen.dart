@@ -35,6 +35,8 @@ import 'widgets/add_student_panel.dart';
 import 'widgets/resizable_panel.dart';
 
 import '../../core/utils/image_utils.dart';
+import '../../core/utils/app_logger.dart';
+import '../../core/utils/app_logger.dart';
 
 final _compressForEdit = compressImage;
 
@@ -229,7 +231,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _editAgeCtrl.text = ageStr;
             }
           }
-        } catch (_) {}
+        } catch (e, stackTrace) {
+          AppLogger.error('Failed to parse national ID date', error: e, stack: stackTrace);
+        }
       }
       
       // 3. Real-time Duplicate ID Check
@@ -269,7 +273,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           AppTheme.showSnack(context, 'تنبيه: هذا الرقم القومي مسجل لمتسابق آخر!', color: AppTheme.warningColor);
         }
       }
-    } catch (_) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to check duplicate national ID in edit', error: e, stack: stackTrace);
       if (mounted) setState(() => _isEditIdChecking = false);
     }
   }
@@ -975,7 +980,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           });
         }
       } catch (e) {
-        debugPrint('Error fetching original profile bytes: $e');
+        AppLogger.info('Error fetching original profile bytes: $e');
       }
     }
     if (Validator.isValidImageUrl(s.birthCertificateUrl)) {
@@ -988,7 +993,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           });
         }
       } catch (e) {
-        debugPrint('Error fetching original birth cert bytes: $e');
+        AppLogger.info('Error fetching original birth cert bytes: $e');
       }
     }
   }
@@ -1011,7 +1016,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
       });
     } catch (e) {
-      debugPrint('Error picking image: $e');
+      AppLogger.info('Error picking image: $e');
     }
   }
 

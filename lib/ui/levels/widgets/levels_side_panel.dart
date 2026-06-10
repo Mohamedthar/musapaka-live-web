@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../data/models/competition_level.dart';
 import '../../../services/supabase_service.dart';
+import '../../../core/utils/app_logger.dart';
 
 class LevelsSidePanel extends StatefulWidget {
   final CompetitionLevel? level;
@@ -27,7 +28,7 @@ class LevelsSidePanel extends StatefulWidget {
 }
 
 class _LevelsSidePanelState extends State<LevelsSidePanel> {
-  late TextEditingController _titleCtrl, _contentCtrl, _notesCtrl, _minAgeCtrl, _maxAgeCtrl, _capCtrl, _totalPointsCtrl, _rewayaMaxScoreCtrl, _availableRewayasCtrl, _tajweedMaxScoreCtrl, _voiceMaxScoreCtrl, _meaningMaxScoreCtrl, _branchesCtrl, _firstPrizeCtrl, _secondPrizeCtrl, _thirdPrizeCtrl, _prizesCtrl;
+  late TextEditingController _titleCtrl, _contentCtrl, _notesCtrl, _minAgeCtrl, _maxAgeCtrl, _capCtrl, _totalPointsCtrl, _passingPercentageCtrl, _rewayaMaxScoreCtrl, _availableRewayasCtrl, _tajweedMaxScoreCtrl, _voiceMaxScoreCtrl, _meaningMaxScoreCtrl, _branchesCtrl, _firstPrizeCtrl, _secondPrizeCtrl, _thirdPrizeCtrl, _prizesCtrl;
   bool _hasRewaya = false;
   bool _hasTajweed = false;
   bool _hasVoice = false;
@@ -60,7 +61,7 @@ class _LevelsSidePanelState extends State<LevelsSidePanel> {
           });
         }
       } catch (e) {
-        debugPrint('Error loading student count: $e');
+        AppLogger.info('Error loading student count: $e');
       }
     }
   }
@@ -73,6 +74,7 @@ class _LevelsSidePanelState extends State<LevelsSidePanel> {
     _maxAgeCtrl = TextEditingController(text: widget.level?.maxAge?.toString() ?? '');
     _capCtrl = TextEditingController(text: widget.level?.maxCapacity?.toString() ?? '');
     _totalPointsCtrl = TextEditingController(text: widget.level?.totalPoints?.toString() ?? '100');
+    _passingPercentageCtrl = TextEditingController(text: widget.level?.passingPercentage?.toString() ?? '95');
     _isActive = widget.level?.isActive ?? true;
     _rewayaMaxScoreCtrl = TextEditingController(text: widget.level?.rewayaMaxScore.toString() ?? '100');
     _availableRewayasCtrl = TextEditingController(text: widget.level?.availableRewayas.join('، ') ?? '');
@@ -150,6 +152,7 @@ class _LevelsSidePanelState extends State<LevelsSidePanel> {
     _maxAgeCtrl.dispose();
     _capCtrl.dispose();
     _totalPointsCtrl.dispose();
+    _passingPercentageCtrl.dispose();
     _rewayaMaxScoreCtrl.dispose();
     _availableRewayasCtrl.dispose();
     _tajweedMaxScoreCtrl.dispose();
@@ -288,6 +291,8 @@ class _LevelsSidePanelState extends State<LevelsSidePanel> {
                       const SizedBox(width: 12),
                       Expanded(child: _field(_totalPointsCtrl, 'النقاط الأساسية (درجة الحفظ)', Icons.score_rounded, isNum: true)),
                     ]),
+                    const SizedBox(height: 12),
+                    _field(_passingPercentageCtrl, 'نسبة النجاح للتكريم %', Icons.emoji_events_rounded, isNum: true),
                     const SizedBox(height: 24),
                     Divider(height: 1, color: Colors.grey.shade200),
                     const SizedBox(height: 12),
@@ -528,6 +533,7 @@ class _LevelsSidePanelState extends State<LevelsSidePanel> {
                             maxCapacity: cap,
                             isActive: _isActive,
                             totalPoints: int.tryParse(_totalPointsCtrl.text) ?? 100,
+                            passingPercentage: int.tryParse(_passingPercentageCtrl.text) ?? 95,
                             hasRewaya: _hasRewaya,
                             rewayaMaxScore: int.tryParse(_rewayaMaxScoreCtrl.text) ?? 100,
                             availableRewayas: _availableRewayasCtrl.text.trim().isEmpty ? [] : _availableRewayasCtrl.text.split(RegExp(r'[،,]')).map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),

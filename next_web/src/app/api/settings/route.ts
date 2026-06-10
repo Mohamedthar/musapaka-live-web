@@ -13,12 +13,21 @@ export async function GET(request: Request) {
 
     const supabase = getAdminClient();
 
-    const [settingsRes, statusRes, countRes, levelCountsRes] = await Promise.all([
+    const [settingsRes, countRes, levelCountsRes] = await Promise.all([
       supabase.from('app_settings').select('*').eq('id', 1).single(),
-      supabase.rpc('public_get_registration_status').single(),
       supabase.from('students').select('id', { count: 'exact', head: true }),
+      // TODO: Replace with RPC get_level_counts() when student count exceeds ~5000
+      // Currently fetches all rows to build per-level counts
       supabase.from('students').select('level'),
     ]);
+
+    let statusData: Record<string, unknown> | null = null;
+    try {
+      const rpcRes = await supabase.rpc('public_get_registration_status').single();
+      statusData = rpcRes.data as Record<string, unknown> | null;
+    } catch {
+      statusData = null;
+    }
 
     const levelCounts: Record<string, number> = {};
     if (levelCountsRes.data) {
@@ -30,10 +39,10 @@ export async function GET(request: Request) {
     return jsonResponse({
       success: true,
       settings: settingsRes.data,
-      status: statusRes.data,
+      status: statusData,
       total_students: countRes.count ?? 0,
       level_counts: levelCounts,
-    }, 200, origin, 30);
+    }, 200, origin, 5);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';
     return jsonResponse({ error: message }, 500, origin);

@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 export function CardSkeleton() {
   return (
     <div className="bg-white rounded-2xl border border-outline-variant p-5 animate-pulse">

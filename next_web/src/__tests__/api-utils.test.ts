@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { checkRateLimit, getClientIp, validateCsrf } from '@/lib/api-utils';
+import { checkRateLimit, getClientIp, validateCsrf, clearRateLimitsForTesting } from '@/lib/api-utils';
 
 describe('api-utils', () => {
   describe('getClientIp', () => {
@@ -25,7 +25,7 @@ describe('api-utils', () => {
 
   describe('checkRateLimit', () => {
     beforeEach(() => {
-      // Clear rate limit state between tests
+      clearRateLimitsForTesting();
     });
 
     it('allows first request', () => {

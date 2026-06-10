@@ -9,7 +9,7 @@ interface Step1PersonalProps {
     phone: string;
     location: string;
     nationalId: string;
-    age: string;
+    birthDate: string;
     gender: string;
   };
   setFormData: React.Dispatch<React.SetStateAction<RegistrationFormData>>;
@@ -109,22 +109,23 @@ export default function Step1Personal({
             error={fieldErrors.nationalId || (idExists ? "هذا الرقم القومي مسجل مسبقاً" : undefined)}
           />
 
-          {/* العمر + النوع */}
+          {/* تاريخ الميلاد + النوع */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 sm:col-span-2">
           <div>
-            <Field
-              label="العمر"
-              icon={<UserCircle size={17} />}
-              value={formData.age}
-              onChange={v => {
-                setFormData((p) => ({ ...p, age: v }));
-                clearErr('age');
-              }}
-              placeholder="مثال: 18"
-              type="number"
-              required
-              error={fieldErrors.age}
-            />
+            <label className="block text-sm font-bold text-primary mb-1.5">تاريخ الميلاد <span className="text-red-500">*</span></label>
+            <div className="relative">
+              <input
+                type="date"
+                value={formData.birthDate}
+                onChange={v => {
+                  setFormData((p) => ({ ...p, birthDate: v.target.value }));
+                  clearErr('birthDate');
+                }}
+                className={`w-full bg-white border-2 ${fieldErrors.birthDate ? 'border-amber-400' : 'border-primary/20'} rounded-xl py-[14px] px-3 sm:px-4 text-primary text-sm font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/8 transition-all shadow-sm`}
+                required
+              />
+            </div>
+            {fieldErrors.birthDate && <p className="text-[11px] font-bold text-amber-600 mt-1 mr-1">{fieldErrors.birthDate}</p>}
           </div>
           <div>
             <label className="block text-sm font-bold text-primary mb-1.5">النوع</label>

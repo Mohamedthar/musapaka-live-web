@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../../core/utils/app_logger.dart';
 
 /// One row in `app_settings.exam_schedule`.
 ///
@@ -140,7 +141,8 @@ class ExamScheduleSlot {
       try {
         final decoded = jsonDecode(trimmed);
         return listFromJson(decoded);
-      } catch (_) {
+      } catch (e, stackTrace) {
+        AppLogger.error('Failed to parse exam schedule JSON', error: e, stack: stackTrace);
         return [];
       }
     }

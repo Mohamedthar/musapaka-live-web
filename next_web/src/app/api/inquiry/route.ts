@@ -41,7 +41,7 @@ export async function POST(request: Request) {
 
     const student = Array.isArray(studentData) ? studentData[0] : studentData;
     if (!student) {
-      return jsonResponse({ error: 'لم يُعثر على متسابق بهذا الرقم القومي ورقم الهاتف. تأكد من البيانات المُدخلة أو تواصل مع الإدارة.' }, 404, origin);
+      return jsonResponse({ error: 'لم يُعثر على متسابق بهذا الرقم القومي.' }, 404, origin);
     }
 
     return jsonResponse({

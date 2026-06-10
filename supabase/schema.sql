@@ -6,7 +6,7 @@
 --   • القيود (CHECK, UNIQUE, FK, NOT NULL)
 --   • الفهارس (عادية, مركبة, جزئية)
 --   • أمان الصفوف (RLS Policies)
---   • المحفزات (Triggers)
+--      • المحفزات (Triggers) + الدوال المساعدة (Helper Functions)
 --   • الدوال الداخلية (Internal Functions)
 --   • دوال الـ API العامة (Public API)
 --   • دوال الحفل (Ceremony)
@@ -100,6 +100,7 @@ CREATE TABLE IF NOT EXISTS competition_levels (
     has_meaning          BOOLEAN DEFAULT FALSE,
     meaning_max_score    INTEGER DEFAULT 100,
     max_score            INTEGER DEFAULT 100,
+    passing_percentage   INTEGER DEFAULT 95,
     first_prize          TEXT,
     second_prize         TEXT,
     third_prize          TEXT,
@@ -169,9 +170,8 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'national_id_format') THEN
         ALTER TABLE students ADD CONSTRAINT national_id_format CHECK (national_id IS NULL OR national_id ~ '^\d{14}$');
     END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'students_age_check') THEN
-        ALTER TABLE students ADD CONSTRAINT students_age_check CHECK (age BETWEEN 5 AND 100);
-    END IF;
+    -- students_age_check removed (migration 015). Age is computed from birth_date.
+    ALTER TABLE students DROP CONSTRAINT IF EXISTS students_age_check;
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'students_name_not_empty') THEN
         ALTER TABLE students ADD CONSTRAINT students_name_not_empty CHECK (name <> '');
     END IF;
@@ -233,14 +233,28 @@ BEGIN
         ALTER TABLE competition_levels ADD CONSTRAINT levels_level_code_format
             CHECK (level_code IS NULL OR level_code ~ '^[A-Z]$');
     END IF;
+    -- passing_percentage range check (1-100)
+    ALTER TABLE competition_levels DROP CONSTRAINT IF EXISTS levels_passing_pct_range;
+    ALTER TABLE competition_levels ADD CONSTRAINT levels_passing_pct_range
+        CHECK (passing_percentage IS NULL OR (passing_percentage >= 1 AND passing_percentage <= 100));
 END $$;
 
 -- -------------------------------------------------------------------
--- 2.5 قيد app_settings
+-- 2.5 قيود app_settings — صف وحيد + تواريخ صحيحة
 -- -------------------------------------------------------------------
 ALTER TABLE app_settings DROP CONSTRAINT IF EXISTS exam_schedule_structure_check;
 ALTER TABLE app_settings ADD CONSTRAINT exam_schedule_structure_check CHECK (
     exam_schedule IS NULL OR jsonb_typeof(exam_schedule) = 'array'
+);
+
+-- تأكد أن جدول الإعدادات لا يحتوي إلا على صف واحد (id = 1)
+ALTER TABLE app_settings DROP CONSTRAINT IF EXISTS app_settings_single_row;
+ALTER TABLE app_settings ADD CONSTRAINT app_settings_single_row CHECK (id = 1);
+
+-- تأكد من ترتيب تواريخ التسجيل
+ALTER TABLE app_settings DROP CONSTRAINT IF EXISTS app_settings_registration_dates;
+ALTER TABLE app_settings ADD CONSTRAINT app_settings_registration_dates CHECK (
+    registration_end_date IS NULL OR registration_start_date IS NULL OR registration_end_date >= registration_start_date
 );
 
 
@@ -274,10 +288,16 @@ CREATE INDEX IF NOT EXISTS idx_students_nid_code           ON students(national_
 CREATE INDEX IF NOT EXISTS idx_students_reg_ip_created     ON students(registration_ip, created_at);
 
 -- -------------------------------------------------------------------
--- 3.4 فهارس الطلاب — جزئية (Partial) + فريدة
+-- 3.4 فهارس الطلاب — جزئية (Partial) + فريدة + أداء مركب
 -- -------------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS idx_students_ceremony_code      ON students(ceremony_code) WHERE ceremony_code IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_students_student_code ON students(student_code) WHERE student_code IS NOT NULL;
+
+-- فهرس مركب لترتيب أداء الطلاب داخل كل مستوى
+CREATE INDEX IF NOT EXISTS idx_students_level_id_score     ON students(level_id, score DESC NULLS LAST);
+
+-- فهرس مركب لاستعلام national_id + student_code معاً
+CREATE INDEX IF NOT EXISTS idx_students_nid_student_code   ON students(national_id, student_code);
 
 -- -------------------------------------------------------------------
 -- 3.5 فهارس المستويات
@@ -355,29 +375,59 @@ GRANT SELECT ON TABLE public.app_settings TO anon, authenticated;
 
 
 -- =================================================================================================
--- القسم الخامس: المحفزات — Triggers
+-- القسم الخامس: دوال مساعدة مشتركة — Shared Helper Functions
 -- =================================================================================================
 
 -- -------------------------------------------------------------------
--- 5.1 تحديث تلقائي لـ updated_at
+-- احتساب مجموع درجات الطالب
 -- -------------------------------------------------------------------
-
--- 5.1.1 طالب
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION calculate_total_score(p_student students)
+RETURNS DOUBLE PRECISION AS $$
 BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
+    RETURN COALESCE(p_student.score, 0) + COALESCE(p_student.rewaya_score, 0) +
+           COALESCE(p_student.tajweed_score, 0) + COALESCE(p_student.voice_score, 0) +
+           COALESCE(p_student.meaning_score, 0);
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql IMMUTABLE;
 
-DROP TRIGGER IF EXISTS update_students_updated_at ON students;
-CREATE TRIGGER update_students_updated_at
-    BEFORE UPDATE ON students FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+-- -------------------------------------------------------------------
+-- احتساب أقصى درجات المستوى
+-- -------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION calculate_max_score(p_level competition_levels)
+RETURNS INTEGER AS $$
+BEGIN
+    RETURN COALESCE(p_level.total_points, 100) +
+           COALESCE(CASE WHEN p_level.has_rewaya THEN p_level.rewaya_max_score ELSE 0 END, 0) +
+           COALESCE(CASE WHEN p_level.has_tajweed THEN p_level.tajweed_max_score ELSE 0 END, 0) +
+           COALESCE(CASE WHEN p_level.has_voice THEN p_level.voice_max_score ELSE 0 END, 0) +
+           COALESCE(CASE WHEN p_level.has_meaning THEN p_level.meaning_max_score ELSE 0 END, 0);
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
 
--- 5.1.2 إعدادات
-CREATE OR REPLACE FUNCTION update_app_settings_updated_at()
+-- -------------------------------------------------------------------
+-- توليد بادئة كود الطالب (حرف المستوى + رقم الجنس)
+-- -------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION get_student_code_prefix(p_level TEXT, p_gender TEXT)
+RETURNS TEXT AS $$
+DECLARE
+    v_level_code CHAR(1);
+    v_gender_num CHAR(1);
+BEGIN
+    SELECT level_code INTO v_level_code FROM competition_levels WHERE title = p_level LIMIT 1;
+    IF v_level_code IS NULL THEN v_level_code := 'X'; END IF;
+    v_gender_num := CASE WHEN p_gender = 'ذكر' THEN '1' WHEN p_gender = 'أنثى' THEN '0' ELSE '9' END;
+    RETURN v_level_code || v_gender_num;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+-- =================================================================================================
+-- القسم السادس: المحفزات — Triggers
+-- =================================================================================================
+
+-- -------------------------------------------------------------------
+-- 5.1 تحديث تلقائي لـ updated_at (دالة واحدة لجميع الجداول)
+-- -------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at := NOW();
@@ -385,27 +435,23 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS update_students_updated_at ON students;
+CREATE TRIGGER update_students_updated_at
+    BEFORE UPDATE ON students FOR EACH ROW
+    EXECUTE FUNCTION set_updated_at();
+
 DROP TRIGGER IF EXISTS trg_app_settings_updated_at ON app_settings;
 CREATE TRIGGER trg_app_settings_updated_at
     BEFORE UPDATE ON app_settings FOR EACH ROW
-    EXECUTE FUNCTION update_app_settings_updated_at();
-
--- 5.1.3 مستوى
-CREATE OR REPLACE FUNCTION trigger_update_timestamp_competition_levels()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+    EXECUTE FUNCTION set_updated_at();
 
 DROP TRIGGER IF EXISTS trg_levels_updated_at ON competition_levels;
 CREATE TRIGGER trg_levels_updated_at
     BEFORE UPDATE ON competition_levels FOR EACH ROW
-    EXECUTE FUNCTION trigger_update_timestamp_competition_levels();
+    EXECUTE FUNCTION set_updated_at();
 
 -- -------------------------------------------------------------------
--- 5.2 توليد كود المستوى (A, B, C...)
+-- 6.2 توليد كود المستوى (A, B, C...)
 -- -------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION assign_level_code()
 RETURNS TRIGGER AS $$
@@ -432,7 +478,9 @@ CREATE TRIGGER trg_assign_level_code
     EXECUTE FUNCTION assign_level_code();
 
 -- -------------------------------------------------------------------
--- 5.3 جدولة مواعيد الاختبارات — FIFO Scheduling
+-- 6.3 جدولة مواعيد الاختبارات — FIFO Scheduling (محسّنة)
+-- تملأ من أول ساعة متاحة في كل يوم (FIFO حقيقي)
+-- تستخدم استعلام GROUP BY واحد بدلاً من N+1 لكل ساعة
 -- -------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION assign_exam_slot()
 RETURNS TRIGGER AS $$
@@ -445,7 +493,8 @@ DECLARE
     v_students_per_hour INT;
     v_current_hour INT;
     assigned       BOOLEAN := FALSE;
-    slot_count     INT;
+    slot_counts    RECORD;
+    v_slot_counts_json JSONB;
 BEGIN
     PERFORM pg_advisory_xact_lock(987654321);
     SELECT exam_schedule INTO schedule_json FROM app_settings WHERE id = 1 LIMIT 1;
@@ -455,6 +504,16 @@ BEGIN
         RETURN NEW;
     END IF;
 
+    -- استعلام واحد مجمع بدلاً من N+1 لكل ساعة
+    SELECT jsonb_object_agg(exam_date::TEXT || '_' || exam_hour::TEXT, cnt)
+    INTO v_slot_counts_json
+    FROM (
+        SELECT exam_date, exam_hour, COUNT(*) AS cnt
+        FROM students
+        WHERE exam_date IS NOT NULL AND exam_hour IS NOT NULL
+        GROUP BY exam_date, exam_hour
+    ) sub;
+
     FOR slot IN
         SELECT value FROM jsonb_array_elements(schedule_json)
         ORDER BY (value->>'date')::DATE ASC, (value->>'start_hour')::INT ASC
@@ -463,19 +522,24 @@ BEGIN
         v_start_hour        := (slot->>'start_hour')::INT;
         v_end_hour          := (slot->>'end_hour')::INT;
         v_students_per_hour := (slot->>'students_per_hour')::INT;
-        v_current_hour      := v_end_hour - 1;
 
-        WHILE v_current_hour >= v_start_hour LOOP
-            SELECT COUNT(*) INTO slot_count
-            FROM students WHERE exam_date = v_date AND exam_hour = v_current_hour;
+        -- FIFO حقيقي: ابدأ من أول ساعة في اليوم
+        v_current_hour := v_start_hour;
 
-            IF slot_count < v_students_per_hour THEN
-                NEW.exam_date := v_date;
-                NEW.exam_hour := v_current_hour;
-                assigned := TRUE;
-                EXIT;
-            END IF;
-            v_current_hour := v_current_hour - 1;
+        WHILE v_current_hour < v_end_hour LOOP
+            DECLARE
+                cnt BIGINT;
+            BEGIN
+                cnt := COALESCE((v_slot_counts_json->>(v_date::TEXT || '_' || v_current_hour::TEXT))::BIGINT, 0);
+
+                IF cnt < v_students_per_hour THEN
+                    NEW.exam_date := v_date;
+                    NEW.exam_hour := v_current_hour;
+                    assigned := TRUE;
+                    EXIT;
+                END IF;
+            END;
+            v_current_hour := v_current_hour + 1;
         END LOOP;
         IF assigned THEN EXIT; END IF;
     END LOOP;
@@ -493,28 +557,24 @@ CREATE TRIGGER trigger_assign_exam_slot
     EXECUTE FUNCTION assign_exam_slot();
 
 -- -------------------------------------------------------------------
--- 5.4 توليد كود الطالب — Student Code (مثال: A1001)
+-- 6.4 توليد كود الطالب — Student Code (مثال: A1001)
+-- تُستخدم get_student_code_prefix الدالة المساعدة المشتركة
+-- تُستخدم regex بدلاً من LIKE لضمان مطابقة أرقام فقط
 -- -------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION generate_student_code()
 RETURNS TRIGGER AS $$
 DECLARE
-    v_level_code CHAR(1);
-    v_gender_num CHAR(1);
-    v_seq        INTEGER;
-    v_prefix     TEXT;
+    v_prefix TEXT;
+    v_seq    INTEGER;
 BEGIN
     PERFORM pg_advisory_xact_lock(987654322);
-    SELECT level_code INTO v_level_code FROM competition_levels WHERE title = NEW.level LIMIT 1;
-    IF v_level_code IS NULL THEN v_level_code := 'X'; END IF;
-
-    v_gender_num := CASE WHEN NEW.gender = 'ذكر' THEN '1' WHEN NEW.gender = 'أنثى' THEN '0' ELSE '9' END;
-    v_prefix := v_level_code || v_gender_num;
+    v_prefix := get_student_code_prefix(NEW.level, NEW.gender);
 
     SELECT COALESCE(
         (SELECT e.seq + 1
          FROM (
              SELECT SUBSTRING(student_code, 3)::int AS seq
-             FROM students WHERE student_code LIKE v_prefix || '___'
+             FROM students WHERE student_code ~ ('^' || v_prefix || '\d{3}$')
              UNION ALL SELECT 0
          ) e
          WHERE NOT EXISTS (
@@ -536,28 +596,23 @@ CREATE TRIGGER trg_generate_student_code
     EXECUTE FUNCTION generate_student_code();
 
 -- -------------------------------------------------------------------
--- 5.5 إعادة توليد الكود عند تغيير المستوى أو النوع
+-- 6.5 إعادة توليد الكود عند تغيير المستوى أو النوع
+-- تُستخدم get_student_code_prefix الدالة المساعدة المشتركة
 -- -------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION regenerate_student_code_on_level_change()
 RETURNS TRIGGER AS $$
 DECLARE
-    v_level_code CHAR(1);
-    v_gender_num CHAR(1);
-    v_seq        INTEGER;
-    v_prefix     TEXT;
+    v_prefix TEXT;
+    v_seq    INTEGER;
 BEGIN
     PERFORM pg_advisory_xact_lock(987654323);
-    SELECT level_code INTO v_level_code FROM competition_levels WHERE title = NEW.level LIMIT 1;
-    IF v_level_code IS NULL THEN v_level_code := 'X'; END IF;
-
-    v_gender_num := CASE WHEN NEW.gender = 'ذكر' THEN '1' WHEN NEW.gender = 'أنثى' THEN '0' ELSE '9' END;
-    v_prefix := v_level_code || v_gender_num;
+    v_prefix := get_student_code_prefix(NEW.level, NEW.gender);
 
     SELECT COALESCE(
         (SELECT e.seq + 1
          FROM (
              SELECT SUBSTRING(student_code, 3)::int AS seq
-             FROM students WHERE student_code LIKE v_prefix || '___' AND id != OLD.id
+             FROM students WHERE student_code ~ ('^' || v_prefix || '\d{3}$') AND id != OLD.id
              UNION ALL SELECT 0
          ) e
          WHERE NOT EXISTS (
@@ -581,7 +636,7 @@ CREATE TRIGGER trg_regenerate_student_code_on_level_change
     EXECUTE FUNCTION regenerate_student_code_on_level_change();
 
 -- -------------------------------------------------------------------
--- 5.6 مزامنة level_id تلقائياً من level (نص)
+-- 6.6 مزامنة level_id تلقائياً من level (نص)
 -- -------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION sync_level_id()
 RETURNS TRIGGER AS $$
@@ -602,7 +657,7 @@ CREATE TRIGGER trg_sync_level_id
     EXECUTE FUNCTION sync_level_id();
 
 -- -------------------------------------------------------------------
--- 5.7 فحص سعة المستوى — Capacity Check
+-- 6.7 فحص سعة المستوى — Capacity Check (باستخدام level_id)
 -- -------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION check_level_capacity()
 RETURNS TRIGGER AS $$
@@ -611,10 +666,12 @@ DECLARE
     v_current  INTEGER;
 BEGIN
     PERFORM pg_advisory_xact_lock(987654325);
-    SELECT max_capacity INTO v_capacity FROM competition_levels WHERE title = NEW.level;
+
+    -- يضمن sync_level_id أن level_id موجود قبل هذا المحفز
+    SELECT max_capacity INTO v_capacity FROM competition_levels WHERE id = NEW.level_id;
 
     IF v_capacity IS NOT NULL THEN
-        SELECT COUNT(*) INTO v_current FROM students WHERE level = NEW.level;
+        SELECT COUNT(*) INTO v_current FROM students WHERE level_id = NEW.level_id;
         IF v_current >= v_capacity THEN
             RAISE EXCEPTION 'المستوى المطلوب ممتلئ تماماً بالحد الأقصى للمتسابقين';
         END IF;
@@ -629,7 +686,7 @@ CREATE TRIGGER trg_check_level_capacity
     EXECUTE FUNCTION check_level_capacity();
 
 -- -------------------------------------------------------------------
--- 5.8 حذف متسلسل للطلاب عند حذف المستوى
+-- 6.8 حذف متسلسل للطلاب عند حذف المستوى
 -- -------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION cascade_delete_level_students()
 RETURNS TRIGGER AS $$
@@ -646,11 +703,11 @@ CREATE TRIGGER trg_cascade_delete_level
 
 
 -- =================================================================================================
--- القسم السادس: الدوال الداخلية — Internal Functions
+-- القسم السابع: الدوال الداخلية — Internal Functions
 -- =================================================================================================
 
 -- -------------------------------------------------------------------
--- 6.1 التحقق من المدير
+-- 7.1 التحقق من المدير
 -- -------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION is_admin()
 RETURNS BOOLEAN AS $$
@@ -660,7 +717,7 @@ END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public;
 
 -- -------------------------------------------------------------------
--- 6.2 إحصائيات أساسية (بدون فلاتر)
+-- 7.2 إحصائيات أساسية (بدون فلاتر)
 -- -------------------------------------------------------------------
 DROP FUNCTION IF EXISTS get_student_stats();
 CREATE FUNCTION get_student_stats()
@@ -675,7 +732,7 @@ $$ LANGUAGE plpgsql;
 GRANT EXECUTE ON FUNCTION get_student_stats() TO authenticated;
 
 -- -------------------------------------------------------------------
--- 6.3 إحصائيات متقدمة (مع فلاتر)
+-- 7.3 إحصائيات متقدمة (مع فلاتر)
 -- -------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION get_student_stats(
     p_level      TEXT DEFAULT NULL,
@@ -710,7 +767,7 @@ $$ LANGUAGE plpgsql;
 GRANT EXECUTE ON FUNCTION get_student_stats(TEXT, TEXT, DATE, DATE) TO authenticated;
 
 -- -------------------------------------------------------------------
--- 6.4 حالة طالب كاملة — get_student_status
+-- 7.4 حالة طالب كاملة — get_student_status
 -- -------------------------------------------------------------------
 DROP FUNCTION IF EXISTS get_student_status(TEXT, TEXT);
 CREATE OR REPLACE FUNCTION get_student_status(p_national_id TEXT, p_student_code TEXT)
@@ -764,7 +821,7 @@ $$;
 GRANT EXECUTE ON FUNCTION get_student_status(TEXT, TEXT) TO authenticated;
 
 -- -------------------------------------------------------------------
--- 6.5 استرجاع كود الطالب المفقود
+-- 7.5 استرجاع كود الطالب المفقود
 -- -------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION retrieve_student_code(p_national_id TEXT, p_phone TEXT)
 RETURNS TABLE (student_code TEXT, name TEXT)
@@ -782,12 +839,12 @@ GRANT EXECUTE ON FUNCTION retrieve_student_code(TEXT, TEXT) TO authenticated;
 
 
 -- =================================================================================================
--- القسم السابع: دوال الـ API العامة — Public API Functions
+-- القسم الثامن: دوال الـ API العامة — Public API Functions
 -- =================================================================================================
 -- تستخدم من واجهة Next.js للاستعلامات العامة
 
 -- -------------------------------------------------------------------
--- 7.1 البحث عن طالب — public_lookup_student
+-- 8.1 البحث عن طالب — public_lookup_student
 -- -------------------------------------------------------------------
 DROP FUNCTION IF EXISTS public_lookup_student(TEXT);
 DROP FUNCTION IF EXISTS public_lookup_student(TEXT, TEXT);
@@ -807,6 +864,11 @@ RETURNS TABLE (
     phone             TEXT,
     national_id       TEXT,
     memorizer_name    TEXT,
+    memorizer_phone   TEXT,
+    memorizer_address TEXT,
+    location          TEXT,
+    birth_date        DATE,
+    selected_rewaya   TEXT,
     level_code        CHAR(1)
 )
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
@@ -817,6 +879,8 @@ BEGIN
         s.id, s.name, s.level, s.student_code, s.ceremony_code,
         s.exam_date, s.exam_hour, s.score, s.profile_image_url,
         s.age, s.gender, s.phone, s.national_id, s.memorizer_name,
+        s.memorizer_phone, s.memorizer_address, s.location,
+        s.birth_date, s.selected_rewaya,
         cl.level_code
     FROM students s
     LEFT JOIN competition_levels cl ON cl.id = s.level_id
@@ -828,7 +892,7 @@ REVOKE EXECUTE ON FUNCTION public_lookup_student(TEXT) FROM anon;
 GRANT EXECUTE ON FUNCTION public_lookup_student(TEXT) TO authenticated;
 
 -- -------------------------------------------------------------------
--- 7.2 نتيجة طالب — public_lookup_result
+-- 8.2 نتيجة طالب — public_lookup_result
 -- -------------------------------------------------------------------
 DROP FUNCTION IF EXISTS public_lookup_result(TEXT, TEXT);
 DROP FUNCTION IF EXISTS public_lookup_result(TEXT);
@@ -875,10 +939,10 @@ $$;
 GRANT EXECUTE ON FUNCTION public_lookup_result(TEXT) TO anon, authenticated;
 
 -- -------------------------------------------------------------------
--- 7.3 استعلام الحفل — public_lookup_ceremony
+-- 8.3 استعلام الحفل — public_lookup_ceremony
 -- -------------------------------------------------------------------
 -- ملاحظة: تحسب النسبة المئوية للمتسابق (total_score / max_score * 100)
--- وتقرر الأهلية بناءً على >= 95% (نفس منطق generate_all_ceremony_codes)
+-- وتقرر الأهلية بناءً على >= passing_percentage لكل مستوى
 -- -------------------------------------------------------------------
 DROP FUNCTION IF EXISTS public_lookup_ceremony(TEXT, TEXT);
 DROP FUNCTION IF EXISTS public_lookup_ceremony(TEXT);
@@ -929,14 +993,9 @@ BEGIN
             cl.first_prize,
             cl.second_prize,
             cl.third_prize,
-            (COALESCE(s.score, 0) + COALESCE(s.rewaya_score, 0) + 
-             COALESCE(s.tajweed_score, 0) + COALESCE(s.voice_score, 0) + 
-             COALESCE(s.meaning_score, 0)) AS total_score,
-            (COALESCE(cl.total_points, 100) +
-             COALESCE(CASE WHEN cl.has_rewaya THEN cl.rewaya_max_score ELSE 0 END, 0) +
-             COALESCE(CASE WHEN cl.has_tajweed THEN cl.tajweed_max_score ELSE 0 END, 0) +
-             COALESCE(CASE WHEN cl.has_voice THEN cl.voice_max_score ELSE 0 END, 0) +
-             COALESCE(CASE WHEN cl.has_meaning THEN cl.meaning_max_score ELSE 0 END, 0)) AS max_score
+            calculate_total_score(s) AS total_score,
+            calculate_max_score(cl) AS max_score,
+            COALESCE(cl.passing_percentage, 95) AS passing_pct
         FROM students s
         LEFT JOIN competition_levels cl ON cl.id = s.level_id
         WHERE s.national_id = p_national_id
@@ -957,7 +1016,7 @@ BEGIN
         sd.first_prize,
         sd.second_prize,
         sd.third_prize,
-        CASE WHEN sd.max_score > 0 THEN (sd.total_score * 100.0 / sd.max_score) >= 95 ELSE false END AS is_eligible,
+        CASE WHEN sd.max_score > 0 THEN (sd.total_score * 100.0 / sd.max_score) >= COALESCE(sd.passing_pct, 95) ELSE false END AS is_eligible,
         CASE WHEN sd.max_score > 0 THEN (sd.total_score * 100.0 / sd.max_score) ELSE 0 END AS percentage,
         sd.total_score,
         sd.max_score
@@ -968,7 +1027,7 @@ $$;
 GRANT EXECUTE ON FUNCTION public_lookup_ceremony(TEXT) TO anon, authenticated;
 
 -- -------------------------------------------------------------------
--- 7.4 حالة التسجيل — public_get_registration_status
+-- 8.4 حالة التسجيل — public_get_registration_status
 -- -------------------------------------------------------------------
 DROP FUNCTION IF EXISTS public_get_registration_status();
 CREATE OR REPLACE FUNCTION public_get_registration_status()
@@ -996,10 +1055,11 @@ BEGIN
         COALESCE((slot->>'students_per_hour')::INT, 1)
     ), 0) INTO v_total_slots
     FROM app_settings, jsonb_array_elements(exam_schedule) AS slot
-    WHERE id = 1;
+    WHERE app_settings.id = 1;
 
-    SELECT COUNT(*) INTO v_filled_slots FROM students WHERE exam_date IS NOT NULL;
-    SELECT COUNT(*) INTO v_total_students FROM students;
+    SELECT COUNT(*) FILTER (WHERE exam_date IS NOT NULL), COUNT(*)
+    INTO v_filled_slots, v_total_students
+    FROM students;
 
     RETURN QUERY
     SELECT
@@ -1021,7 +1081,7 @@ $$;
 GRANT EXECUTE ON FUNCTION public_get_registration_status() TO anon, authenticated;
 
 -- -------------------------------------------------------------------
--- 7.5 استعلام حضور الحفل (للإدارة) — query_ceremony_attendance
+-- 8.5 استعلام حضور الحفل (للإدارة) — query_ceremony_attendance
 -- -------------------------------------------------------------------
 DROP FUNCTION IF EXISTS query_ceremony_attendance(TEXT, TEXT);
 CREATE OR REPLACE FUNCTION query_ceremony_attendance(p_national_id TEXT, p_phone TEXT DEFAULT NULL)
@@ -1055,25 +1115,24 @@ GRANT EXECUTE ON FUNCTION query_ceremony_attendance(TEXT, TEXT) TO authenticated
 
 
 -- =================================================================================================
--- القسم الثامن: دوال الحفل — Ceremony Functions
+-- القسم التاسع: دوال الحفل — Ceremony Functions
 -- =================================================================================================
 
 -- -------------------------------------------------------------------
--- 8.1 توليد أكواد الحفل — generate_all_ceremony_codes
+-- 9.1 توليد أكواد الحفل — generate_all_ceremony_codes (محسّنة)
+-- تستخدم UPDATE مجمع بدلاً من N+1 تحديثات منفردة
+-- تستخدم الدوال المساعدة calculate_total_score و calculate_max_score
+-- تستخدم قفل منفصل (987654324) لتجنب التصادم مع جدولة الامتحان
 -- -------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION generate_all_ceremony_codes()
 RETURNS VOID
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
 DECLARE
-    student_rec RECORD;
-    gender_char TEXT;
-    level_num   TEXT;
-    stage_char  TEXT;
-    global_seq  INTEGER := 50;
     total_count INTEGER := 0;
+    v_date_format TEXT;
 BEGIN
-    IF NOT is_admin() AND auth.uid() IS NOT NULL THEN
+    IF is_admin() IS NOT TRUE THEN
         RAISE EXCEPTION 'غير مصرح لك بتنفيذ هذا الإجراء.';
     END IF;
 
@@ -1082,67 +1141,60 @@ BEGIN
         RAISE EXCEPTION 'لا يوجد طلاب مسجلين في النظام. قم بإضافة طلاب أولاً.';
     END IF;
 
-    PERFORM pg_advisory_xact_lock(987654321);
+    PERFORM pg_advisory_xact_lock(987654324);
 
     -- مسح الأكواد القديمة
     UPDATE students SET ceremony_code = NULL WHERE ceremony_code IS NOT NULL;
 
-    FOR student_rec IN
-        WITH level_order AS (
-            SELECT id, ROW_NUMBER() OVER (ORDER BY id) AS lev_num
-            FROM competition_levels
-        ),
-        ranked_students AS (
-            SELECT 
-                s.id,
-                s.gender,
-                lo.lev_num,
-                (COALESCE(s.score, 0) + COALESCE(s.rewaya_score, 0) + 
-                 COALESCE(s.tajweed_score, 0) + COALESCE(s.voice_score, 0) + 
-                 COALESCE(s.meaning_score, 0)) AS total_score,
-                (COALESCE(cl.total_points, 100) +
-                 COALESCE(CASE WHEN cl.has_rewaya THEN cl.rewaya_max_score ELSE 0 END, 0) +
-                 COALESCE(CASE WHEN cl.has_tajweed THEN cl.tajweed_max_score ELSE 0 END, 0) +
-                 COALESCE(CASE WHEN cl.has_voice THEN cl.voice_max_score ELSE 0 END, 0) +
-                 COALESCE(CASE WHEN cl.has_meaning THEN cl.meaning_max_score ELSE 0 END, 0)) AS max_points,
-                ROW_NUMBER() OVER (
-                    PARTITION BY s.level_id
-                    ORDER BY (COALESCE(s.score, 0) + COALESCE(s.rewaya_score, 0) + 
-                             COALESCE(s.tajweed_score, 0) + COALESCE(s.voice_score, 0) + 
-                             COALESCE(s.meaning_score, 0)) DESC
-                ) AS rank_in_level
-            FROM students s
-            JOIN competition_levels cl ON cl.id = s.level_id
-            JOIN level_order lo ON lo.id = s.level_id
-            WHERE s.level_id IS NOT NULL
-        )
-        SELECT *, 
-            CASE WHEN max_points > 0 
-                 THEN (total_score * 100.0 / max_points) 
-                 ELSE 0 
-            END AS percentage
-        FROM ranked_students
-        ORDER BY lev_num, total_score DESC
-    LOOP
-        gender_char := CASE WHEN student_rec.gender = 'ذكر' THEN 'M' ELSE 'F' END;
-
-        level_num := LPAD(student_rec.lev_num::TEXT, 2, '0');
-
-        IF student_rec.lev_num <= 9 THEN
-            stage_char := CASE WHEN student_rec.percentage >= 95 THEN 'S' ELSE 'C' END;
-        ELSE
-            stage_char := CASE WHEN student_rec.rank_in_level <= 3 THEN 'S' ELSE 'C' END;
-        END IF;
-
-        UPDATE students
-        SET ceremony_code = gender_char || '-' || level_num || '-' || stage_char || '-' || LPAD(global_seq::TEXT, 3, '0')
-        WHERE id = student_rec.id;
-
-        global_seq := global_seq + 1;
-    END LOOP;
+    -- UPDATE مجمع واحد بدلاً من N+1
+    WITH level_order AS (
+        SELECT id, ROW_NUMBER() OVER (ORDER BY id) AS lev_num
+        FROM competition_levels
+    ),
+    ranked AS (
+        SELECT
+            s.id,
+            s.gender,
+            lo.lev_num,
+            calculate_total_score(s) AS total_score,
+            calculate_max_score(cl) AS max_points,
+            COALESCE(cl.passing_percentage, 95) AS passing_pct,
+            ROW_NUMBER() OVER (
+                PARTITION BY s.level_id
+                ORDER BY calculate_total_score(s) DESC
+            ) AS rank_in_level
+        FROM students s
+        JOIN competition_levels cl ON cl.id = s.level_id
+        JOIN level_order lo ON lo.id = s.level_id
+        WHERE s.level_id IS NOT NULL
+    ),
+    with_percentage AS (
+        SELECT *,
+            CASE WHEN max_points > 0 THEN (total_score * 100.0 / max_points) ELSE 0 END AS percentage
+        FROM ranked
+    ),
+    with_codes AS (
+        SELECT
+            id,
+            CASE WHEN gender = 'ذكر' THEN 'M' ELSE 'F' END || '-' ||
+            LPAD(lev_num::TEXT, 2, '0') || '-' ||
+            CASE
+                WHEN lev_num <= 9 THEN
+                    CASE WHEN (CASE WHEN max_points > 0 THEN (total_score * 100.0 / max_points) ELSE 0 END) >= COALESCE(passing_pct, 95)
+                         THEN 'S' ELSE 'C' END
+                ELSE
+                    CASE WHEN rank_in_level <= 3 THEN 'S' ELSE 'C' END
+            END || '-' ||
+            LPAD((ROW_NUMBER() OVER (ORDER BY lev_num, total_score DESC) + 49)::TEXT, 3, '0') AS ceremony_code
+        FROM with_percentage
+    )
+    UPDATE students s
+    SET ceremony_code = wc.ceremony_code
+    FROM with_codes wc
+    WHERE s.id = wc.id;
 END;
 $$;
 
-COMMENT ON FUNCTION generate_all_ceremony_codes() IS 'توليد أكواد الحفل. الأهلية: percentage >= 95% للمستويات 1-9، وأفضل 3 للمستويات 10+';
+COMMENT ON FUNCTION generate_all_ceremony_codes() IS 'توليد أكواد الحفل. الأهلية: percentage >= passing_percentage للمستويات 1-9، وأفضل 3 للمستويات 10+';
 
 GRANT EXECUTE ON FUNCTION generate_all_ceremony_codes() TO authenticated;

@@ -80,10 +80,6 @@ export async function POST(request: Request) {
       return jsonResponse({ error: 'لم يُعثر على متسابق بهذا الرقم القومي.' }, 404, origin);
     }
 
-    if (student.error) {
-      return jsonResponse(student, !!(student as Record<string, unknown>).closed ? 403 : 400, origin);
-    }
-
     const level = (levels as Array<Record<string, unknown>> | null)?.find(
       l => l.title === (student as Record<string, unknown>).level
     ) ?? null;

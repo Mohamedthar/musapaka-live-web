@@ -16,6 +16,8 @@
 | 8 | `011_fix_all_missing_columns.sql` | إضافة `selected_rewaya` إلى `students`، و `max_score`، وتواريخ الاستعلام. إعادة إنشاء دوال RPC |
 | 9 | `012_fix_students_score_columns_type.sql` | تغيير أنواع أعمدة الدرجات في `students` من NUMERIC(5,2) → DOUBLE PRECISION |
 | 10 | `014_fix_ceremony_eligibility.sql` | **إضافة حساب النسبة المئوية والأهلية (`is_eligible`)** في `public_lookup_ceremony`. المتسابق مؤهل ≥ 95% |
+| 11 | `015_remove_age_constraint.sql` | إزالة قيد العمر `students_age_check` |
+| 12 | `016_add_passing_percentage.sql` | إضافة `passing_percentage` لكل مستوى — نسبة نجاح ديناميكية بدل 95% الثابتة |
 
 ## ملاحظات
 

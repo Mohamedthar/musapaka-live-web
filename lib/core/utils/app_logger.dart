@@ -14,7 +14,9 @@ class AppLogger {
       _logDir = '${dir.path}/logs';
       await Directory(_logDir!).create(recursive: true);
       _initialized = true;
-    } catch (_) {}
+    } catch (_) {
+      // ignore: avoid_catches_without_on_clauses
+    }
   }
 
   static void info(String message, {String? tag}) {
@@ -60,7 +62,9 @@ class AppLogger {
         '${_formatEntry(entry)}\n',
         mode: FileMode.append,
       );
-    } catch (_) {}
+    } catch (_) {
+      // ignore: avoid_catches_without_on_clauses
+    }
   }
 
   static String _formatEntry(_LogEntry entry) {

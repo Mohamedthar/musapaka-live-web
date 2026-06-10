@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import '../core/constants/app_constants.dart';
+import '../core/utils/app_logger.dart';
 
 class CloudinaryService {
   String _buildUploadUrl(String cloudName) {
@@ -17,7 +18,9 @@ class CloudinaryService {
           return error['message'].toString();
         }
       }
-    } catch (_) {}
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to parse Cloudinary error response', error: e, stack: stackTrace);
+    }
     return 'خطأ غير معروف';
   }
 

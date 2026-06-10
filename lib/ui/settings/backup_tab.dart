@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/app_logger.dart';
 import '../../services/backup_service.dart';
 
 class BackupTab extends StatefulWidget {
@@ -50,7 +51,8 @@ class BackupTabState extends State<BackupTab> {
   Future<void> openFolder() async {
     try {
       await Process.run('explorer', [await _b.getBackupDirPath()]);
-    } catch (_) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to open backup folder', error: e, stack: stackTrace);
       if (mounted) AppTheme.showSnack(context, 'تعذر فتح المجلد', color: Colors.orange);
     }
   }

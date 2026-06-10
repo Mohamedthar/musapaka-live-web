@@ -1,4 +1,3 @@
-import React from 'react';
 import Link from 'next/link';
 
 const navLinks = [
@@ -8,6 +7,7 @@ const navLinks = [
   { href: '/status?tab=result', label: 'النتائج' },
 ];
 
+// TODO: Move these phone numbers to app_settings in the future
 const phones = ['01065502096', '01023240169', '01062114225'];
 
 const socialLinks = [

@@ -61,7 +61,7 @@ class StatisticsRankingTable extends StatelessWidget {
             1: FixedColumnWidth(120),  // الترتيب / المركز
             2: FlexColumnWidth(1.5),   // اسم المتسابق
             3: FixedColumnWidth(140),  // كود الحفل
-            4: FixedColumnWidth(88),   // المحفوظ
+             4: FixedColumnWidth(95),   // المحفوظ
             5: FlexColumnWidth(1.2),   // الهاتف
             6: FlexColumnWidth(1.5),   // الرقم القومي
             7: FixedColumnWidth(130),  // الدرجة
@@ -291,7 +291,7 @@ class StatisticsRankingTable extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       _buildRankBadge(rs),
-                      if (rs.student.memorizationAmount != null) ...[
+                      if (rs.student.memorizationAmount != null && rs.student.memorizationAmount != 0) ...[
                         const SizedBox(height: 4),
                         _buildMemorizationBadge(rs.student.memorizationAmount),
                       ],
@@ -439,7 +439,7 @@ class StatisticsRankingTable extends StatelessWidget {
 
 
   Widget _buildMemorizationBadge(int? amount) {
-    if (amount == null) return const SizedBox.shrink();
+    if (amount == null || amount == 0) return const SizedBox.shrink();
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -464,7 +464,7 @@ class StatisticsRankingTable extends StatelessWidget {
     final maxScore = rs.maxLevelScore;
     final percentage = rs.percentage / 100.0;
     Color color;
-    if (percentage >= 0.95) {
+    if (percentage >= (rs.passingPercentage / 100.0)) {
       color = Colors.green;
     } else if (percentage >= 0.75) {
       color = Colors.blue;
@@ -495,7 +495,7 @@ class StatisticsRankingTable extends StatelessWidget {
   Widget _buildPercentageBadge(RankedStudent rs) {
     final percentage = rs.percentage;
     Color color;
-    if (percentage >= 95) {
+    if (percentage >= rs.passingPercentage) {
       color = Colors.green;
     } else if (percentage >= 75) {
       color = Colors.blue;
@@ -602,7 +602,7 @@ class StatisticsRankingTable extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (s.memorizationAmount != null)
+                if (s.memorizationAmount != null && s.memorizationAmount != 0)
                   _buildDetailRow('عدد الأجزاء المحفوظة', s.memorizationAmount!.toDouble()),
                 _buildDetailRow('درجة الحفظ', s.score),
                 if (s.rewayaScore != null) _buildDetailRow('درجة الرواية', s.rewayaScore),

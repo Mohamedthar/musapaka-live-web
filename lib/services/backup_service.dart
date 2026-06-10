@@ -39,7 +39,8 @@ class BackupInfo {
     String content;
     try {
       content = file.readAsStringSync();
-    } catch (_) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to read backup file: ${file.path}', error: e, stack: stackTrace);
       return BackupInfo(path: file.path, sizeBytes: size, createdAt: file.lastModifiedSync(), studentCount: 0, levelCount: 0);
     }
     try {
@@ -54,7 +55,8 @@ class BackupInfo {
         levelCount: levels.length,
         imageCount: data['image_count'] as int? ?? 0,
       );
-    } catch (_) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to parse backup JSON: ${file.path}', error: e, stack: stackTrace);
       return BackupInfo(path: file.path, sizeBytes: size, createdAt: file.lastModifiedSync(), studentCount: 0, levelCount: 0);
     }
   }
@@ -124,7 +126,10 @@ class BackupService {
       final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 15));
       if (response.statusCode == 200) return response.bodyBytes;
       return null;
-    } catch (_) { return null; }
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to download image: $url', error: e, stack: stackTrace);
+      return null;
+    }
   }
 
   Future<int> _downloadStudentImages(Student student, String backupFolderName) async {
@@ -167,7 +172,7 @@ class BackupService {
 
     Map<String, dynamic>? settings;
     if (includeSettings) {
-      try { settings = await _service.getSettings(); } catch (_) {}
+      try { settings = await _service.getSettings(); } catch (e, stackTrace) { AppLogger.error('Failed to get settings during backup', error: e, stack: stackTrace); }
     }
 
     int totalImages = 0;
@@ -211,7 +216,7 @@ class BackupService {
     final file = await createBackup(includeImages: false);
     try {
       await Process.run('explorer.exe', [await _backupDir]);
-    } catch (_) {}
+    } catch (e, stackTrace) { AppLogger.error('Failed to open backup directory', error: e, stack: stackTrace); }
     return file;
   }
 
@@ -220,7 +225,7 @@ class BackupService {
     if (backups.isEmpty) return null;
     try {
       await Process.run('explorer.exe', [await _backupDir]);
-    } catch (_) {}
+    } catch (e, stackTrace) { AppLogger.error('Failed to open backup directory', error: e, stack: stackTrace); }
     return null;
   }
 
@@ -232,13 +237,13 @@ class BackupService {
     int restored = 0;
 
     for (final l in levelsJson) {
-      try { await _service.createLevel(CompetitionLevel.fromJson(l as Map<String, dynamic>)); restored++; } catch (_) {}
+      try { await _service.createLevel(CompetitionLevel.fromJson(l as Map<String, dynamic>)); restored++; } catch (e, stackTrace) { AppLogger.error('Failed to restore level', error: e, stack: stackTrace); }
     }
     for (final s in studentsJson) {
-      try { await _service.createStudent(Student.fromJson(s as Map<String, dynamic>)); restored++; } catch (_) {}
+      try { await _service.createStudent(Student.fromJson(s as Map<String, dynamic>)); restored++; } catch (e, stackTrace) { AppLogger.error('Failed to restore student', error: e, stack: stackTrace); }
     }
     if (settings != null) {
-      try { await _service.updateSettings(settings); } catch (_) {}
+      try { await _service.updateSettings(settings); } catch (e, stackTrace) { AppLogger.error('Failed to restore settings', error: e, stack: stackTrace); }
     }
     return restored;
   }
@@ -250,7 +255,10 @@ class BackupService {
       final files = d.listSync().whereType<File>().where((f) => f.path.endsWith('.json')).toList();
       files.sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
       return files.map((f) => BackupInfo.fromFile(f)).toList();
-    } catch (_) { return []; }
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to list backups', error: e, stack: stackTrace);
+      return [];
+    }
   }
 
   Future<bool> deleteBackup(String path) async {
@@ -267,7 +275,10 @@ class BackupService {
         }
       }
       return true;
-    } catch (_) { return false; }
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to delete backup: $path', error: e, stack: stackTrace);
+      return false;
+    }
   }
 
   Future<int> getTotalImageSize() async {
@@ -279,7 +290,10 @@ class BackupService {
         if (entity is File) total += entity.lengthSync();
       }
       return total;
-    } catch (_) { return 0; }
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to calculate image size', error: e, stack: stackTrace);
+      return 0;
+    }
   }
 
   Future<DateTime?> getLastBackupDate() async {
@@ -300,7 +314,7 @@ class BackupService {
     if (await shouldAutoBackup()) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_autoBackupKey, DateTime.now().toIso8601String());
-      try { return await createBackup(includeImages: true); } catch (_) { return null; }
+      try { return await createBackup(includeImages: true); } catch (e, stackTrace) { AppLogger.error('Auto backup failed', error: e, stack: stackTrace); return null; }
     }
     return null;
   }

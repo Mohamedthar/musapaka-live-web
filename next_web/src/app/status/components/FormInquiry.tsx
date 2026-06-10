@@ -70,14 +70,25 @@ export default function FormInquiry() {
     const el = document.getElementById(id);
     if (!el) return null;
 
+    const parent = el.closest('.hidden.print\\:block') as HTMLElement | null;
+    const wasHidden = parent ? parent.classList.contains('hidden') : false;
+    if (wasHidden) {
+      parent!.classList.remove('hidden');
+      parent!.style.opacity = '0';
+      parent!.style.position = 'fixed';
+      parent!.style.pointerEvents = 'none';
+    }
+
+    await new Promise(r => requestAnimationFrame(r));
+
     const html2canvas = (await import('html2canvas-pro')).default;
-    return html2canvas(el, {
+    const canvas = await html2canvas(el, {
       scale: 2,
       useCORS: true,
       backgroundColor: '#ffffff',
       logging: false,
       windowWidth: 850,
-      windowHeight: el.scrollHeight + 150,
+      windowHeight: el.scrollHeight + 200,
       onclone: (clonedDoc) => {
         const clonedEl = clonedDoc.getElementById(id);
         if (!clonedEl) return;
@@ -92,6 +103,15 @@ export default function FormInquiry() {
         }
       },
     });
+
+    if (wasHidden) {
+      parent!.classList.add('hidden');
+      parent!.style.opacity = '';
+      parent!.style.position = '';
+      parent!.style.pointerEvents = '';
+    }
+
+    return canvas;
   };
 
   const handleDownloadImage = async () => {
@@ -166,7 +186,7 @@ export default function FormInquiry() {
       name: studentData.name,
       phone: studentData.phone || '',
       nationalId: studentData.national_id || '',
-      age: (studentData.age ?? '').toString(),
+      birthDate: studentData.birth_date || '',
       gender: studentData.gender || '',
       memorizerName: studentData.memorizer_name || '',
       memorizerPhone: studentData.memorizer_phone || '',

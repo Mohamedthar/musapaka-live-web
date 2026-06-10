@@ -1,7 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/utils/app_logger.dart';
-import '../../../data/repositories/auth_repository.dart';
+import '../../data/repositories/auth_repository.dart';
 import '../shared/widgets/hero_branding.dart';
 import '../dashboard/dashboard_screen.dart';
 

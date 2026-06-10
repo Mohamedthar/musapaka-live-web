@@ -6,6 +6,7 @@ import '../../../core/utils/responsive.dart';
 import '../../../core/utils/validators.dart';
 import '../../../data/models/competition_level.dart';
 import '../../../data/models/student.dart';
+import '../../shared/widgets/gender_safe_image.dart';
 
 class StudentTable extends StatelessWidget {
   final List<Student> students;
@@ -223,7 +224,9 @@ class StudentTable extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         ),
         const SizedBox(width: 8),
-        Container(
+        GenderSafeImage(
+          gender: student.gender,
+          image: Container(
           width: 44,
           height: 44,
           decoration: BoxDecoration(
@@ -239,6 +242,7 @@ class StudentTable extends StatelessWidget {
           child: !Validator.isValidImageUrl(student.profileImageUrl)
               ? Icon(Icons.person, size: 24, color: Colors.grey.shade400)
               : null,
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -447,7 +451,9 @@ class StudentTable extends StatelessWidget {
         _td(
           Row(
             children: [
-              Container(
+              GenderSafeImage(
+                gender: student.gender,
+                image: Container(
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
@@ -465,6 +471,7 @@ class StudentTable extends StatelessWidget {
                 child: !Validator.isValidImageUrl(student.profileImageUrl)
                     ? Icon(Icons.person, size: 20, color: Colors.grey.shade400)
                     : null,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(

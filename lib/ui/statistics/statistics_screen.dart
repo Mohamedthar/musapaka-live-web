@@ -36,6 +36,7 @@ class _MemorizerStudentDetail {
   final double? totalScore;
   final String rankTitle;
   final double percentage;
+  final int passingPercentage;
 
   _MemorizerStudentDetail({
     required this.studentName,
@@ -44,6 +45,7 @@ class _MemorizerStudentDetail {
     required this.totalScore,
     required this.rankTitle,
     required this.percentage,
+    required this.passingPercentage,
   });
 }
 
@@ -222,7 +224,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         map[key]!['total'] = map[key]!['total'] + 1;
         if (r.rankNumber == 1) map[key]!['winners'] = map[key]!['winners'] + 1;
         if (r.rankNumber <= 3) map[key]!['top3'] = map[key]!['top3'] + 1;
-        if (r.percentage >= 95) map[key]!['passed'] = map[key]!['passed'] + 1;
+        if (r.percentage >= r.passingPercentage) map[key]!['passed'] = map[key]!['passed'] + 1;
         detailsMap[key]!.add(_MemorizerStudentDetail(
           studentName: r.student.name,
           level: r.student.level,
@@ -230,6 +232,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           totalScore: r.student.totalScore,
           rankTitle: r.rankTitle,
           percentage: r.percentage,
+          passingPercentage: r.passingPercentage,
         ));
       }
     }
@@ -307,7 +310,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       builder: (ctx) => AlertDialog(
         title: const Text('تأكيد توليد الأكواد', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, color: _primary)),
         content: const Text('سيتم توليد أكواد الحفل لجميع الطلاب حسب الترتيب:\n'
-            '• المستويات 1-9: الناجح (95%+) → منصة (S)\n'
+            '• المستويات 1-9: الناجح (نسبة النجاح+) → منصة (S)\n'
             '• المستويات 10-19: أول 3 مراكز → منصة (S)\n'
             '• الصيغة: جنس-مستوى-مكان-رقم',
             style: TextStyle(fontFamily: 'Cairo', fontSize: 13)),
@@ -993,7 +996,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         ),
                         ...students.asMap().entries.map((se) {
                           final s = se.value;
-                          final pctColor = s.percentage >= 95 ? Colors.green : (s.percentage >= 75 ? Colors.blue : (s.percentage >= 50 ? Colors.orange : Colors.red));
+                          final pctColor = s.percentage >= s.passingPercentage ? Colors.green : (s.percentage >= 75 ? Colors.blue : (s.percentage >= 50 ? Colors.orange : Colors.red));
                           final rankColor = s.rank == 1 ? Colors.amber.shade800 : (s.rank == 2 ? Colors.blueGrey.shade600 : (s.rank == 3 ? Colors.brown.shade500 : Colors.grey.shade600));
                           return Container(
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),

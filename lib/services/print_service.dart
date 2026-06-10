@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:printing/printing.dart';
@@ -13,6 +12,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import '../core/utils/app_logger.dart';
 
 class PrintService {
   static final Map<String, pw.ImageProvider> _imageCache = {};
@@ -128,7 +128,7 @@ class PrintService {
       final data = await rootBundle.load('assets/images/logo_musapaka.jpeg');
       return pw.MemoryImage(data.buffer.asUint8List());
     } catch (e) {
-      debugPrint('Failed to load logo asset: $e');
+      AppLogger.info('Failed to load logo asset: $e');
       return null;
     }
   }
@@ -146,7 +146,7 @@ class PrintService {
       }
       return null;
     } catch (e) {
-      debugPrint('Failed to fetch QR code: $e');
+      AppLogger.info('Failed to fetch QR code: $e');
       return null;
     }
   }
@@ -176,7 +176,7 @@ class PrintService {
         }
       }
     } catch (e) {
-      debugPrint('Failed to fetch profile image: $e');
+      AppLogger.info('Failed to fetch profile image: $e');
     }
     return null;
   }
@@ -185,7 +185,7 @@ class PrintService {
     try {
       return await _service.getLevels();
     } catch (e) {
-      debugPrint('Failed to fetch levels: $e');
+      AppLogger.info('Failed to fetch levels: $e');
       return defaultLevels;
     }
   }
@@ -203,10 +203,11 @@ class PrintService {
     final normalized = normalizeArabic(levelName);
     try {
       return levels.firstWhere((l) => normalizeArabic(l.title) == normalized);
-    } catch (_) {
+    } catch (e, stackTrace) {
       try {
         return levels.firstWhere((l) => normalizeArabic(l.title).contains(normalized) || normalized.contains(normalizeArabic(l.title)));
-      } catch (_) {
+      } catch (e2, stackTrace2) {
+        AppLogger.error('Failed to match level: $levelName', error: e2, stack: stackTrace2);
         return CompetitionLevel(title: displayLevel, content: 'محتوى الاختبار غير متوفر حالياً');
       }
     }
@@ -353,7 +354,7 @@ class PrintService {
                         children: [
                           pw.Text('مسابقة أهل القرآن الكبرى', style: pw.TextStyle(color: blueDark, fontSize: 20, font: arabicFontBold)),
                           pw.SizedBox(height: 2),
-                          pw.Text('مقر اللجنة: مركز فاقوس - قرية الديدمون - شارع الشيخ - منزل المشرف العام', style: pw.TextStyle(color: gold, fontSize: 13, font: arabicFontBold)),
+                          pw.Text('مقر اللجنة: مركز فاقوس - قرية الديدامون - شارع الشيخ - منزل المشرف العام', style: pw.TextStyle(color: gold, fontSize: 13, font: arabicFontBold)),
                         ]
                       )
                     ),

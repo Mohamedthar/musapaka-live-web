@@ -1,3 +1,5 @@
+import '../../core/utils/app_logger.dart';
+
 class CompetitionLevel {
   final int? id;
   final String title;
@@ -19,6 +21,7 @@ class CompetitionLevel {
   final int voiceMaxScore;
   final bool hasMeaning;
   final int meaningMaxScore;
+  final int? passingPercentage;
   final List<String> branches;
   final bool requireCustomAmount;
   final String? firstPrize;
@@ -47,6 +50,7 @@ class CompetitionLevel {
     this.voiceMaxScore = 100,
     this.hasMeaning = false,
     this.meaningMaxScore = 100,
+    this.passingPercentage,
     this.branches = const [],
     this.requireCustomAmount = false,
     this.firstPrize,
@@ -79,6 +83,7 @@ class CompetitionLevel {
       voiceMaxScore: json['voice_max_score'] ?? 100,
       hasMeaning: json['has_meaning'] ?? false,
       meaningMaxScore: json['meaning_max_score'] ?? 100,
+      passingPercentage: json['passing_percentage'],
       branches: (json['branches'] as List?)?.map((e) => e.toString()).toList() ?? [],
       requireCustomAmount: json['require_custom_amount'] ?? false,
       firstPrize: json['first_prize'],
@@ -110,6 +115,7 @@ class CompetitionLevel {
       'voice_max_score': voiceMaxScore,
       'has_meaning': hasMeaning,
       'meaning_max_score': meaningMaxScore,
+      'passing_percentage': passingPercentage,
       'branches': branches,
       'require_custom_amount': requireCustomAmount,
       if (firstPrize != null) 'first_prize': firstPrize,
@@ -142,6 +148,7 @@ class CompetitionLevel {
     int? voiceMaxScore,
     bool? hasMeaning,
     int? meaningMaxScore,
+    Object? passingPercentage = _unset,
     List<String>? branches,
     bool? requireCustomAmount,
     Object? firstPrize = _unset,
@@ -170,6 +177,7 @@ class CompetitionLevel {
       voiceMaxScore: voiceMaxScore ?? this.voiceMaxScore,
       hasMeaning: hasMeaning ?? this.hasMeaning,
       meaningMaxScore: meaningMaxScore ?? this.meaningMaxScore,
+      passingPercentage: identical(passingPercentage, _unset) ? this.passingPercentage : passingPercentage as int?,
       branches: branches ?? this.branches,
       requireCustomAmount: requireCustomAmount ?? this.requireCustomAmount,
       firstPrize: identical(firstPrize, _unset) ? this.firstPrize : firstPrize as String?,
@@ -223,7 +231,8 @@ class CompetitionLevel {
     if (title == null) return null;
     try {
       return levels.firstWhere((l) => l.title == title);
-    } catch (_) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to find level by title: $title', error: e, stack: stackTrace);
       return null;
     }
   }

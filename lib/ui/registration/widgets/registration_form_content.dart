@@ -8,6 +8,7 @@ import '../../../data/models/competition_level.dart';
 import '../../../services/supabase_service.dart';
 import '../../../services/cloudinary_service.dart';
 import '../../../core/utils/validators.dart';
+import '../../../core/utils/app_logger.dart';
 import '../../../core/theme/app_theme.dart';
 
 // دالة ضغط الصور في مسار منفصل لمنع تجميد الواجهة
@@ -177,7 +178,9 @@ class _RegistrationFormContentState extends State<RegistrationFormContent> {
             }
           }
           setState(() {});
-        } catch (_) {}
+        } catch (e, stackTrace) {
+          AppLogger.error('Failed to parse national ID date in registration', error: e, stack: stackTrace);
+        }
       }
 
       // 3. Real-time Duplicate ID Check
@@ -200,7 +203,8 @@ class _RegistrationFormContentState extends State<RegistrationFormContent> {
           AppTheme.showSnack(context, 'تنبيه: هذا الرقم القومي مسجل مسبقاً!', color: AppTheme.warningColor);
         }
       }
-    } catch (_) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to check duplicate national ID in registration', error: e, stack: stackTrace);
       if (mounted) setState(() => _isCheckingId = false);
     }
   }

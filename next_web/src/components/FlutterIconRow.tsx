@@ -1,4 +1,4 @@
-import React from 'react';
+import type { ReactNode } from 'react';
 
 export function FlutterIconRow({
   label,
@@ -9,14 +9,14 @@ export function FlutterIconRow({
 }: {
   label: string;
   value: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   valueColor?: string;
   bgColor?: string;
 }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center' }}>
       <div style={{
-        minWidth: '18pt', width: '18pt', height: '18pt',
+        minWidth: '21pt', width: '21pt', height: '21pt',
         borderRadius: '5pt',
         display: 'flex',
         alignItems: 'center', justifyContent: 'center',
@@ -25,7 +25,7 @@ export function FlutterIconRow({
       }}>
         {icon}
       </div>
-      <div style={{ marginRight: '5pt' }}>
+      <div style={{ marginRight: '6pt' }}>
         <span style={{
           fontSize: '12pt', fontWeight: 400,
           color: '#0f172a',
@@ -54,13 +54,13 @@ export function FlutterGridCell({
 }: {
   label: string;
   value: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   isTopRow?: boolean;
   bg?: string;
 }) {
   return (
     <div style={{
-      padding: '6pt 8pt',
+      padding: '8pt 10pt',
       display: 'flex', alignItems: 'center',
       gap: '6pt',
       background: bg,

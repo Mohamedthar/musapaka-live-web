@@ -67,10 +67,6 @@ export async function POST(request: Request) {
       return jsonResponse({ error: 'لم يُعثر على متسابق بهذا الرقم القومي.' }, 404, origin);
     }
 
-    if ((rows[0] as Record<string, unknown>).error) {
-      return jsonResponse(rows[0], !!(rows[0] as Record<string, unknown>).closed ? 403 : 400, origin);
-    }
-
     return jsonResponse({ success: true, student: rows[0] }, 200, origin);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';

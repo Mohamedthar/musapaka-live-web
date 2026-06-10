@@ -65,6 +65,11 @@ export function checkRateLimit(ip: string, maxRequests = 5, windowMs = 60_000): 
   return true;
 }
 
+export function clearRateLimitsForTesting(): void {
+  rateLimitMap.clear();
+  lastCleanup = Date.now();
+}
+
 export function getClientIp(request: Request): string {
   return (
     request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||

@@ -4,6 +4,7 @@ import '../../../data/models/student.dart';
 import '../../../services/supabase_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/validators.dart';
+import '../../shared/widgets/gender_safe_image.dart';
 
 class StudentDetailsScreen extends StatefulWidget {
   final Student student;
@@ -106,7 +107,9 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            CircleAvatar(
+            GenderSafeImage(
+              gender: _student.gender,
+              image: CircleAvatar(
               radius: 30,
               backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
               backgroundImage: Validator.isValidImageUrl(_student.profileImageUrl)
@@ -122,6 +125,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                         color: AppTheme.primaryColor,
                       ),
                     ),
+              ),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -228,6 +232,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                   child: _buildImageWidget(
                     _student.profileImageUrl,
                     'الصورة الشخصية',
+                    _student.gender,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -235,6 +240,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                   child: _buildImageWidget(
                     _student.birthCertificateUrl,
                     'شهادة الميلاد',
+                    _student.gender,
                   ),
                 ),
               ],
@@ -245,10 +251,12 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
     );
   }
 
-  Widget _buildImageWidget(String? url, String label) {
+  Widget _buildImageWidget(String? url, String label, String? gender) {
     return Column(
       children: [
-        Container(
+        GenderSafeImage(
+          gender: gender,
+          image: Container(
           height: 150,
           width: double.infinity,
           decoration: BoxDecoration(
@@ -273,6 +281,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
               : const Center(
                   child: Icon(Icons.image_not_supported, size: 40),
                 ),
+          ),
         ),
         const SizedBox(height: 8),
         Text(

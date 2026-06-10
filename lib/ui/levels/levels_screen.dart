@@ -5,6 +5,7 @@ import '../../services/supabase_service.dart';
 import '../../services/export_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/responsive.dart';
+import '../../core/utils/app_logger.dart';
 import '../../ui/shared/widgets/export_fields.dart';
 import '../../ui/shared/widgets/confirm_dialog.dart';
 import 'widgets/levels_top_bar.dart';
@@ -59,7 +60,9 @@ class LevelsScreenState extends State<LevelsScreen> {
     try {
       _allStudents = await _service.getAllStudents();
       if (mounted) setState(() => _studentsLoaded = true);
-    } catch (_) {}
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to load students in levels screen', error: e, stack: stackTrace);
+    }
   }
 
   void _snack(String msg, [Color color = Colors.green]) {

@@ -52,6 +52,12 @@ export default function RootLayout({
           <link rel="dns-prefetch" href="https://res.cloudinary.com" />
         </head>
         <body className={`${cairo.variable} ${notoSerif.variable} font-cairo antialiased`}>
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-1/2 focus:-translate-x-1/2 focus:z-[9999] focus:bg-secondary-fixed focus:text-black focus:px-4 focus:py-2 focus:rounded-lg focus:font-bold focus:shadow-lg"
+        >
+          تخطي إلى المحتوى
+        </a>
         <OfflineBanner />
         <div className="pt-[var(--online-banner-h,0px)] transition-[padding] duration-300">
           <Suspense fallback={
@@ -59,7 +65,9 @@ export default function RootLayout({
               <div className="w-10 h-10 border-3 border-primary/25 border-t-primary rounded-full animate-spin" />
             </div>
           }>
-            {children}
+            <main id="main-content">
+              {children}
+            </main>
           </Suspense>
         </div>
         <Toaster position="top-center" />

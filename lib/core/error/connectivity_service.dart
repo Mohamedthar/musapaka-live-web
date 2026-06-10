@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import '../utils/app_logger.dart';
 
 class ConnectivityService {
   static final ConnectivityService _instance = ConnectivityService._();
@@ -33,7 +34,8 @@ class ConnectivityService {
         _isOnline = online;
         _controller.add(online);
       }
-    } catch (_) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Connectivity check failed', error: e, stack: stackTrace);
       if (_isOnline) {
         _isOnline = false;
         _controller.add(false);

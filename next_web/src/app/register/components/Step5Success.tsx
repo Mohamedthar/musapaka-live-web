@@ -6,14 +6,13 @@ import { ArrowLeft, Printer, User, Layers, Calendar, CreditCard, Phone, MapPin, 
 import type { CompetitionLevel } from '@/lib/database.types';
 import toast from 'react-hot-toast';
 import { FlutterIconRow, FlutterGridCell } from '@/components/FlutterIconRow';
-import { parseNationalId } from '@/lib/national-id';
 
 interface Step5SuccessProps {
   formData: {
     name: string;
     phone: string;
     nationalId: string;
-    age: string;
+    birthDate: string;
     gender: string;
     memorizerName: string;
     memorizerPhone: string;
@@ -44,9 +43,9 @@ export default function Step5Success({
 }: Step5SuccessProps) {
   const receiptRef = useRef<HTMLDivElement>(null);
   const evalRef = useRef<HTMLDivElement>(null);
-  const [, setScale] = useState(1);
-  const [, setReceiptHeight] = useState(0);
-  const [, setEvalHeight] = useState(0);
+  const scaleRef = useRef(1);
+  const receiptHeightRef = useRef(0);
+  const evalHeightRef = useRef(0);
   const [isDownloading, setIsDownloading] = useState(false);
 
   const downloadAsImages = async () => {
@@ -122,9 +121,9 @@ export default function Step5Success({
       const targetWidth = 800;
       const padding = 32; // 16px on each side
       if (width < targetWidth + padding) {
-        setScale((width - padding) / targetWidth);
+        scaleRef.current = (width - padding) / targetWidth;
       } else {
-        setScale(1);
+        scaleRef.current = 1;
       }
     };
 
@@ -134,10 +133,10 @@ export default function Step5Success({
     // Dynamic ResizeObserver to continuously track dimensions (handles slow-loading fonts, images, etc.)
     const resizeObserver = new ResizeObserver(() => {
       if (receiptRef.current) {
-        setReceiptHeight(receiptRef.current.scrollHeight);
+        receiptHeightRef.current = receiptRef.current.scrollHeight;
       }
       if (evalRef.current) {
-        setEvalHeight(evalRef.current.scrollHeight);
+        evalHeightRef.current = evalRef.current.scrollHeight;
       }
     });
 
@@ -242,7 +241,7 @@ export default function Step5Success({
               <div style={{ paddingBottom: '8pt', borderBottom: '2pt solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', flex: 1, paddingLeft: '16pt' }}>
                   <h1 style={{ color: '#0f172a', fontSize: '20pt', fontWeight: 700, margin: 0, lineHeight: 1.2, fontFamily: '"Cairo", sans-serif' }}>مسابقة أهل القرآن الكبرى</h1>
-                  <p style={{ color: '#b45309', fontSize: '13pt', fontWeight: 700, margin: '4pt 0 0 0', lineHeight: 1.2, fontFamily: '"Cairo", sans-serif' }}>مقر اللجنة: مركز فاقوس - قرية الديدمون - شارع الشيخ - منزل المشرف العام</p>
+                  <p style={{ color: '#b45309', fontSize: '13pt', fontWeight: 700, margin: '4pt 0 0 0', lineHeight: 1.2, fontFamily: '"Cairo", sans-serif' }}>مقر اللجنة: مركز فاقوس - قرية الديدامون - شارع الشيخ - منزل المشرف العام</p>
                 </div>
                 <div style={{ width: '70pt', height: '70pt', borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
                   <img src="/logo_musapaka.jpeg" alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -254,11 +253,11 @@ export default function Step5Success({
 
                 {/* ── INFO CARD ── */}
                 <div style={{ border: '1pt solid #e2e8f0', borderRadius: '10pt', padding: '10pt 12pt', backgroundColor: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowWrap: 'break-word' }}>
                     <div style={{ marginBottom: '8pt' }}><FlutterIconRow label="الاسم" value={formData.name} icon={<User size="12pt" color="white" />} /></div>
                     <div style={{ marginBottom: '8pt' }}><FlutterIconRow label="المستوى" value={`${formData.level} - ${getLevelContent()}${formData.selectedRewaya ? ' - ' + formData.selectedRewaya : ''}${branchName ? ' - ' + branchName : ''}`} icon={<Layers size="12pt" color="white" />} /></div>
                     <div style={{ marginBottom: '8pt' }}><FlutterIconRow label="موعد الامتحان" value={examSlot || 'لم يتم التحديد'} icon={<Calendar size="12pt" color="white" />} valueColor="#1e40af" /></div>
-                    <FlutterIconRow label="العمر" value={`${formData.age} سنة`} icon={<User size="12pt" color="white" />} />
+                    <FlutterIconRow label="العمر" value={formData.birthDate ? `${(() => { const [y, m, d] = formData.birthDate.split('-').map(Number); const bd = new Date(y, m - 1, d); const now = new Date(); let age = now.getFullYear() - bd.getFullYear(); if (now.getMonth() < bd.getMonth() || (now.getMonth() === bd.getMonth() && now.getDate() < bd.getDate())) age--; return age; })()} سنة` : ''} icon={<User size="12pt" color="white" />} />
                   </div>
 
                   <div style={{ width: '100pt', minWidth: '100pt', marginRight: '20pt', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -278,7 +277,7 @@ export default function Step5Success({
                   </div>
                 </div>
 
-                <div style={{ height: '16pt' }} />
+                <div style={{ height: '24pt' }} />
 
                 {/* ── DETAILED DATA GRID ── */}
                 <div style={{ position: 'relative' }}>
@@ -312,7 +311,7 @@ export default function Step5Success({
                     <FlutterGridCell label="الرقم القومي" value={formData.nationalId} icon={<CreditCard size="10pt" color="white" />} isTopRow={true} bg="#f8fafc" />
                     <FlutterGridCell label="هاتف الطالب / ولي الأمر" value={formData.phone} icon={<Phone size="10pt" color="white" />} isTopRow={true} bg="#f8fafc" />
                     
-                    <FlutterGridCell label="تاريخ الميلاد" value={parseNationalId(formData.nationalId)?.birthDate ?? ''} icon={<Calendar size="10pt" color="white" />} />
+                    <FlutterGridCell label="تاريخ الميلاد" value={formData.birthDate} icon={<Calendar size="10pt" color="white" />} />
                     <FlutterGridCell label="النوع" value={formData.gender} icon={<User size="10pt" color="white" />} />
                     
                     <FlutterGridCell label="المحفظ" value={formData.memorizerName || '-'} icon={<User size="10pt" color="white" />} bg="#f8fafc" />
@@ -324,7 +323,7 @@ export default function Step5Success({
                   </div>
                 </div>
 
-                <div style={{ height: '16pt' }} />
+                <div style={{ height: '24pt' }} />
 
                 {/* ── NOTES / CONDITIONS ── */}
                 <div style={{ border: '1pt solid #e2e8f0', borderRadius: '10pt', backgroundColor: '#f8fafc' }}>
@@ -384,7 +383,7 @@ export default function Step5Success({
                     <div style={{ width: '70pt', height: '70pt' }}>
                       <img 
                         src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://maps.app.goo.gl/F75xUpSbdsfzDmHn8" 
-                        alt="QR Code" 
+                        alt="رمز QR لتوجيهك إلى موقع اللجنة على خرائط جوجل" 
                         style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
                       />
                     </div>
