@@ -162,7 +162,7 @@ export default function Step1Personal({
                     <option value="">السنة</option>
                     {Array.from({ length: 80 }, (_, i) => {
                       const y = new Date().getFullYear() - i;
-                      return <option key={y} value={y}>{y}</option>;
+                      return <option key={y} value={String(y)}>{y}</option>;
                     })}
                   </select>
                 </div>
