@@ -117,11 +117,10 @@ export default function Step1Personal({
                 {/* اليوم */}
                 <div className="relative">
                   <select
-                    value={formData.birthDate ? formData.birthDate.split('-')[2] : ''}
+                    value={formData.birthDate ? formData.birthDate.split('-')[2] ?? '' : ''}
                     onChange={e => {
-                      const parts = (formData.birthDate || '--').split('-');
-                      parts[2] = e.target.value.padStart(2, '0');
-                      setFormData((p) => ({ ...p, birthDate: parts.join('-') }));
+                      const [y = '', m = ''] = (formData.birthDate || '').split('-');
+                      setFormData((p) => ({ ...p, birthDate: [y, m, e.target.value.padStart(2, '0')].join('-') }));
                       clearErr('birthDate');
                     }}
                     className={`w-full bg-white border-2 ${fieldErrors.birthDate ? 'border-amber-400' : 'border-primary/20'} rounded-xl py-[11px] px-1.5 sm:px-2 text-primary text-[13px] sm:text-sm font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/8 transition-all appearance-none shadow-sm cursor-pointer text-center`}
@@ -135,11 +134,10 @@ export default function Step1Personal({
                 {/* الشهر */}
                 <div className="relative">
                   <select
-                    value={formData.birthDate ? formData.birthDate.split('-')[1] : ''}
+                    value={formData.birthDate ? formData.birthDate.split('-')[1] ?? '' : ''}
                     onChange={e => {
-                      const parts = (formData.birthDate || '--').split('-');
-                      parts[1] = e.target.value.padStart(2, '0');
-                      setFormData((p) => ({ ...p, birthDate: parts.join('-') }));
+                      const [y = '', , d = ''] = (formData.birthDate || '').split('-');
+                      setFormData((p) => ({ ...p, birthDate: [y, e.target.value.padStart(2, '0'), d].join('-') }));
                       clearErr('birthDate');
                     }}
                     className={`w-full bg-white border-2 ${fieldErrors.birthDate ? 'border-amber-400' : 'border-primary/20'} rounded-xl py-[11px] px-1.5 sm:px-2 text-primary text-[13px] sm:text-sm font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/8 transition-all appearance-none shadow-sm cursor-pointer text-center`}
@@ -153,11 +151,10 @@ export default function Step1Personal({
                 {/* السنة */}
                 <div className="relative">
                   <select
-                    value={formData.birthDate ? formData.birthDate.split('-')[0] : ''}
+                    value={formData.birthDate ? formData.birthDate.split('-')[0] ?? '' : ''}
                     onChange={e => {
-                      const parts = (formData.birthDate || '--').split('-');
-                      parts[0] = e.target.value;
-                      setFormData((p) => ({ ...p, birthDate: parts.join('-') }));
+                      const [, m = '', d = ''] = (formData.birthDate || '').split('-');
+                      setFormData((p) => ({ ...p, birthDate: [e.target.value, m, d].join('-') }));
                       clearErr('birthDate');
                     }}
                     className={`w-full bg-white border-2 ${fieldErrors.birthDate ? 'border-amber-400' : 'border-primary/20'} rounded-xl py-[11px] px-1.5 sm:px-2 text-primary text-[13px] sm:text-sm font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/8 transition-all appearance-none shadow-sm cursor-pointer text-center`}
