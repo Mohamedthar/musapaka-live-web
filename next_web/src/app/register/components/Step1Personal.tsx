@@ -119,7 +119,7 @@ export default function Step1Personal({
                   <select
                     value={formData.birthDate ? formData.birthDate.split('-')[2] : ''}
                     onChange={e => {
-                      const parts = (formData.birthDate || '----').split('-');
+                      const parts = (formData.birthDate || '--').split('-');
                       parts[2] = e.target.value.padStart(2, '0');
                       setFormData((p) => ({ ...p, birthDate: parts.join('-') }));
                       clearErr('birthDate');
@@ -137,7 +137,7 @@ export default function Step1Personal({
                   <select
                     value={formData.birthDate ? formData.birthDate.split('-')[1] : ''}
                     onChange={e => {
-                      const parts = (formData.birthDate || '----').split('-');
+                      const parts = (formData.birthDate || '--').split('-');
                       parts[1] = e.target.value.padStart(2, '0');
                       setFormData((p) => ({ ...p, birthDate: parts.join('-') }));
                       clearErr('birthDate');
@@ -155,7 +155,7 @@ export default function Step1Personal({
                   <select
                     value={formData.birthDate ? formData.birthDate.split('-')[0] : ''}
                     onChange={e => {
-                      const parts = (formData.birthDate || '----').split('-');
+                      const parts = (formData.birthDate || '--').split('-');
                       parts[0] = e.target.value;
                       setFormData((p) => ({ ...p, birthDate: parts.join('-') }));
                       clearErr('birthDate');
