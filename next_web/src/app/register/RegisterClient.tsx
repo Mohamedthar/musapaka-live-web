@@ -1,6 +1,6 @@
 'use client';
 /* Deployment trigger: 2026-05-19T23:36:27Z */
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { CheckCircle2, ChevronLeft, ChevronRight, ShieldCheck, ArrowLeft, Send, CalendarX, Download, Printer, FileText } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
@@ -227,24 +227,6 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull }: 
     }
     return { birthDate: '', age: null, isMale: null, isValid: false };
   }, [formData.nationalId]);
-
-  // Auto-fill birthDate + gender from valid national ID
-  const prevNationalId = useRef('');
-  useEffect(() => {
-    if (!extractedInfo.isValid) return;
-    // Only auto-fill once per national ID change (not on every render)
-    if (formData.nationalId.trim() === prevNationalId.current) return;
-    prevNationalId.current = formData.nationalId.trim();
-
-    setFormData(p => ({
-      ...p,
-      birthDate: extractedInfo.birthDate,
-      gender: extractedInfo.isMale ? 'ذكر' : 'أنثى',
-      nationalId: p.nationalId, // keep nationalId as-is
-    }));
-    clearErr('birthDate');
-    clearErr('gender');
-  }, [extractedInfo, formData.nationalId]);
 
   const handleImagePick = (e: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'birthCert') => {
     const file = e.target.files?.[0]; if (!file) return;
