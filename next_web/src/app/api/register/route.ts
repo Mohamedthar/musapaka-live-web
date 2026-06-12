@@ -177,12 +177,13 @@ export async function POST(request: Request) {
       memorization_amount: body.memorization_amount ?? null,
     };
 
-    // 3. Check for duplicate name or national ID
-    const [dupName, dupId] = await Promise.all([
+    // 3. Check for duplicate name, national ID, or phone
+    const [dupName, dupId, dupPhone] = await Promise.all([
       supabase.from('students').select('id').eq('name', name).maybeSingle(),
       nationalId
         ? supabase.from('students').select('id').eq('national_id', nationalId).maybeSingle()
         : Promise.resolve({ data: null, error: null }),
+      supabase.from('students').select('id').eq('phone', phone).maybeSingle(),
     ]);
 
     if (dupName.data) {
@@ -190,6 +191,9 @@ export async function POST(request: Request) {
     }
     if (dupId.data) {
       return jsonResponse({ error: 'هذا الرقم القومي مسجل مسبقاً في النظام' }, 409, origin);
+    }
+    if (dupPhone.data) {
+      return jsonResponse({ error: 'رقم الهاتف هذا مسجل مسبقاً في النظام' }, 409, origin);
     }
 
     // 4. Check Selected Level Age & Capacity Restrictions
@@ -287,6 +291,14 @@ export async function POST(request: Request) {
       }
       if (insertErr.code === '23514') {
         return jsonResponse({ error: 'بيانات غير صالحة. تحقق من الحقول.' }, 400, origin);
+      }
+      // Catch trigger-raised exceptions (exam slots full, capacity full, etc.)
+      const errMsg = (insertErr as { message?: string }).message || '';
+      if (errMsg.includes('اكتملت جميع المواعيد')) {
+        return jsonResponse({ error: errMsg }, 409, origin);
+      }
+      if (errMsg.includes('ممتلئ')) {
+        return jsonResponse({ error: errMsg }, 409, origin);
       }
       return jsonResponse({ error: 'حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى.' }, 500, origin);
     }
