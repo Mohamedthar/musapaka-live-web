@@ -1,4 +1,7 @@
 // Server Component — pre-fetches registration status before HTML is sent
+// force-dynamic: يمنع Next.js من تخزين الصفحة - يتم فحص حالة التسجيل مع كل طلب
+export const dynamic = 'force-dynamic';
+
 import { createClient } from '@supabase/supabase-js';
 import RegisterClient from './RegisterClient';
 
@@ -29,7 +32,7 @@ async function getRegistrationStatus() {
       ]);
       const settings = settingsRes.data as Record<string, unknown> | null;
       if (settings) {
-        if (isOpen === null) isOpen = settings.is_registration_open !== false;
+        if (isOpen === null) isOpen = settings.is_registration_open === true;
         if (hasSlots === null) {
           const schedule = settings.exam_schedule as Array<Record<string, unknown>> | null;
           let totalCap = 0;
@@ -43,6 +46,10 @@ async function getRegistrationStatus() {
         }
       }
     }
+
+    // لو مش قادرين نحدد الحالة بوضوح، نقفل التسجيل (fail-closed)
+    if (isOpen === null) isOpen = false;
+    if (hasSlots === null) hasSlots = false;
 
     if (isOpen === false) return { allowed: false, capacityFull: false };
     if (hasSlots === false) return { allowed: false, capacityFull: true };
