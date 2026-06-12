@@ -36,7 +36,7 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, []);
 
-  const paragraphText = 'هذه المسابقة تأسست عام 2000 وبفضل الله هي الآن في نسختها السادسة والعشرون وهذا النسخة من المسابقة اول نسخة الكترونية';
+  const paragraphText = 'هذه المسابقة تأسست عام 2006 وبفضل الله هي الآن في نسختها العشرين وهذه النسخة من المسابقة أول نسخة إلكترونية';
 
   const currentYear = new Date().getFullYear();
   const [yearCount, setYearCount] = useState(currentYear);
@@ -49,7 +49,7 @@ export default function HomePage() {
   }, []);
 
   const animateYear = useCallback(() => {
-    const range = currentYear - 2000;
+    const range = currentYear - 2006;
     const start = performance.now();
     const loop = () => {
       const elapsed = performance.now() - start;
@@ -172,7 +172,7 @@ export default function HomePage() {
             style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7)' }}
           >
             {paragraphText.split(' ').map((word, i) => {
-              if (word === '2000') {
+              if (word === '2006') {
                 return (
                   <React.Fragment key={i}>
                     <motion.span

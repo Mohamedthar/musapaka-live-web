@@ -20,9 +20,10 @@ import Step4Success from './components/Step5Success';
 interface RegisterClientProps {
   initialAllowed: boolean;
   initialCapacityFull: boolean;
+  registrationStartDate: string | null;
 }
 
-export default function RegisterClient({ initialAllowed, initialCapacityFull }: RegisterClientProps) {
+export default function RegisterClient({ initialAllowed, initialCapacityFull, registrationStartDate }: RegisterClientProps) {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [levels, setLevels] = useState<CompetitionLevel[]>([]);
@@ -54,6 +55,21 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull }: 
   const [levelCounts, setLevelCounts] = useState<Record<string, number>>({});
   const [isCapturing, setIsCapturing] = useState(false);
   const clearErr = (key: string) => setFieldErrors(p => { if (!p[key]) return p; const n = { ...p }; delete n[key]; return n; });
+
+  const formattedStartDate = useMemo(() => {
+    if (!registrationStartDate) return null;
+    try {
+      const d = new Date(registrationStartDate);
+      if (isNaN(d.getTime())) return null;
+      return new Intl.DateTimeFormat('ar-EG', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      }).format(d);
+    } catch {
+      return null;
+    }
+  }, [registrationStartDate]);
 
   const steps = [
     { num: 1, label: 'البيانات الشخصية' },
@@ -617,7 +633,9 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull }: 
         <p className="text-on-surface-variant text-xs sm:text-sm leading-relaxed mb-8 font-semibold">
           {capacityFull 
             ? 'نعتذر، جميع مواعيد الاختبارات المتاحة حالياً مكتملة بالكامل. سيتم فتح التسجيل فور إضافة مواعيد جديدة من قبل إدارة المسابقة.'
-            : 'التسجيل مغلق حالياً. سيتم فتح باب التسجيل في الموعد الرسمي المُعلن عنه في ورقة الإعلان عن المسابقة. يرجى متابعة الإعلانات الرسمية.'}
+            : formattedStartDate
+              ? `التسجيل مغلق حالياً. سيتم فتح باب التسجيل يوم ${formattedStartDate} إن شاء الله.`
+              : 'التسجيل مغلق حالياً. سيتم فتح باب التسجيل في الموعد الرسمي المُعلن عنه في ورقة الإعلان عن المسابقة. يرجى متابعة الإعلانات الرسمية.'}
         </p>
         <Link href="/" className="inline-flex items-center justify-center gap-2 px-6 py-2.5 w-full rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary-container active:scale-95 transition-all shadow-sm">
           <ArrowLeft size={14} /> العودة للصفحة الرئيسية
