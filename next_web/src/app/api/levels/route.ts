@@ -22,7 +22,7 @@ export async function GET(request: Request) {
       return jsonResponse({ error: 'حدث خطأ في جلب المستويات' }, 500, origin);
     }
 
-    return jsonResponse({ success: true, levels: data || [] }, 200, origin, 120);
+    return jsonResponse({ success: true, levels: data || [] }, 200, origin, 0);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';
     return jsonResponse({ error: message }, 500, origin);

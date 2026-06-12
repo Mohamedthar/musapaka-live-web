@@ -1,7 +1,7 @@
 import { getAdminClient } from '@/lib/supabase-admin';
 import LevelsClient from './client-page';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
 
 export default async function LevelsPage() {
   let levels = null;

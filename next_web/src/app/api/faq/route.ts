@@ -40,7 +40,7 @@ export async function GET(request: Request) {
     const faqs = (data?.faqs as { q: string; a: string }[]) ?? [];
     const resultFaqs = faqs.length > 0 ? faqs : DEFAULT_FAQS;
 
-    return jsonResponse({ data: resultFaqs }, 200, origin, 60);
+    return jsonResponse({ data: resultFaqs }, 200, origin, 0);
   } catch {
     return jsonResponse({ data: DEFAULT_FAQS }, 200, origin, 60);
   }

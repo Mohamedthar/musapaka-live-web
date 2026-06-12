@@ -30,7 +30,7 @@ export function getCorsHeaders(origin: string | null) {
 
 export function jsonResponse(data: unknown, status = 200, requestOrigin: string | null = null, cacheMaxAge?: number) {
   const headers: Record<string, string> = getCorsHeaders(requestOrigin ?? null);
-  if (cacheMaxAge !== undefined) {
+  if (cacheMaxAge !== undefined && cacheMaxAge > 0) {
     headers['Cache-Control'] = `public, max-age=${cacheMaxAge}, stale-while-revalidate=${cacheMaxAge * 2}`;
   }
   return NextResponse.json(data, {

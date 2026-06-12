@@ -42,7 +42,7 @@ export async function GET(request: Request) {
       status: statusData,
       total_students: countRes.count ?? 0,
       level_counts: levelCounts,
-    }, 200, origin, 5);
+    }, 200, origin, 0);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';
     return jsonResponse({ error: message }, 500, origin);
