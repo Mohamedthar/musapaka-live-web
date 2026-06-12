@@ -107,9 +107,8 @@ export default function Step3Level({
                   else if (op === 'lte' && l.max_age) ageLabel.push(`السن ≤ ${l.max_age}`);
                   else if (op === 'range' && l.min_age && l.max_age) ageLabel.push(`${l.min_age}-${l.max_age} سنة`);
                   else {
-                    if (l.min_age) ageLabel.push(`فوق ${l.min_age}`);
-                    if (l.max_age) ageLabel.push(`حتى ${l.max_age}`);
-                    if (ageLabel.length) ageLabel[ageLabel.length - 1] += ' عام';
+                    if (l.min_age) ageLabel.push(`فوق ${l.min_age} عام`);
+                    if (l.max_age) ageLabel.push(`${l.max_age} عام فأقل`);
                   }
                   const extra = [
                     ageLabel.length ? ageLabel.join(' ') : '',
