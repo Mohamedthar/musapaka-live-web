@@ -3,6 +3,7 @@ import { Cairo, Noto_Serif } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
 import { Toaster } from 'react-hot-toast';
+import { Analytics } from '@vercel/analytics/react';
 import OfflineBanner from '@/components/OfflineBanner';
 
 const cairo = Cairo({
@@ -71,6 +72,7 @@ export default function RootLayout({
           </Suspense>
         </div>
         <Toaster position="top-center" />
+        <Analytics />
       </body>
     </html>
   );
