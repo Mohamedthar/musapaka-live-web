@@ -6,7 +6,7 @@ async function getRegistrationStatus() {
   try {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!url || !key) return { allowed: true, capacityFull: false };
+    if (!url || !key) return { allowed: false, capacityFull: false };
 
     const supabase = createClient(url, key, { auth: { persistSession: false } });
 
