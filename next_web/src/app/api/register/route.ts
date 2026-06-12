@@ -195,7 +195,7 @@ export async function POST(request: Request) {
     // 4. Check Selected Level Age & Capacity Restrictions
     const { data: levelData } = await supabase
       .from('competition_levels')
-      .select('min_age, max_age, max_capacity, branches, has_rewaya, available_rewayas')
+      .select('min_age, max_age, max_capacity, branches, has_rewaya, available_rewayas, age_op')
       .eq('title', studentData.level)
       .eq('is_active', true)
       .single();
@@ -205,11 +205,38 @@ export async function POST(request: Request) {
     }
 
     if (studentData.age != null) {
-      if (levelData.min_age != null && studentData.age < levelData.min_age) {
-        return jsonResponse({ error: `عمرك أقل من الحد الأدنى المطلوب لهذا المستوى (${levelData.min_age} سنة)` }, 400, origin);
+      const op = (levelData as Record<string, unknown>).age_op as string | undefined;
+      if (op === 'gt' && levelData.min_age != null && studentData.age <= levelData.min_age) {
+        return jsonResponse({ error: `يجب أن يكون العمر أكبر من ${levelData.min_age} سنة لهذا المستوى` }, 400, origin);
       }
-      if (levelData.max_age != null && studentData.age > levelData.max_age) {
-        return jsonResponse({ error: `عمرك أكبر من الحد الأقصى المطلوب لهذا المستوى (${levelData.max_age} سنة)` }, 400, origin);
+      if (op === 'gte' && levelData.min_age != null && studentData.age < levelData.min_age) {
+        return jsonResponse({ error: `الحد الأدنى للعمر ${levelData.min_age} سنة لهذا المستوى` }, 400, origin);
+      }
+      if (op === 'lt' && levelData.max_age != null && studentData.age >= levelData.max_age) {
+        return jsonResponse({ error: `يجب أن يكون العمر أقل من ${levelData.max_age} سنة لهذا المستوى` }, 400, origin);
+      }
+      if (op === 'lte' && levelData.max_age != null && studentData.age > levelData.max_age) {
+        return jsonResponse({ error: `الحد الأقصى للعمر ${levelData.max_age} سنة لهذا المستوى` }, 400, origin);
+      }
+      if (op === 'range') {
+        if (levelData.min_age != null && studentData.age < levelData.min_age) {
+          return jsonResponse({ error: `عمرك أقل من الحد الأدنى المطلوب لهذا المستوى (${levelData.min_age} سنة)` }, 400, origin);
+        }
+        if (levelData.max_age != null && studentData.age > levelData.max_age) {
+          return jsonResponse({ error: `عمرك أكبر من الحد الأقصى المطلوب لهذا المستوى (${levelData.max_age} سنة)` }, 400, origin);
+        }
+      }
+      // fallback: بدون age_op
+      if (!op || op === 'gte' || op === 'range') {
+        // already handled above for gte/range
+      }
+      if (!op) {
+        if (levelData.min_age != null && studentData.age < levelData.min_age) {
+          return jsonResponse({ error: `عمرك أقل من الحد الأدنى المطلوب لهذا المستوى (${levelData.min_age} سنة)` }, 400, origin);
+        }
+        if (levelData.max_age != null && studentData.age > levelData.max_age) {
+          return jsonResponse({ error: `عمرك أكبر من الحد الأقصى المطلوب لهذا المستوى (${levelData.max_age} سنة)` }, 400, origin);
+        }
       }
     }
 

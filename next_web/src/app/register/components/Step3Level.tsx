@@ -36,6 +36,22 @@ export default function Step3Level({
   const filteredLevels = useMemo(() => {
     if (studentAge === null) return levels;
     return levels.filter(l => {
+      const op = l.age_op || l.birth_year_op;
+      // gt: أكبر من (فقط) — السن > min_age
+      if (op === 'gt' && l.min_age != null && studentAge <= l.min_age) return false;
+      // gte: أكبر من أو يساوي — السن >= min_age
+      if (op === 'gte' && l.min_age != null && studentAge < l.min_age) return false;
+      // lt: أقل من — السن < max_age
+      if (op === 'lt' && l.max_age != null && studentAge >= l.max_age) return false;
+      // lte: أقل من أو يساوي — السن <= max_age
+      if (op === 'lte' && l.max_age != null && studentAge > l.max_age) return false;
+      // range: بين min_age و max_age (شامل)
+      if (op === 'range') {
+        if (l.min_age != null && studentAge < l.min_age) return false;
+        if (l.max_age != null && studentAge > l.max_age) return false;
+        return true;
+      }
+      // fallback: بدون age_op — تعامل شامل (>= min_age, <= max_age)
       if (l.min_age != null && studentAge < l.min_age) return false;
       if (l.max_age != null && studentAge > l.max_age) return false;
       return true;
@@ -84,10 +100,19 @@ export default function Step3Level({
                   const count = levelCounts[l.title] || 0;
                   const isFull = l.max_capacity != null && count >= l.max_capacity;
                   const ageLabel = [];
-                  if (l.min_age) ageLabel.push(`فوق ${l.min_age}`);
-                  if (l.max_age) ageLabel.push(`${l.max_age} فأقل`);
+                  const op = l.age_op || l.birth_year_op;
+                  if (op === 'gt' && l.min_age) ageLabel.push(`السن > ${l.min_age}`);
+                  else if (op === 'gte' && l.min_age) ageLabel.push(`السن ≥ ${l.min_age}`);
+                  else if (op === 'lt' && l.max_age) ageLabel.push(`السن < ${l.max_age}`);
+                  else if (op === 'lte' && l.max_age) ageLabel.push(`السن ≤ ${l.max_age}`);
+                  else if (op === 'range' && l.min_age && l.max_age) ageLabel.push(`${l.min_age}-${l.max_age} سنة`);
+                  else {
+                    if (l.min_age) ageLabel.push(`فوق ${l.min_age}`);
+                    if (l.max_age) ageLabel.push(`حتى ${l.max_age}`);
+                    if (ageLabel.length) ageLabel[ageLabel.length - 1] += ' عام';
+                  }
                   const extra = [
-                    ageLabel.length ? `${ageLabel.join('-')} عام` : '',
+                    ageLabel.length ? ageLabel.join(' ') : '',
                     isFull ? 'ممتلئ' : l.max_capacity ? `${count}/${l.max_capacity}` : '',
                   ].filter(Boolean).join(' · ');
                   return (
