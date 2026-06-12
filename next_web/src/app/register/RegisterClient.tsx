@@ -606,12 +606,12 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull }: 
           )}
         </div>
         <h2 className="text-xl font-black text-primary mb-3">
-          {capacityFull ? 'التسجيل مغلق مؤقتاً' : 'التسجيل مغلق حالياً'}
+          {capacityFull ? 'اكتمال المواعيد' : 'التسجيل مغلق'}
         </h2>
         <p className="text-on-surface-variant text-xs sm:text-sm leading-relaxed mb-8 font-semibold">
           {capacityFull 
-            ? 'اكتملت جميع المواعيد المتاحة حالياً. سيتم فتح التسجيل مجدداً فور توفر مواعيد اختبار جديدة.'
-            : 'نعتذر إليكم، باب التسجيل مغلق حالياً. يرجى متابعة الإعلانات الرسمية للمواعيد القادمة.'}
+            ? 'نعتذر، جميع مواعيد الاختبارات المتاحة حالياً مكتملة بالكامل. سيتم فتح التسجيل فور إضافة مواعيد جديدة من قبل إدارة المسابقة.'
+            : 'التسجيل مغلق حالياً. سيتم فتح باب التسجيل في الموعد الرسمي المُعلن عنه في ورقة الإعلان عن المسابقة. يرجى متابعة الإعلانات الرسمية.'}
         </p>
         <Link href="/" className="inline-flex items-center justify-center gap-2 px-6 py-2.5 w-full rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary-container active:scale-95 transition-all shadow-sm">
           <ArrowLeft size={14} /> العودة للصفحة الرئيسية
