@@ -177,6 +177,9 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'students_phone_not_empty') THEN
         ALTER TABLE students ADD CONSTRAINT students_phone_not_empty CHECK (phone <> '');
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'students_gender_check') THEN
+        ALTER TABLE students ADD CONSTRAINT students_gender_check CHECK (gender IS NULL OR gender IN ('ذكر', 'أنثى'));
+    END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'students_score_check') THEN
         ALTER TABLE students ADD CONSTRAINT students_score_check CHECK (score IS NULL OR (score >= 0 AND score <= 1000));
     END IF;
@@ -294,9 +297,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_students_student_code ON students(student_
 
 -- فهرس مركب لترتيب أداء الطلاب داخل كل مستوى
 CREATE INDEX IF NOT EXISTS idx_students_level_id_score     ON students(level_id, score DESC NULLS LAST);
-
--- فهرس مركب لاستعلام national_id + student_code معاً
-CREATE INDEX IF NOT EXISTS idx_students_nid_student_code   ON students(national_id, student_code);
 
 -- -------------------------------------------------------------------
 -- 3.5 فهارس المستويات
@@ -680,7 +680,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trg_check_level_capacity ON students;
-CREATE TRIGGER trg_check_level_capacity
+CREATE TRIGGER trg_z_check_level_capacity
     BEFORE INSERT ON students FOR EACH ROW
     EXECUTE FUNCTION check_level_capacity();
 
@@ -715,6 +715,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public;
 
+GRANT EXECUTE ON FUNCTION is_admin() TO anon, authenticated;
+
 -- -------------------------------------------------------------------
 -- 7.2 إحصائيات أساسية (بدون فلاتر)
 -- -------------------------------------------------------------------
@@ -728,6 +730,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+REVOKE EXECUTE ON FUNCTION get_student_stats() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION get_student_stats() TO authenticated;
 
 -- -------------------------------------------------------------------
@@ -763,6 +766,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+REVOKE EXECUTE ON FUNCTION get_student_stats(TEXT, TEXT, DATE, DATE) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION get_student_stats(TEXT, TEXT, DATE, DATE) TO authenticated;
 
 -- -------------------------------------------------------------------
@@ -817,6 +821,7 @@ BEGIN
 END;
 $$;
 
+REVOKE EXECUTE ON FUNCTION get_student_status(TEXT, TEXT) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION get_student_status(TEXT, TEXT) TO authenticated;
 
 -- -------------------------------------------------------------------
@@ -834,6 +839,7 @@ BEGIN
 END;
 $$;
 
+REVOKE EXECUTE ON FUNCTION retrieve_student_code(TEXT, TEXT) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION retrieve_student_code(TEXT, TEXT) TO authenticated;
 
 
@@ -1110,6 +1116,7 @@ BEGIN
 END;
 $$;
 
+REVOKE EXECUTE ON FUNCTION query_ceremony_attendance(TEXT, TEXT) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION query_ceremony_attendance(TEXT, TEXT) TO authenticated;
 
 
@@ -1196,4 +1203,5 @@ $$;
 
 COMMENT ON FUNCTION generate_all_ceremony_codes() IS 'توليد أكواد الحفل. الأهلية: percentage >= passing_percentage للمستويات 1-9، وأفضل 3 للمستويات 10+';
 
+REVOKE EXECUTE ON FUNCTION generate_all_ceremony_codes() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION generate_all_ceremony_codes() TO authenticated;

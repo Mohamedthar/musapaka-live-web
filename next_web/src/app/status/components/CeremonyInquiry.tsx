@@ -49,7 +49,8 @@ export default function CeremonyInquiry() {
       setTimeout(shoot, 600);
       setTimeout(shoot, 800);
       const interval = setInterval(shoot, 1200);
-      setTimeout(() => clearInterval(interval), 8000);
+      const stopTimer = setTimeout(() => clearInterval(interval), 8000);
+      return () => { clearInterval(interval); clearTimeout(stopTimer); };
     }
   }, [data?.is_eligible]);
 

@@ -1,0 +1,9 @@
+__tests__
+*.test.ts
+*.spec.ts
+vitest.config.*
+eslint.config.*
+.github
+.git
+.husky
+next_web/node_modules
