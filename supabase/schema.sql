@@ -158,9 +158,8 @@ WHERE NOT EXISTS (SELECT 1 FROM competition_levels WHERE title = 'المستوى
 -- -------------------------------------------------------------------
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'students_phone_unique') THEN
-        ALTER TABLE students ADD CONSTRAINT students_phone_unique UNIQUE (phone);
-    END IF;
+    -- students_phone_unique removed (migration 018) — siblings may share parent's phone
+    ALTER TABLE students DROP CONSTRAINT IF EXISTS students_phone_unique;
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'students_national_id_unique') THEN
         ALTER TABLE students ADD CONSTRAINT students_national_id_unique UNIQUE (national_id);
     END IF;
