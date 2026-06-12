@@ -701,7 +701,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('من الساعة', style: TextStyle(fontFamily: 'Cairo', fontSize: 10.5, color: Colors.grey, fontWeight: FontWeight.bold)), const SizedBox(height: 4), _CompactDropdown(value: slot.startHour, items: List.generate(15, (i) => i + 8), onChanged: (v) => setState(() { slot.startHour = v; slot.clampInclusiveRange(); }), primaryColor: _primary)])),
                 const SizedBox(width: 8),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('إلى الساعة', style: TextStyle(fontFamily: 'Cairo', fontSize: 10.5, color: Colors.grey, fontWeight: FontWeight.bold)), const SizedBox(height: 4), _CompactDropdown(value: slot.endHour, items: List.generate(24 - slot.startHour, (i) => i + slot.startHour + 1), onChanged: (v) => setState(() { slot.endHour = v; }), primaryColor: _primary)])),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('إلى الساعة', style: TextStyle(fontFamily: 'Cairo', fontSize: 10.5, color: Colors.grey, fontWeight: FontWeight.bold)), const SizedBox(height: 4), _CompactDropdown(value: slot.lastInclusiveHour, items: List.generate(24 - slot.startHour, (i) => i + slot.startHour), onChanged: (v) => setState(() { slot.lastInclusiveHour = v; }), primaryColor: _primary)])),
               ],
             ),
             const SizedBox(height: 12),
@@ -729,7 +729,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SizedBox(width: 110, child: _CompactDropdown(value: slot.startHour, items: List.generate(15, (i) => i + 8), onChanged: (v) => setState(() { slot.startHour = v; slot.clampInclusiveRange(); }), primaryColor: _primary)),
           const SizedBox(width: 12), const Text('إلى', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey, fontWeight: FontWeight.bold)),
           const SizedBox(width: 6),
-          SizedBox(width: 110, child: _CompactDropdown(value: slot.endHour, items: List.generate(24 - slot.startHour, (i) => i + slot.startHour + 1), onChanged: (v) => setState(() { slot.endHour = v; }), primaryColor: _primary)),
+          SizedBox(width: 110, child: _CompactDropdown(value: slot.lastInclusiveHour, items: List.generate(24 - slot.startHour, (i) => i + slot.startHour), onChanged: (v) => setState(() { slot.lastInclusiveHour = v; }), primaryColor: _primary)),
           const SizedBox(width: 16),
           Container(height: 24, width: 1, color: Colors.grey.shade200), const SizedBox(width: 16),
           const Text('السعة لكل ساعة:', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Color(0xFF334155), fontWeight: FontWeight.bold)),
