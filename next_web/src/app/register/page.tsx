@@ -6,6 +6,11 @@ import { createClient } from '@supabase/supabase-js';
 import RegisterClient from './RegisterClient';
 
 async function getRegistrationStatus() {
+  // في وضع التطوير، التسجيل مفتوح دائماً لتسهيل الاختبار
+  if (process.env.NODE_ENV === 'development') {
+    return { allowed: true, capacityFull: false };
+  }
+
   try {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;

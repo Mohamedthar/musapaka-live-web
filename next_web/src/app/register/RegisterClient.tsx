@@ -151,6 +151,11 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull }: 
           const filledSlots = status?.filled_slots ?? 0;
 
           if (status) {
+            // في وضع التطوير، تجاهل حالة التسجيل من الخادم وافتح التسجيل دايماً
+            if (process.env.NODE_ENV === 'development') {
+              setRegistrationAllowed(true);
+              setCapacityFull(false);
+            } else {
             const hasSlots = status.has_available_slots === true;
             const isOpen = status.is_registration_open === true;
 
@@ -163,6 +168,7 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull }: 
             } else {
               setRegistrationAllowed(true);
               setCapacityFull(false);
+            }
             }
           }
 
