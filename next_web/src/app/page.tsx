@@ -20,25 +20,6 @@ const journey = [
 
 
 export default function HomePage() {
-  const fullTitle = 'مسابقة أهل القرآن الكبرى';
-  const [displayedTitle, setDisplayedTitle] = useState('');
-  const [showCursor, setShowCursor] = useState(true);
-  const [titleDone, setTitleDone] = useState(false);
-
-  useEffect(() => {
-    let i = 0;
-    const interval = setInterval(() => {
-      i++;
-      setDisplayedTitle(fullTitle.slice(0, i));
-      if (i >= fullTitle.length) {
-        clearInterval(interval);
-        setTitleDone(true);
-        setTimeout(() => setShowCursor(false), 800);
-      }
-    }, 20);
-    return () => clearInterval(interval);
-  }, []);
-
   const paragraphText = 'هذه المسابقة تأسست عام 2006 وبفضل الله هي الآن في نسختها العشرين وهذه النسخة من المسابقة أول نسخة إلكترونية';
 
   const currentYear = new Date().getFullYear();
@@ -254,28 +235,15 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="text-[36px] sm:text-[48px] md:text-[60px] font-black text-white leading-[1.2] mb-5 min-h-[1.2em]"
+            className="text-[36px] sm:text-[48px] md:text-[60px] font-black text-white leading-[1.2] mb-5"
             style={{
               fontFamily: "'Noto Serif', serif",
-              textShadow: titleDone
-                ? '0 0 60px rgba(255,224,136,0.3), 0 0 20px rgba(255,224,136,0.2), 0 4px 12px rgba(0,0,0,0.6)'
-                : '0 4px 12px rgba(0,0,0,0.6)',
+              textShadow: '0 0 60px rgba(255,224,136,0.3), 0 0 20px rgba(255,224,136,0.2), 0 4px 12px rgba(0,0,0,0.6)',
             }}
           >
-            <span className={titleDone ? '' : 'animate-title-glow'}>
-              {titleDone ? (
-                <>
-                  <span>مسابقة أهل </span>
-                  <span className="text-secondary-fixed">القرآن</span>
-                  <span> الكبرى</span>
-                </>
-              ) : (
-                displayedTitle
-              )}
-            </span>
-            {showCursor && displayedTitle.length < fullTitle.length && (
-              <span className="inline-block w-[3px] h-[0.9em] bg-white mr-1 animate-pulse align-middle" />
-            )}
+            <span>مسابقة أهل </span>
+            <span className="text-secondary-fixed">القرآن</span>
+            <span> الكبرى</span>
           </motion.h1>
 
           <motion.p

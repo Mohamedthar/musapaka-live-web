@@ -57,7 +57,7 @@ export default function Footer() {
             </p>
           </div>
           <div className="col-span-1 md:col-span-4 lg:col-span-2 flex flex-col items-center lg:items-start text-center lg:text-right gap-3">
-            <h5 className="text-white/70 font-black text-sm lg:text-base">المنصة</h5>
+            <h4 className="text-white/70 font-black text-sm lg:text-base">المنصة</h4>
             <div className="flex flex-col items-center lg:items-start gap-2">
               {navLinks.map((link) => (
                 <Link key={link.href} href={link.href} className="text-white/40 hover:text-secondary-fixed transition-colors text-sm lg:text-base font-bold">
@@ -67,7 +67,7 @@ export default function Footer() {
             </div>
           </div>
           <div className="col-span-1 md:col-span-4 lg:col-span-2 flex flex-col items-center lg:items-start text-center lg:text-right gap-3">
-            <h5 className="text-white/70 font-black text-sm lg:text-base">لللاستفسار</h5>
+            <h4 className="text-white/70 font-black text-sm lg:text-base">لللاستفسار</h4>
             <div className="flex flex-col items-center lg:items-start gap-2">
               {phones.map((phone) => (
                 <a key={phone} href={`https://wa.me/20${phone.replace(/^0/, '')}`} target="_blank" rel="noopener noreferrer"
@@ -81,7 +81,7 @@ export default function Footer() {
             </div>
           </div>
           <div className="col-span-2 md:col-span-4 lg:col-span-2 flex flex-col items-center lg:items-start text-center lg:text-right gap-3">
-            <h5 className="text-white/70 font-black text-sm lg:text-base">روابط</h5>
+            <h4 className="text-white/70 font-black text-sm lg:text-base">روابط</h4>
             <div className="flex flex-col items-center lg:items-start gap-2">
               {socialLinks.map((link) => (
                 <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer"

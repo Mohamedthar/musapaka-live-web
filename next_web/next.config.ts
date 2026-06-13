@@ -5,6 +5,10 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: false,
   poweredByHeader: false,
 
+  experimental: {
+    optimizePackageImports: ['framer-motion', 'gsap', '@gsap/react', 'lucide-react', 'react-hot-toast'],
+  },
+
   images: {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 86400,
