@@ -29,7 +29,7 @@ export default function Step4Review({
     <div className="space-y-5">
       <div className="mb-2">
         <h2 className="text-lg sm:text-xl font-black text-primary">بيانات المحفِّظ</h2>
-        <p className="text-primary/50 text-sm mt-0.5">معلومات الشيخ أو المحفِّظ</p>
+        <p className="text-primary/60 text-sm mt-0.5">معلومات الشيخ أو المحفِّظ</p>
       </div>
 
       <div className="rounded-2xl bg-primary/[0.02] p-3 sm:p-4 md:p-6">

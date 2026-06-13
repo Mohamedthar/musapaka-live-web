@@ -41,7 +41,7 @@ export default function Step1Personal({
     <div className="space-y-6">
       <div>
         <h2 className="text-lg sm:text-xl font-black text-primary">البيانات الشخصية</h2>
-        <p className="text-primary/50 text-sm mt-0.5">جميع بيانات الطالب الأساسية</p>
+        <p className="text-primary/60 text-sm mt-0.5">جميع بيانات الطالب الأساسية</p>
       </div>
 
       {/* Fields Section */}
@@ -117,6 +117,7 @@ export default function Step1Personal({
                 {/* اليوم */}
                 <div className="relative">
                   <select
+                    aria-label="اليوم"
                     value={formData.birthDate ? formData.birthDate.split('-')[2] ?? '' : ''}
                     onChange={e => {
                       const [y = '', m = ''] = (formData.birthDate || '').split('-');
@@ -134,6 +135,7 @@ export default function Step1Personal({
                 {/* الشهر */}
                 <div className="relative">
                   <select
+                    aria-label="الشهر"
                     value={formData.birthDate ? formData.birthDate.split('-')[1] ?? '' : ''}
                     onChange={e => {
                       const [y = '', , d = ''] = (formData.birthDate || '').split('-');
@@ -151,6 +153,7 @@ export default function Step1Personal({
                 {/* السنة */}
                 <div className="relative">
                   <select
+                    aria-label="السنة"
                     value={formData.birthDate ? formData.birthDate.split('-')[0] ?? '' : ''}
                     onChange={e => {
                       const [, m = '', d = ''] = (formData.birthDate || '').split('-');
@@ -167,14 +170,15 @@ export default function Step1Personal({
                   </select>
                 </div>
               </div>
-              {fieldErrors.birthDate && <p className="text-[11px] font-bold text-amber-600 mt-1 mr-1">{fieldErrors.birthDate}</p>}
+              {fieldErrors.birthDate && <p className="text-[11px] font-bold text-amber-700 mt-1 mr-1">{fieldErrors.birthDate}</p>}
             </div>
 
             {/* النوع */}
             <div>
-              <label className="block text-sm font-bold text-primary mb-1.5">النوع</label>
+              <label htmlFor="gender-select" className="block text-sm font-bold text-primary mb-1.5">النوع</label>
               <div className="relative">
                 <select
+                  id="gender-select"
                   value={formData.gender}
                   onChange={e => {
                     setFormData((p) => ({ ...p, gender: e.target.value }));
@@ -188,7 +192,7 @@ export default function Step1Personal({
                 </select>
                 <ChevronDown size={14} className="sm:size-[16px] absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-primary/30 pointer-events-none" />
               </div>
-              {fieldErrors.gender && <p className="text-[11px] font-bold text-amber-600 mt-1 mr-1">{fieldErrors.gender}</p>}
+              {fieldErrors.gender && <p className="text-[11px] font-bold text-amber-700 mt-1 mr-1">{fieldErrors.gender}</p>}
             </div>
           </div>
         </div>
@@ -212,19 +216,19 @@ export default function Step1Personal({
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-2 text-primary/40 py-5">
+              <div className="flex flex-col items-center gap-2 text-primary/60 py-5">
                 <div className="w-10 h-10 rounded-full bg-primary/[0.06] flex items-center justify-center">
                   <Camera size={20} />
                 </div>
                 <div className="text-center">
                   <p className="font-bold text-sm text-primary/60">اضغط لرفع الصورة</p>
-                  <p className="text-xs text-primary/40 mt-0.5">صورة واضحة، حجم أقصاه 5MB</p>
+                  <p className="text-xs text-primary/60 mt-0.5">صورة واضحة، حجم أقصاه 5MB</p>
                 </div>
               </div>
             )}
             <input type="file" className="hidden" accept="image/*" onChange={e => handleImagePick(e, 'profile')} />
           </label>
-          {fieldErrors.profile && <p className="text-[11px] font-bold text-amber-600 mt-1 mr-1">{fieldErrors.profile}</p>}
+          {fieldErrors.profile && <p className="text-[11px] font-bold text-amber-700 mt-1 mr-1">{fieldErrors.profile}</p>}
         </div>
 
         {/* Birth Certificate */}
@@ -243,19 +247,19 @@ export default function Step1Personal({
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-2 text-primary/40 py-5">
+              <div className="flex flex-col items-center gap-2 text-primary/60 py-5">
                 <div className="w-10 h-10 rounded-full bg-primary/[0.06] flex items-center justify-center">
                   <FileImage size={20} />
                 </div>
                 <div className="text-center">
                   <p className="font-bold text-sm text-primary/60">اضغط لرفع المستند</p>
-                  <p className="text-xs text-primary/40 mt-0.5">صورة واضحة، حجم أقصاه 5MB</p>
+                  <p className="text-xs text-primary/60 mt-0.5">صورة واضحة، حجم أقصاه 5MB</p>
                 </div>
               </div>
             )}
             <input type="file" className="hidden" accept="image/*" onChange={e => handleImagePick(e, 'birthCert')} />
           </label>
-          {fieldErrors.birthCert && <p className="text-[11px] font-bold text-amber-600 mt-1 mr-1">{fieldErrors.birthCert}</p>}
+          {fieldErrors.birthCert && <p className="text-[11px] font-bold text-amber-700 mt-1 mr-1">{fieldErrors.birthCert}</p>}
         </div>
       </div>
     </div>

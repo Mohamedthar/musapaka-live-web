@@ -65,16 +65,17 @@ export default function Step3Level({
     <div className="space-y-5">
       <div className="mb-2">
         <h2 className="text-lg sm:text-xl font-black text-primary">اختيار المستوى</h2>
-        <p className="text-primary/50 text-sm mt-0.5">حدد الفرع المناسب لك</p>
+        <p className="text-primary/60 text-sm mt-0.5">حدد الفرع المناسب لك</p>
       </div>
 
       {/* Level Select - native dropdown */}
       <div className="rounded-2xl bg-primary/[0.02] p-3 sm:p-4 md:p-6">
-        <label className="block text-sm font-bold text-primary mb-1.5">
+        <label htmlFor="level-select" className="block text-sm font-bold text-primary mb-1.5">
           مستوى المسابقة <span className="text-red-500">*</span>
         </label>
         <div className="relative">
           <select
+            id="level-select"
             value={formData.level}
             onChange={e => {
               const selLevel = levels.find(l => l.title === e.target.value);
@@ -135,9 +136,9 @@ export default function Step3Level({
           <ChevronDown size={14} className="sm:size-[16px] absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-primary/30 pointer-events-none" />
         </div>
         {filteredLevels.length === 0 && studentAge !== null && (
-          <p className="text-[11px] font-bold text-amber-600 mt-2 mr-1">لا توجد مستويات متاحة لعمرك الحالي</p>
+          <p className="text-[11px] font-bold text-amber-700 mt-2 mr-1">لا توجد مستويات متاحة لعمرك الحالي</p>
         )}
-        {fieldErrors.level && <p className="text-[11px] font-bold text-amber-600 mt-1 mr-1">{fieldErrors.level}</p>}
+        {fieldErrors.level && <p className="text-[11px] font-bold text-amber-700 mt-1 mr-1">{fieldErrors.level}</p>}
       </div>
 
 
@@ -149,11 +150,12 @@ export default function Step3Level({
         return (
           <div className="rounded-2xl bg-primary/[0.02] p-3 sm:p-4 md:p-6">
             <div className="tour-step3-rewaya">
-              <label className="block text-sm font-bold text-primary mb-1.5">
+              <label htmlFor="rewaya-select" className="block text-sm font-bold text-primary mb-1.5">
                 الرواية / القراءة <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <select
+                  id="rewaya-select"
                   value={formData.selectedRewaya}
                   onChange={e => setFormData((p) => ({ ...p, selectedRewaya: e.target.value }))}
                   className="w-full bg-white border-2 border-primary/15 rounded-xl py-[14px] px-3 sm:px-4 text-primary text-sm font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/8 transition-all appearance-none shadow-sm"
@@ -176,11 +178,12 @@ export default function Step3Level({
         if (!selLevel?.branches || selLevel.branches.length === 0) return null;
         return (
           <div className={`rounded-2xl ${fieldErrors.branch ? 'bg-amber-50/50 border-2 border-amber-400' : 'bg-primary/[0.02]'} p-3 sm:p-4 md:p-6`}>
-            <label className="block text-sm font-bold text-primary mb-1.5">
+            <label htmlFor="branch-select" className="block text-sm font-bold text-primary mb-1.5">
               الكمية المشاركة بها <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <select
+                id="branch-select"
                 value={branchName}
                 onChange={e => { setBranchName(e.target.value); clearErr('branch'); }}
                 className="w-full bg-white border-2 border-primary/15 rounded-xl py-[14px] px-3 sm:px-4 text-primary text-sm font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/8 transition-all appearance-none shadow-sm"
@@ -192,16 +195,17 @@ export default function Step3Level({
               </select>
               <ChevronDown size={14} className="sm:size-[16px] absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-primary/30 pointer-events-none" />
             </div>
-            {fieldErrors.branch && <p className="text-[11px] font-bold text-amber-600 mt-1">{fieldErrors.branch}</p>}
+            {fieldErrors.branch && <p className="text-[11px] font-bold text-amber-700 mt-1">{fieldErrors.branch}</p>}
 
             {/* Memorization amount selector - only when require_custom_amount is enabled */}
             {selLevel.require_custom_amount && (
               <div className="mt-4">
-                <label className="block text-sm font-bold text-primary mb-1.5">
+                <label htmlFor="memorization-select" className="block text-sm font-bold text-primary mb-1.5">
                   عدد الأجزاء المحفوظة
                 </label>
                 <div className="relative">
                   <select
+                    id="memorization-select"
                     value={memorizationAmount ?? ''}
                     onChange={e => setMemorizationAmount(e.target.value ? parseInt(e.target.value) : null)}
                     className="w-full bg-white border-2 border-primary/15 rounded-xl py-[14px] px-3 sm:px-4 text-primary text-sm font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/8 transition-all appearance-none shadow-sm"
@@ -225,12 +229,13 @@ export default function Step3Level({
         if (!selLevel?.require_custom_amount || (selLevel.branches && selLevel.branches.length > 0)) return null;
         return (
           <div className={`rounded-2xl ${fieldErrors.branch ? 'bg-amber-50/50 border-2 border-amber-400' : 'bg-primary/[0.02]'} p-3 sm:p-4 md:p-6`}>
-            <label className="block text-sm font-bold text-primary mb-1">
+            <label htmlFor="custom-amount-select" className="block text-sm font-bold text-primary mb-1">
               عدد الأجزاء المحفوظة <span className="text-red-500">*</span>
             </label>
-            <p className="text-[10px] sm:text-[11px] text-primary/50 mb-2 sm:mb-3">اختر عدد الأجزاء التي تحفظها</p>
+            <p className="text-[10px] sm:text-[11px] text-primary/60 mb-2 sm:mb-3">اختر عدد الأجزاء التي تحفظها</p>
             <div className="relative">
               <select
+                id="custom-amount-select"
                 value={memorizationAmount ?? ''}
                 onChange={e => {
                   const v = e.target.value ? parseInt(e.target.value) : null;
@@ -247,7 +252,7 @@ export default function Step3Level({
               </select>
               <ChevronDown size={14} className="sm:size-[16px] absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-primary/30 pointer-events-none" />
             </div>
-            {fieldErrors.branch && <p className="text-[11px] font-bold text-amber-600 mt-1">{fieldErrors.branch}</p>}
+            {fieldErrors.branch && <p className="text-[11px] font-bold text-amber-700 mt-1">{fieldErrors.branch}</p>}
           </div>
         );
       })()}

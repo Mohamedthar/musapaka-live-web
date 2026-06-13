@@ -337,7 +337,7 @@ export default function FormInquiry() {
           >
             <AlertTriangle size={20} className="mx-auto text-amber-500 mb-2" />
             <p className="text-amber-800 font-bold text-sm mb-0.5">لم يتم العثور على المتسابق</p>
-            <p className="text-amber-600 text-xs font-semibold">تأكد من صحة الرقم القومي المدخل</p>
+            <p className="text-amber-700 text-xs font-semibold">تأكد من صحة الرقم القومي المدخل</p>
           </motion.div>
         )}
       </AnimatePresence>

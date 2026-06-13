@@ -837,12 +837,12 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
                       ? 'bg-secondary border-secondary text-white shadow-sm'
                     : step === s.num
                       ? 'bg-primary border-primary text-white shadow-md scale-110'
-                      : 'bg-white border-primary/15 text-primary/50'
+                      : 'bg-white border-primary/15 text-primary/60'
                   }`}>
                     {step > s.num ? <CheckCircle2 size={14} className="sm:size-[14px]" /> : s.num}
                   </div>
                   <span className={`text-xs sm:text-xs font-bold transition-colors duration-300 whitespace-nowrap ${
-                    step === s.num ? 'text-primary' : step > s.num ? 'text-primary/70' : 'text-primary/40'
+                    step === s.num ? 'text-primary' : step > s.num ? 'text-primary/70' : 'text-primary/60'
                   }`}>
                     {s.label}
                   </span>

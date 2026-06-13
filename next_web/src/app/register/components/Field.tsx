@@ -56,7 +56,7 @@ export default function Field({
           </div>
         )}
       </div>
-      {error && <p className="text-[10px] sm:text-[11px] font-bold text-amber-600 mt-1 sm:mt-1.5 mr-1 sm:mr-1.5">{error}</p>}
+      {error && <p className="text-[10px] sm:text-[11px] font-bold text-amber-700 mt-1 sm:mt-1.5 mr-1 sm:mr-1.5">{error}</p>}
     </div>
   );
 }
