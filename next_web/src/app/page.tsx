@@ -4,7 +4,10 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { motion } from 'framer-motion';
+import HeroBackground from '@/components/HeroBackground';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useGSAP } from '@gsap/react';
+import { gsap, ScrollTrigger } from '@/lib/gsap';
 import { UserPlus, CalendarCheck, ChevronDown, UserCheck, FilePen, Trophy, BarChart3 } from 'lucide-react';
 
 const journey = [
@@ -66,6 +69,9 @@ export default function HomePage() {
     return () => cancelAnimationFrame(yearRaf.current);
   }, [startYearAnim, animateYear]);
 
+  const heroRef = useRef<HTMLDivElement>(null);
+  const journeyRef = useRef<HTMLElement>(null);
+  const faqRef = useRef<HTMLElement>(null);
   const [openFaq, setOpenFaq] = useState(-1);
   const [faq, setFaq] = useState<{ q: string; a: string }[]>([]);
 
@@ -87,39 +93,149 @@ export default function HomePage() {
     return () => { cancelled = true; };
   }, []);
 
+  useGSAP(() => {
+    const mm = gsap.matchMedia();
+
+    mm.add('(prefers-reduced-motion: reduce)', () => {
+      ScrollTrigger.getAll().forEach(t => t.kill());
+    });
+
+    mm.add('(prefers-reduced-motion: no-preference)', () => {
+      // Parallax: background image moves slower than scroll
+      gsap.to('.hero-bg-image', {
+        y: '15%',
+        ease: 'none',
+        scrollTrigger: {
+          trigger: heroRef.current,
+          start: 'top top',
+          end: 'bottom top',
+          scrub: 1.2,
+        },
+      });
+
+      // Gold glow blob drifts upward slightly slower
+      gsap.to('.hero-glow-blob', {
+        y: -40,
+        scale: 0.95,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: heroRef.current,
+          start: 'top top',
+          end: 'bottom top',
+          scrub: 0.8,
+        },
+      });
+
+      // Decorative blob moves opposite direction
+      gsap.to('.hero-decorative-blob', {
+        y: 30,
+        scale: 1.05,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: heroRef.current,
+          start: 'top top',
+          end: 'bottom top',
+          scrub: 0.6,
+        },
+      });
+
+      // Dark overlay lifts slightly for depth
+      gsap.to('.hero-gradient-overlay', {
+        opacity: 0.75,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: heroRef.current,
+          start: 'top top',
+          end: 'bottom top',
+          scrub: 1,
+        },
+      });
+    });
+
+    mm.add('(max-width: 767px)', () => {
+      // Mobile: lighter parallax, no heavy shifts
+      gsap.to('.hero-bg-image', {
+        y: '8%',
+        ease: 'none',
+        scrollTrigger: {
+          trigger: heroRef.current,
+          start: 'top top',
+          end: 'bottom top',
+          scrub: true,
+        },
+      });
+    });
+  }, { scope: heroRef });
+
+  useGSAP(() => {
+    const mm = gsap.matchMedia();
+
+    mm.add('(prefers-reduced-motion: no-preference)', () => {
+      ScrollTrigger.batch('.journey-step', {
+        onEnter: (elements) => {
+          gsap.fromTo(elements, { opacity: 0, y: 30 }, {
+            opacity: 1, y: 0, stagger: 0.08, duration: 0.45, ease: 'power2.out',
+          });
+        },
+        start: 'top 85%',
+        once: true,
+      });
+    });
+
+    mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
+      const el = document.querySelector('.journey-connector');
+      if (!el) return;
+      gsap.fromTo(el, { scaleX: 0 }, {
+        scaleX: 1, duration: 1, ease: 'power3.inOut',
+        scrollTrigger: { trigger: el, start: 'top 90%', once: true },
+      });
+    });
+
+    mm.add('(max-width: 1023px) and (prefers-reduced-motion: no-preference)', () => {
+      const el = document.querySelector('.journey-connector-v');
+      if (!el) return;
+      gsap.fromTo(el, { scaleY: 0 }, {
+        scaleY: 1, duration: 0.8, ease: 'power2.inOut',
+        scrollTrigger: { trigger: el, start: 'top 85%', once: true },
+      });
+    });
+  }, { scope: journeyRef });
+
+  useGSAP(() => {
+    if (faq.length === 0) return;
+    if (!faqRef.current || !faqRef.current.querySelector('.faq-item')) return;
+    gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
+      ScrollTrigger.batch('.faq-item', {
+        onEnter: (elements) => {
+          gsap.fromTo(elements, { opacity: 0, y: 20 }, {
+            opacity: 1, y: 0, stagger: 0.06, duration: 0.35, ease: 'power2.out',
+          });
+        },
+        start: 'top 88%',
+        once: true,
+      });
+    });
+  }, { scope: faqRef, dependencies: [faq.length] });
+
   return (
     <div className="min-h-screen bg-surface font-cairo flex flex-col" dir="rtl">
       <Header />
 
       <div className="flex-1">
         {/* ─── HERO ─── */}
-      <section className="relative min-h-[60vh] md:min-h-[70vh] flex items-center overflow-hidden bg-primary" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 30px), 0 100%)' }}>
+      <section ref={heroRef} className="relative min-h-[60vh] md:min-h-[70vh] flex items-center overflow-hidden bg-primary" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 30px), 0 100%)' }}>
         {/* Islamic pattern — very subtle */}
         <div className="absolute inset-0 islamic-pattern z-0 opacity-[0.5]" />
 
-        {/* Background image */}
-        <motion.div
-          initial={{ opacity: 0, scale: 1.05 }}
-          animate={{ opacity: 0.55, scale: 1 }}
-          transition={{ duration: 2, ease: 'easeOut' }}
-          className="absolute inset-0 z-[1]"
-        >
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{
-              backgroundImage: "url('/background.png')",
-              backgroundPosition: 'center 40%',
-            }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-primary/60" />
-        </motion.div>
+        {/* Optimized background image with Next.js Image */}
+        <HeroBackground parallaxClass="hero-bg-image" />
 
         {/* Soft gold glow from behind */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1.5, ease: 'easeOut' }}
-          className="absolute -top-32 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-secondary-fixed/8 rounded-full blur-[120px] pointer-events-none z-[2]"
+          className="hero-glow-blob absolute -top-32 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-secondary-fixed/8 rounded-full blur-[120px] pointer-events-none z-[2]"
         />
 
         {/* Decorative blobs */}
@@ -127,11 +243,11 @@ export default function HomePage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1.5, ease: 'easeOut', delay: 0.2 }}
-          className="absolute -bottom-48 -right-48 w-[600px] h-[600px] bg-secondary-fixed/6 rounded-full blur-[150px] pointer-events-none z-[2]"
+          className="hero-decorative-blob absolute -bottom-48 -right-48 w-[600px] h-[600px] bg-secondary-fixed/6 rounded-full blur-[150px] pointer-events-none z-[2]"
         />
 
         {/* Subtle dark overlay for depth */}
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/0 via-primary/15 via-50% to-primary/85 to-95% z-[3]" />
+        <div className="hero-gradient-overlay absolute inset-0 bg-gradient-to-b from-primary/0 via-primary/15 via-50% to-primary/85 to-95% z-[3]" />
 
         <div className="max-w-7xl mx-auto px-6 relative z-10 text-center w-full py-24">
           <motion.h1
@@ -269,7 +385,7 @@ export default function HomePage() {
       </section>
 
       {/* ─── JOURNEY ─── */}
-      <section className="section-below-fold relative py-20 bg-gradient-to-b from-surface via-surface to-surface-container-low overflow-hidden">
+      <section ref={journeyRef} className="section-below-fold relative py-20 bg-gradient-to-b from-surface via-surface to-surface-container-low overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -303,25 +419,15 @@ export default function HomePage() {
             <div className="relative pt-2">
               {/* Connecting line with animation */}
               <div className="absolute top-[32px] right-[8%] left-[8%] h-0.5 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ scaleX: 0 }}
-                  whileInView={{ scaleX: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 1.2, delay: 0.3, ease: 'easeInOut' }}
-                  className="absolute inset-0 origin-right bg-gradient-to-l from-secondary-fixed/40 via-secondary/30 to-secondary-fixed/40"
-                />
+                <div className="journey-connector absolute inset-0 origin-right bg-gradient-to-l from-secondary-fixed/40 via-secondary/30 to-secondary-fixed/40" />
               </div>
 
               <div className="grid grid-cols-5 gap-4 relative">
                 {journey.map((step, i) => (
                   <motion.div
                     key={i}
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: 0.2 + i * 0.1, ease: 'easeOut' }}
+                    className="journey-step flex flex-col items-center text-center group"
                     whileHover={{ y: -5 }}
-                    className="flex flex-col items-center text-center group"
                   >
                     <div className="relative mb-5">
                       {/* Hover glow */}
@@ -340,9 +446,9 @@ export default function HomePage() {
                         <step.Icon className="text-secondary text-2xl" />
                       </motion.div>
                     </div>
-                    <h4 className="font-black text-primary text-sm mb-1.5 group-hover:text-secondary transition-colors duration-300">
+                    <h3 className="font-black text-primary text-sm mb-1.5 group-hover:text-secondary transition-colors duration-300">
                       {step.title}
-                    </h4>
+                    </h3>
                     <p className="text-on-surface-variant text-[12px] leading-relaxed px-1">
                       {step.desc}
                     </p>
@@ -355,22 +461,12 @@ export default function HomePage() {
           {/* ── Mobile ── */}
           <div className="lg:hidden">
             <div className="relative">
-              <motion.div
-                initial={{ scaleY: 0 }}
-                whileInView={{ scaleY: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-                className="absolute right-[23px] top-2 bottom-2 w-[2px] bg-gradient-to-b from-secondary/30 via-secondary/10 to-secondary/30 rounded-full origin-top"
-              />
+              <div className="journey-connector-v absolute right-[23px] top-2 bottom-2 w-[2px] bg-gradient-to-b from-secondary/30 via-secondary/10 to-secondary/30 rounded-full origin-top" />
               <div className="space-y-0">
                 {journey.map((step, i) => (
                   <motion.div
                     key={i}
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: i * 0.1, ease: 'easeOut' }}
-                    className="relative flex gap-4 pb-8 last:pb-0"
+                    className="journey-step relative flex gap-4 pb-8 last:pb-0"
                   >
                     <motion.div
                       className="relative z-10 flex-shrink-0 w-[48px] h-[48px] rounded-full bg-white border-2 border-secondary/20 flex items-center justify-center shadow-md"
@@ -384,7 +480,7 @@ export default function HomePage() {
                     >
                       <div className="flex items-center gap-2 mb-1.5">
                         <step.Icon className="text-secondary text-lg" />
-                        <h4 className="font-black text-primary text-sm">{step.title}</h4>
+                        <h3 className="font-black text-primary text-sm">{step.title}</h3>
                       </div>
                       <p className="text-on-surface-variant text-xs leading-relaxed">{step.desc}</p>
                     </motion.div>
@@ -398,7 +494,7 @@ export default function HomePage() {
 
       {/* ─── FAQ ─── */}
       {faq.length > 0 && (
-      <section className="section-below-fold relative py-16 bg-white overflow-hidden">
+      <section ref={faqRef} className="section-below-fold relative py-16 bg-white overflow-hidden">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-secondary-fixed/[0.04] rounded-full blur-[180px] pointer-events-none" />
         <div className="max-w-3xl mx-auto px-6 relative z-10">
           <motion.div
@@ -432,11 +528,7 @@ export default function HomePage() {
             {faq.map((item, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.08, ease: 'easeOut' }}
-                className={`rounded-2xl border transition-all duration-300 overflow-hidden ${
+                className={`faq-item rounded-2xl border transition-all duration-300 overflow-hidden ${
                   openFaq === i
                     ? 'bg-surface border-primary/15 shadow-md'
                     : 'bg-surface border-outline-variant/10 hover:border-secondary/12 hover:shadow-sm'
@@ -468,19 +560,20 @@ export default function HomePage() {
                     <ChevronDown />
                   </motion.span>
                 </button>
-                <motion.div
-                  initial={false}
-                  animate={{
-                    height: openFaq === i ? 'auto' : 0,
-                    opacity: openFaq === i ? 1 : 0,
-                  }}
-                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className="overflow-hidden"
-                >
-                  <div className="px-5 pb-5 text-on-surface-variant/90 text-sm leading-[1.8] bg-white/80 border-t border-outline-variant/10">
-                    {item.a}
-                  </div>
-                </motion.div>
+                <AnimatePresence initial={false}>
+                  {openFaq === i && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.25, ease: 'easeOut' }}
+                    >
+                      <div className="px-5 pb-5 text-on-surface-variant/90 text-sm leading-[1.8] bg-white/80 border-t border-outline-variant/10">
+                        {item.a}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             ))}
           </div>

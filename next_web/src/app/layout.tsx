@@ -19,7 +19,7 @@ const notoSerif = Noto_Serif({
   variable: "--font-noto-serif",
   display: "swap",
   weight: ["700", "900"],
-  preload: false,
+  preload: true,
 });
 
 export const metadata: Metadata = {
@@ -45,7 +45,6 @@ export default function RootLayout({
   return (
       <html lang="ar" dir="rtl" className="scroll-smooth" data-scroll-behavior="smooth">
         <head>
-          <link rel="preload" href="/background.png" as="image" />
           <link rel="preconnect" href="https://fvwpmbqbporgvxmfbjla.supabase.co" crossOrigin="anonymous" />
           <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
           <link rel="preconnect" href="https://api.qrserver.com" crossOrigin="anonymous" />

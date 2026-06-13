@@ -1,10 +1,13 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Trophy, BookOpen, ChevronDown, RefreshCw } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import HeroBackground from '@/components/HeroBackground';
 import { motion } from 'framer-motion';
+import { useGSAP } from '@gsap/react';
+import { gsap, ScrollTrigger } from '@/lib/gsap';
 import { LevelCardSkeleton } from '@/components/SkeletonLoader';
 import type { CompetitionLevel } from '@/lib/database.types';
 
@@ -17,6 +20,8 @@ export default function LevelsClient({ initialLevels, initialError }: Props) {
   const [levels, setLevels] = useState<CompetitionLevel[]>(initialLevels ?? []);
   const [loading, setLoading] = useState(!initialLevels && !initialError);
   const [error, setError] = useState<string | null>(initialError);
+  const heroRef = useRef<HTMLElement>(null);
+  const cardsRef = useRef<HTMLDivElement>(null);
 
   const formatAge = (l: CompetitionLevel) => {
     const op = l.age_op || l.birth_year_op;
@@ -46,21 +51,46 @@ export default function LevelsClient({ initialLevels, initialError }: Props) {
     }
   }, []);
 
+  useGSAP(() => {
+    const mm = gsap.matchMedia();
+
+    mm.add('(prefers-reduced-motion: reduce)', () => {
+      ScrollTrigger.getAll().forEach(t => t.kill());
+    });
+
+    mm.add('(prefers-reduced-motion: no-preference)', () => {
+      gsap.fromTo('.levels-hero-bg', { y: 0 }, {
+        y: '12%',
+        ease: 'none',
+        scrollTrigger: { trigger: heroRef.current, start: 'top top', end: 'bottom top', scrub: 1 },
+      });
+    });
+  }, { scope: heroRef });
+
+  useGSAP(() => {
+    if (loading || error || levels.length === 0) return;
+
+    gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
+      ScrollTrigger.batch('.level-card', {
+        onEnter: (elements) => {
+          gsap.fromTo(elements, { opacity: 0, y: 20 }, {
+            opacity: 1, y: 0, stagger: 0.04, duration: 0.35, ease: 'power2.out',
+          });
+        },
+        start: 'top 88%',
+        once: true,
+      });
+    });
+  }, { scope: cardsRef, dependencies: [loading, error, levels.length] });
+
   return (
     <div className="min-h-screen bg-surface flex flex-col font-cairo overflow-x-hidden" dir="rtl">
       <Header />
 
       <div className="flex-1">
-        <section className="relative min-h-[50vh] md:min-h-[55vh] flex items-center overflow-hidden bg-primary" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 30px), 0 100%)' }}>
+        <section ref={heroRef} className="relative min-h-[50vh] md:min-h-[55vh] flex items-center overflow-hidden bg-primary" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 30px), 0 100%)' }}>
           <div className="absolute inset-0 islamic-pattern z-0 opacity-[0.5]" />
-          <motion.div
-            initial={{ opacity: 0, scale: 1.05 }}
-            animate={{ opacity: 0.55, scale: 1 }}
-            transition={{ duration: 2, ease: 'easeOut' }}
-            className="absolute inset-0 z-[1]">
-            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('/background.png')", backgroundPosition: 'center 40%' }} />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-primary/60" />
-          </motion.div>
+          <HeroBackground parallaxClass="levels-hero-bg" />
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.5, ease: 'easeOut' }}
             className="absolute -top-32 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-secondary-fixed/8 rounded-full blur-[120px] pointer-events-none z-[2]" />
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.5, ease: 'easeOut', delay: 0.2 }}
@@ -118,19 +148,16 @@ export default function LevelsClient({ initialLevels, initialError }: Props) {
                 <p className="text-on-surface-variant font-bold text-sm">لا تتوفر مستويات نشطة حالياً</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
+              <div ref={cardsRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
                 {levels.map((level, i) => {
                   const individualPrizes = [level.first_prize, level.second_prize, level.third_prize];
                   const hasIndividualPrizes = individualPrizes.some(Boolean);
                   const codeNum = (level.level_code?.toString() ?? '').replace(/\D/g, '');
                   return (
                     <motion.div key={level.id ?? i}
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, margin: '-50px' }}
-                      transition={{ duration: 0.3, delay: Math.min(i * 0.04, 0.3), ease: [0.16, 1, 0.3, 1] }}
+                      className="level-card bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden border border-outline-variant/10"
                       whileHover={{ y: -4 }}
-                      className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden border border-outline-variant/10">
+                    >
                       <div className="bg-primary px-4 py-3 flex items-center gap-2.5 relative overflow-hidden">
                         <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-secondary-fixed opacity-[0.12] pointer-events-none" />
                         <div className="absolute right-8 -bottom-4 w-16 h-16 rounded-full bg-secondary-fixed opacity-[0.08] pointer-events-none" />
