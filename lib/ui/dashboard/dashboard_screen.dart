@@ -675,7 +675,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (raw == null || raw < 0 || raw > (matchedLevel!.meaningMaxScore)) {
           if (mounted) {
             AppTheme.showSnack(context,
-              'درجة فهم المعاني والوقف يجب أن تكون بين 0 و ${matchedLevel!.meaningMaxScore}',
+              'درجة فهم المعاني يجب أن تكون بين 0 و ${matchedLevel!.meaningMaxScore}',
               color: AppTheme.errorColor);
           }
           return;

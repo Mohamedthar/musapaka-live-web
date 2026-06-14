@@ -272,11 +272,18 @@ class PrintService {
               child: pw.SvgImage(svg: svg, width: 12, height: 12, colorFilter: PdfColors.white),
             ),
             pw.SizedBox(width: 6),
-            pw.Text(label, style: pw.TextStyle(font: arabicFont, fontSize: 13, color: textColor ?? blueDark)),
-            pw.SizedBox(width: 3),
-            pw.Text(':', style: pw.TextStyle(font: arabicFont, fontSize: 13, color: textColor ?? blueDark)),
-            pw.SizedBox(width: 5),
-            pw.Expanded(child: pw.Text(value, style: pw.TextStyle(font: arabicFontBold, fontSize: 14, color: textColor ?? blueDark), textAlign: pw.TextAlign.right)),
+            pw.Expanded(
+              child: pw.RichText(
+                text: pw.TextSpan(
+                  children: [
+                    pw.TextSpan(text: '$label: ', style: pw.TextStyle(font: arabicFont, fontSize: 12, color: textColor ?? blueDark)),
+                    pw.TextSpan(text: value, style: pw.TextStyle(font: arabicFontBold, fontSize: 13, color: textColor ?? blueDark)),
+                  ],
+                ),
+                textAlign: pw.TextAlign.right,
+                textDirection: pw.TextDirection.rtl,
+              ),
+            ),
           ]
         )
       );
@@ -403,13 +410,13 @@ class PrintService {
                           pw.Column(
                             children: [
                               pw.Container(
-                                width: 80, height: 80,
+                                width: 100, height: 100,
                                 decoration: pw.BoxDecoration(
                                   shape: pw.BoxShape.circle,
                                   border: pw.Border.all(color: goldLight, width: 2),
                                 ),
                                 child: pw.ClipOval(
-                                  child: profileImage != null ? pw.Image(profileImage, fit: pw.BoxFit.cover) : pw.Center(child: pw.SvgImage(svg: svgUser, width: 40, height: 40, colorFilter: PdfColors.grey)),
+                                  child: profileImage != null ? pw.Image(profileImage, fit: pw.BoxFit.cover) : pw.Center(child: pw.SvgImage(svg: svgUser, width: 50, height: 50, colorFilter: PdfColors.grey)),
                                 )
                               ),
                               pw.SizedBox(height: 8),
@@ -462,7 +469,7 @@ class PrintService {
                                     child: pw.SvgImage(svg: svgList, width: 10, height: 10, colorFilter: PdfColors.white),
                                   ),
                                   pw.SizedBox(width: 5),
-                                  pw.Text('البيانات التفصيلية', style: pw.TextStyle(color: PdfColors.white, font: arabicFontBold, fontSize: 13)),
+                                  pw.Text('البيانات التفصيلية', style: pw.TextStyle(color: PdfColors.white, font: arabicFontBold, fontSize: 12)),
                                 ]
                               )
                             ),
@@ -834,7 +841,7 @@ class PrintService {
                           children: [
                             buildTableCell('${levelData.meaningMaxScore} / ', isBold: true, textDir: pw.TextDirection.ltr, align: pw.TextAlign.left, fontSize: 14, leftPadding: 24),
                             buildTableCell('', align: pw.TextAlign.right),
-                            buildTableCell('فهم المعاني والوقف', isBold: true),
+                            buildTableCell('فهم المعاني', isBold: true),
                           ]
                         ),
                       

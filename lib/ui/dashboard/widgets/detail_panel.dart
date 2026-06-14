@@ -339,7 +339,7 @@ class StudentDetailPanel extends StatelessWidget {
                             if ((level?.hasMeaning ?? false) && meaningScoreController != null) ...[  
                               const SizedBox(height: 8),
                               _scoreInputRow(
-                                label: 'فهم المعاني والوقف',
+                                label: 'فهم المعاني',
                                 controller: meaningScoreController!,
                                 color: Colors.amber.shade800,
                                 icon: Icons.psychology_rounded,

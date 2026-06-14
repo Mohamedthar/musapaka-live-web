@@ -487,7 +487,7 @@ export default function Step5Success({
                           {/* Meaning */}
                           {hasMeaning && (
                             <tr style={{ backgroundColor: '#f8fafc', borderTop: '1pt solid #cbd5e1' }}>
-                              <td style={{ padding: '8pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '13pt', color: '#0f172a', fontFamily: '"Cairo", sans-serif', borderLeft: '1pt solid #cbd5e1' }}>فهم المعاني والوقف</td>
+                              <td style={{ padding: '8pt 10pt', textAlign: 'center', fontWeight: 700, fontSize: '13pt', color: '#0f172a', fontFamily: '"Cairo", sans-serif', borderLeft: '1pt solid #cbd5e1' }}>فهم المعاني</td>
                               <td style={{ borderLeft: '1pt solid #cbd5e1' }}></td>
                               <td style={{ padding: '8pt 10pt', textAlign: 'left', fontWeight: 700, fontSize: '15pt', color: '#0f172a', fontFamily: 'monospace', paddingLeft: '24pt' }}>/ {meaningScore}</td>
                             </tr>

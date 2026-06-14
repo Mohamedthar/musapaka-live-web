@@ -597,7 +597,7 @@ class ExportService {
     }
 
     if (selectedLevel == null || selectedLevel.hasMeaning) {
-      String h = 'درجة فهم\nالمعاني والوقف';
+      String h = 'درجة فهم\nالمعاني';
       if (selectedLevel != null) h += '\n(${selectedLevel.meaningMaxScore})';
       cols.add(_ColDef(h, 95, true, (s) {
         final lvl = CompetitionLevel.findByTitle(levels, s.level);
