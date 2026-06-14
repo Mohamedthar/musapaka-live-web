@@ -37,7 +37,7 @@ BEGIN
     WHERE app_settings.id = 1;
 
     -- استعلام واحد بدلاً من استعلامين
-    SELECT COUNT(*) FILTER (WHERE exam_date IS NOT NULL), COUNT(*)
+    SELECT COUNT(*) FILTER (WHERE exam_date IS NOT NULL AND exam_hour IS NOT NULL), COUNT(*)
     INTO v_filled_slots, v_total_students
     FROM students;
 

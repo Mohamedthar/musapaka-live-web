@@ -95,8 +95,14 @@ export async function POST(request: Request) {
     if (memorizerName.length > 100) {
       return jsonResponse({ error: 'اسم المحفِّظ طويل جداً (الحد الأقصى 100 حرف)' }, 400, origin);
     }
-    if (body.memorizer_phone && body.memorizer_phone.trim().length > 15) {
-      return jsonResponse({ error: 'رقم هاتف المحفظ طويل جداً' }, 400, origin);
+    if (body.memorizer_phone) {
+      const mp = body.memorizer_phone.trim();
+      if (mp.length > 15) {
+        return jsonResponse({ error: 'رقم هاتف المحفظ طويل جداً' }, 400, origin);
+      }
+      if (mp.length > 0 && !/^(010|011|012|015)\d{8}$/.test(mp)) {
+        return jsonResponse({ error: 'رقم هاتف المحفظ المصري غير صحيح (يجب أن يبدأ بـ 010 أو 011 أو 012 أو 015)' }, 400, origin);
+      }
     }
     if (phone && body.memorizer_phone && phone.trim() === body.memorizer_phone.trim()) {
       return jsonResponse({ error: 'رقم هاتف الطالب يجب أن يكون مختلفاً عن رقم هاتف المحفظ' }, 400, origin);

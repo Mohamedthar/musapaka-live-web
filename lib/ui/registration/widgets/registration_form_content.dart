@@ -534,12 +534,12 @@ class _RegistrationFormContentState extends State<RegistrationFormContent> {
                   const SizedBox(height: 12),
                   if (isWide)
                     Row(children: [
-                      Expanded(child: _field(_memorizerPhoneCtrl, 'هاتف المحفظ', Icons.phone_outlined, (_) => null, type: TextInputType.phone)),
+                      Expanded(child: _field(_memorizerPhoneCtrl, 'هاتف المحفظ', Icons.phone_outlined, Validator.validateStudentPhone, type: TextInputType.phone)),
                       const SizedBox(width: 10),
                       Expanded(child: _field(_memorizerAddressCtrl, 'عنوان المحفظ', Icons.location_on_outlined, (_) => null)),
                     ])
                   else ...[
-                    _field(_memorizerPhoneCtrl, 'هاتف المحفظ', Icons.phone_outlined, (_) => null, type: TextInputType.phone),
+                    _field(_memorizerPhoneCtrl, 'هاتف المحفظ', Icons.phone_outlined, Validator.validateStudentPhone, type: TextInputType.phone),
                     const SizedBox(height: 12),
                     _field(_memorizerAddressCtrl, 'عنوان المحفظ', Icons.location_on_outlined, (_) => null),
                   ],

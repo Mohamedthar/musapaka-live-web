@@ -186,6 +186,9 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'students_memorization_non_negative') THEN
         ALTER TABLE students ADD CONSTRAINT students_memorization_non_negative CHECK (memorization_amount >= 0);
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'students_memorizer_phone_format') THEN
+        ALTER TABLE students ADD CONSTRAINT students_memorizer_phone_format CHECK (memorizer_phone IS NULL OR memorizer_phone = '' OR memorizer_phone ~ '^(010|011|012|015)[0-9]{8}$');
+    END IF;
 END $$;
 
 -- -------------------------------------------------------------------
@@ -513,6 +516,10 @@ BEGIN
         GROUP BY exam_date, exam_hour
     ) sub;
 
+    -- ================================================================
+    -- المرحلة الأولى: سد الثقوب الناتجة عن حذف طلاب (ترتيب زمني تصاعدي)
+    -- الثقب الحقيقي = ساعة فيها طلاب (> 0) ولكن أقل من السعة
+    -- ================================================================
     FOR slot IN
         SELECT value FROM jsonb_array_elements(schedule_json)
         ORDER BY (value->>'date')::DATE ASC, (value->>'start_hour')::INT ASC
@@ -522,16 +529,14 @@ BEGIN
         v_end_hour          := (slot->>'end_hour')::INT;
         v_students_per_hour := (slot->>'students_per_hour')::INT;
 
-        -- FIFO حقيقي: ابدأ من أول ساعة في اليوم
         v_current_hour := v_start_hour;
-
         WHILE v_current_hour < v_end_hour LOOP
             DECLARE
                 cnt BIGINT;
             BEGIN
                 cnt := COALESCE((v_slot_counts_json->>(v_date::TEXT || '_' || v_current_hour::TEXT))::BIGINT, 0);
-
-                IF cnt < v_students_per_hour THEN
+                -- ثقب حقيقي: فيه طلاب بس أقل من السعة (تم حذف بعضهم)
+                IF cnt > 0 AND cnt < v_students_per_hour THEN
                     NEW.exam_date := v_date;
                     NEW.exam_hour := v_current_hour;
                     assigned := TRUE;
@@ -542,6 +547,39 @@ BEGIN
         END LOOP;
         IF assigned THEN EXIT; END IF;
     END LOOP;
+
+    -- ================================================================
+    -- المرحلة الثانية: لا توجد ثقوب → توزيع LIFO من النهاية
+    -- أول مسجل يحصل على آخر موعد
+    -- ================================================================
+    IF NOT assigned THEN
+        FOR slot IN
+            SELECT value FROM jsonb_array_elements(schedule_json)
+            ORDER BY (value->>'date')::DATE DESC, (value->>'start_hour')::INT DESC
+        LOOP
+            v_date              := (slot->>'date')::DATE;
+            v_start_hour        := (slot->>'start_hour')::INT;
+            v_end_hour          := (slot->>'end_hour')::INT;
+            v_students_per_hour := (slot->>'students_per_hour')::INT;
+
+            v_current_hour := v_end_hour - 1;
+            WHILE v_current_hour >= v_start_hour LOOP
+                DECLARE
+                    cnt BIGINT;
+                BEGIN
+                    cnt := COALESCE((v_slot_counts_json->>(v_date::TEXT || '_' || v_current_hour::TEXT))::BIGINT, 0);
+                    IF cnt < v_students_per_hour THEN
+                        NEW.exam_date := v_date;
+                        NEW.exam_hour := v_current_hour;
+                        assigned := TRUE;
+                        EXIT;
+                    END IF;
+                END;
+                v_current_hour := v_current_hour - 1;
+            END LOOP;
+            IF assigned THEN EXIT; END IF;
+        END LOOP;
+    END IF;
 
     IF NOT assigned THEN
         RAISE EXCEPTION 'عذراً، لقد اكتملت جميع المواعيد المتاحة حالياً ولا توجد أماكن شاغرة.';
@@ -1062,7 +1100,7 @@ BEGIN
     FROM app_settings, jsonb_array_elements(exam_schedule) AS slot
     WHERE app_settings.id = 1;
 
-    SELECT COUNT(*) FILTER (WHERE exam_date IS NOT NULL), COUNT(*)
+    SELECT COUNT(*) FILTER (WHERE exam_date IS NOT NULL AND exam_hour IS NOT NULL), COUNT(*)
     INTO v_filled_slots, v_total_students
     FROM students;
 

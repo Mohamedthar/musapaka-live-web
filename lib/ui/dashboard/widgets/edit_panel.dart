@@ -340,12 +340,12 @@ class StudentEditPanel extends StatelessWidget {
                           Row(children: [
                             Expanded(child: _field(memorizerNameController, 'اسم المحفظ', Icons.person_add_alt_1_outlined)),
                             const SizedBox(width: 10),
-                            Expanded(child: _field(memorizerPhoneController, 'هاتف المحفظ', Icons.phone_outlined)),
+                            Expanded(child: _field(memorizerPhoneController, 'هاتف المحفظ', Icons.phone_outlined, Validator.validateStudentPhone)),
                           ])
                         else ...[
                           _field(memorizerNameController, 'اسم المحفظ', Icons.person_add_alt_1_outlined),
                           const SizedBox(height: 12),
-                          _field(memorizerPhoneController, 'هاتف المحفظ', Icons.phone_outlined),
+                          _field(memorizerPhoneController, 'هاتف المحفظ', Icons.phone_outlined, Validator.validateStudentPhone),
                         ],
                         const SizedBox(height: 12),
                         _field(memorizerAddressController, 'عنوان المحفظ', Icons.location_on_outlined),
