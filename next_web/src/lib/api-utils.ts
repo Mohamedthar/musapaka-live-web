@@ -71,10 +71,16 @@ export function clearRateLimitsForTesting(): void {
 }
 
 export function getClientIp(request: Request): string {
-  return (
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    'unknown'
-  );
+  const cf = request.headers.get('cf-connecting-ip');
+  if (cf) return cf;
+  const xRealIp = request.headers.get('x-real-ip');
+  if (xRealIp) return xRealIp;
+  const xff = request.headers.get('x-forwarded-for');
+  if (xff) {
+    const parts = xff.split(',').map(s => s.trim()).filter(Boolean);
+    if (parts.length > 0) return parts[0];
+  }
+  return 'unknown';
 }
 
 export function validateCsrf(request: Request): boolean {

@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     const supabase = getAdminClient();
 
     const ip = getClientIp(request);
-    if (!checkRateLimit(ip, 5)) {
+    if (!checkRateLimit(ip, 15)) {
       return jsonResponse({ error: 'طلبات كثيرة جداً. حاول بعد دقيقة.' }, 429, origin);
     }
 
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
         .eq('registration_ip', ip)
         .gte('created_at', oneMinuteAgo);
 
-      if (!limitErr && count !== null && count >= 5) {
+      if (!limitErr && count !== null && count >= 10) {
         return jsonResponse({ error: 'طلبات كثيرة جداً من هذا الجهاز. حاول بعد دقيقة.' }, 429, origin);
       }
     }
