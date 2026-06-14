@@ -768,7 +768,7 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
                       <div>
                         <p className="text-sm font-black text-secondary mb-1">يجب طباعة الاستمارة وإحضارها</p>
                         <p className="text-xs font-bold text-on-surface-variant leading-relaxed">
-                          يجب طباعة الاستمارة في ورقة واحدة وإحضارها معك في موعد الاختبار المحدد. لا يسمح بدخول الاختبار بدون الاستمارة المطبوعة.
+                          يجب طباعة الاستمارة في ورقة واحدة أو تنزيلها كملف PDF وطباعتها، وإحضارها معك في موعد الاختبار المحدد داخل الاستمارة. لا يسمح بدخول الاختبار بدون الاستمارة المطبوعة.
                         </p>
                       </div>
                     </div>
