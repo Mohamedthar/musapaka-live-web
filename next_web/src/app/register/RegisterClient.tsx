@@ -470,6 +470,7 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
           branch_name: branchName.trim() || null,
           memorization_amount: memorizationAmount,
         }),
+        signal: AbortSignal.timeout(30000),
       });
 
       const result = await res.json();
@@ -491,13 +492,19 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: unknown) {
       toast.dismiss(uploadToast);
-      const msg = err instanceof Error ? err.message : 'حدث خطأ غير متوقع';
-      if (msg.includes('مسبقاً') || msg.includes('موجود')) {
-        toast.error(msg);
-      } else if (msg.includes('انتهت') || msg.includes('فشل') || msg.includes('network') || msg.includes('fetch')) {
-        toast.error('فشل الاتصال بالخادم - لم تفقد بياناتك، حاول مرة أخرى');
+      if (err instanceof DOMException && err.name === 'TimeoutError') {
+        toast.error('انتهت مهلة الاتصال بالخادم - لم تفقد بياناتك، حاول مرة أخرى');
+      } else if (err instanceof TypeError && (err.message.includes('fetch') || err.message.includes('network') || err.message.includes('Network'))) {
+        toast.error('فشل الاتصال بالخادم - تحقق من اتصالك بالإنترنت وحاول مرة أخرى');
       } else {
-        toast.error(msg);
+        const msg = err instanceof Error ? err.message : 'حدث خطأ غير متوقع';
+        if (msg.includes('مسبقاً') || msg.includes('موجود')) {
+          toast.error(msg);
+        } else if (msg.includes('فشل رفع') || msg.includes('فشل في رفع')) {
+          toast.error('فشل رفع الصور - لم تفقد بياناتك، حاول مرة أخرى');
+        } else {
+          toast.error(msg);
+        }
       }
     } finally {
       setLoading(false);
