@@ -187,7 +187,7 @@ BEGIN
         ALTER TABLE students ADD CONSTRAINT students_memorization_non_negative CHECK (memorization_amount >= 0);
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'students_memorizer_phone_format') THEN
-        ALTER TABLE students ADD CONSTRAINT students_memorizer_phone_format CHECK (memorizer_phone IS NULL OR memorizer_phone = '' OR memorizer_phone ~ '^(010|011|012|015)[0-9]{8}$');
+        ALTER TABLE students ADD CONSTRAINT students_memorizer_phone_format CHECK (memorizer_phone IS NOT NULL AND memorizer_phone <> '' AND memorizer_phone ~ '^(010|011|012|015)[0-9]{8}$');
     END IF;
 END $$;
 

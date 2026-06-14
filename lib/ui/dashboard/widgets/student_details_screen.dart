@@ -5,6 +5,7 @@ import '../../../services/supabase_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/validators.dart';
 import '../../shared/widgets/gender_safe_image.dart';
+import '../../shared/widgets/full_screen_image_viewer.dart';
 
 class StudentDetailsScreen extends StatefulWidget {
   final Student student;
@@ -109,6 +110,13 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
           children: [
             GenderSafeImage(
               gender: _student.gender,
+              onImageTap: Validator.isValidImageUrl(_student.profileImageUrl)
+                  ? () => FullScreenImageViewer.show(
+                        context,
+                        _student.profileImageUrl!,
+                        'الصورة الشخصية - ${_student.name}',
+                      )
+                  : null,
               image: CircleAvatar(
               radius: 30,
               backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
@@ -256,6 +264,13 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
       children: [
         GenderSafeImage(
           gender: gender,
+          onImageTap: Validator.isValidImageUrl(url)
+              ? () => FullScreenImageViewer.show(
+                    context,
+                    url!,
+                    '$label - ${_student.name}',
+                  )
+              : null,
           image: Container(
           height: 150,
           width: double.infinity,

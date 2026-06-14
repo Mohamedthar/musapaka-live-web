@@ -5,12 +5,14 @@ class GenderSafeImage extends StatefulWidget {
   final Widget image;
   final String? gender;
   final bool enabled;
+  final VoidCallback? onImageTap;
 
   const GenderSafeImage({
     super.key,
     required this.image,
     this.gender,
     this.enabled = true,
+    this.onImageTap,
   });
 
   @override
@@ -42,6 +44,13 @@ class _GenderSafeImageState extends State<GenderSafeImage> {
     if (_shouldBlur && _blurred) {
       imageWidget = ImageFiltered(
         imageFilter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: imageWidget,
+      );
+    }
+
+    if (!_shouldBlur || !_blurred) {
+      imageWidget = GestureDetector(
+        onTap: _shouldBlur ? _toggle : widget.onImageTap,
         child: imageWidget,
       );
     }

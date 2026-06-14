@@ -340,12 +340,12 @@ class StudentEditPanel extends StatelessWidget {
                           Row(children: [
                             Expanded(child: _field(memorizerNameController, 'اسم المحفظ', Icons.person_add_alt_1_outlined)),
                             const SizedBox(width: 10),
-                            Expanded(child: _field(memorizerPhoneController, 'هاتف المحفظ', Icons.phone_outlined, Validator.validateStudentPhone)),
+                            Expanded(child: _field(memorizerPhoneController, 'هاتف المحفظ', Icons.phone_outlined, validator: Validator.validatePhone)),
                           ])
                         else ...[
                           _field(memorizerNameController, 'اسم المحفظ', Icons.person_add_alt_1_outlined),
                           const SizedBox(height: 12),
-                          _field(memorizerPhoneController, 'هاتف المحفظ', Icons.phone_outlined, Validator.validateStudentPhone),
+                          _field(memorizerPhoneController, 'هاتف المحفظ', Icons.phone_outlined, validator: Validator.validatePhone),
                         ],
                         const SizedBox(height: 12),
                         _field(memorizerAddressController, 'عنوان المحفظ', Icons.location_on_outlined),
@@ -451,8 +451,9 @@ class StudentEditPanel extends StatelessWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
       );
 
-  Widget _field(TextEditingController c, String label, IconData icon, {bool isNum = false, bool readOnly = false, Widget? suffixIcon}) =>
-      TextField(
+  Widget _field(TextEditingController c, String label, IconData icon, {bool isNum = false, bool readOnly = false, Widget? suffixIcon, String? Function(String?)? validator}) =>
+      TextFormField(
+        validator: validator,
         controller: c,
         readOnly: readOnly,
         keyboardType: isNum ? TextInputType.number : TextInputType.text,

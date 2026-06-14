@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../core/utils/validators.dart';
+import '../../shared/widgets/full_screen_image_viewer.dart';
 
 import '../../../data/models/student.dart';
 import '../../../data/models/competition_level.dart';
@@ -124,6 +125,13 @@ class StudentDetailPanel extends StatelessWidget {
               // Profile Image
               GenderSafeImage(
                 gender: student.gender,
+                onImageTap: Validator.isValidImageUrl(student.profileImageUrl)
+                    ? () => FullScreenImageViewer.show(
+                          context,
+                          student.profileImageUrl!,
+                          'الصورة الشخصية - ${student.name}',
+                        )
+                    : null,
                 image: Container(
                 width: 90,
                 height: 90,
@@ -512,14 +520,14 @@ class StudentDetailPanel extends StatelessWidget {
                   if (Validator.isValidImageUrl(student.profileImageUrl))
                       Expanded(
                         child: _docCard(
-                            student.profileImageUrl!, 'الصورة الشخصية', student.gender)),
+                            student.profileImageUrl!, 'الصورة الشخصية', student.gender, student.name, context)),
                   if (Validator.isValidImageUrl(student.profileImageUrl) &&
                       Validator.isValidImageUrl(student.birthCertificateUrl))
                     const SizedBox(width: 12),
                   if (Validator.isValidImageUrl(student.birthCertificateUrl))
                     Expanded(
                         child: _docCard(
-                            student.birthCertificateUrl!, 'شهادة الميلاد', student.gender)),
+                            student.birthCertificateUrl!, 'شهادة الميلاد', student.gender, student.name, context)),
                 ]),
               ],
             ]),
@@ -699,10 +707,15 @@ class StudentDetailPanel extends StatelessWidget {
         ]),
       );
 
-  Widget _docCard(String url, String label, String? gender) =>
+  Widget _docCard(String url, String label, String? gender, String studentName, BuildContext ctx) =>
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         GenderSafeImage(
           gender: gender,
+          onImageTap: () => FullScreenImageViewer.show(
+            ctx,
+            url,
+            '$label - $studentName',
+          ),
           image: Container(
           height: 100,
           width: double.infinity,
