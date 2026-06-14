@@ -36,7 +36,6 @@ import 'widgets/resizable_panel.dart';
 
 import '../../core/utils/image_utils.dart';
 import '../../core/utils/app_logger.dart';
-import '../../core/utils/app_logger.dart';
 
 final _compressForEdit = compressImage;
 

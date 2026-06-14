@@ -203,7 +203,7 @@ class PrintService {
     final normalized = normalizeArabic(levelName);
     try {
       return levels.firstWhere((l) => normalizeArabic(l.title) == normalized);
-    } catch (e, stackTrace) {
+    } catch (e, _) {
       try {
         return levels.firstWhere((l) => normalizeArabic(l.title).contains(normalized) || normalized.contains(normalizeArabic(l.title)));
       } catch (e2, stackTrace2) {
