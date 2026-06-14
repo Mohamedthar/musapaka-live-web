@@ -760,34 +760,17 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
                   </button>
                 </div>
 
-                {/* Notes list */}
-                <div className="p-5 space-y-4">
-                  {[
-                    'القبول بشروط المسابقة، يحظر تقديم أي رسوم مالية',
-                    'كل متسابق يلتزم بالمواعيد المحدده له (التقديم - الاختبار - الحفلة)',
-                    'يتم التصفيه في المسابقة بوضع سؤال للتصفية في الامتحان سؤال في ضبط المتشابهات',
-                    'سيتم تكريم الاوائل الثلاثة على المنصة فقط والباقي في أماكنهم والرجاء الرضا بذلك',
-                    'عند عدم الحضور المكرم الحفل يحجب من الجائزة وتودع في الامانات',
-                    'سيتم تكريم الحاصلين علي درجة نجاح 95% فأكثر، ويحظر الجمع بين أكثر من جائزة',
-                  ].map((text, i) => (
-                    <div key={i} className="flex items-start gap-3">
-                      <div className="w-6 h-6 min-w-[24px] rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-xs font-black text-white">{i + 1}</span>
+                {/* Printing warning */}
+                <div className="p-5">
+                  <div className="p-4 border-2 border-secondary/30 rounded-xl bg-secondary-fixed/10">
+                    <div className="flex items-start gap-2.5">
+                      <Printer size={18} className="text-secondary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-black text-secondary mb-1">يجب طباعة الاستمارة وإحضارها</p>
+                        <p className="text-xs font-bold text-on-surface-variant leading-relaxed">
+                          يجب طباعة الاستمارة في ورقة واحدة وإحضارها معك في موعد الاختبار المحدد. لا يسمح بدخول الاختبار بدون الاستمارة المطبوعة.
+                        </p>
                       </div>
-                      <span className="text-sm font-bold text-on-surface leading-relaxed">{text}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Footer warning */}
-                <div className="mx-5 mb-5 p-4 border-2 border-secondary/30 rounded-xl bg-secondary-fixed/10">
-                  <div className="flex items-start gap-2.5">
-                    <Printer size={18} className="text-secondary flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-black text-secondary mb-1">يجب طباعة الاستمارة وإحضارها</p>
-                      <p className="text-xs font-bold text-on-surface-variant leading-relaxed">
-                        يجب طباعة الاستمارة في ورقة واحدة وإحضارها معك في موعد الاختبار المحدد. لا يسمح بدخول الاختبار بدون الاستمارة المطبوعة.
-                      </p>
                     </div>
                   </div>
                 </div>
