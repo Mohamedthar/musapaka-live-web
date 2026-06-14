@@ -303,19 +303,34 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
   };
 
   const uploadToCloudinary = async (fileOrBlob: File | Blob) => {
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+    if (!cloudName || !uploadPreset) throw new Error('إعدادات رفع الصور غير مكتملة');
+
     const fd = new FormData();
     fd.append('file', fileOrBlob);
+    fd.append('upload_preset', uploadPreset);
 
-    const r = await fetch('/api/upload', {
-      method: 'POST',
-      body: fd,
-    });
-
-    const res = await r.json();
-    if (!r.ok) {
-      throw new Error(res.error || 'فشل في رفع الصورة');
+    let lastError: Error | null = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const r = await fetch(
+          `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+          { method: 'POST', body: fd, signal: AbortSignal.timeout(20000) }
+        );
+        const res = await r.json();
+        if (!r.ok) {
+          throw new Error(res.error?.message || 'فشل في رفع الصورة');
+        }
+        return res.secure_url as string;
+      } catch (e) {
+        lastError = e instanceof Error ? e : new Error('فشل رفع الصورة');
+        if (attempt < 2) {
+          await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+        }
+      }
     }
-    return res.url;
+    throw lastError || new Error('فشل رفع الصورة بعد عدة محاولات');
   };
 
   const nextStep = () => {
