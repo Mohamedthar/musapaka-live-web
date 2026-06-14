@@ -674,9 +674,18 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
               </div>
 
               <h2 className="text-2xl sm:text-3xl font-black text-primary mb-3">تم التسجيل بنجاح!</h2>
+
+              {examSlot && (
+                <div className="bg-secondary-fixed/20 border border-secondary-fixed/40 rounded-xl p-4 mb-5 text-center">
+                  <p className="text-xs font-bold text-secondary mb-1">موعد الاختبار المحدد</p>
+                  <p className="text-base sm:text-lg font-black text-primary leading-snug">{examSlot}</p>
+                </div>
+              )}
+
               <p className="text-sm font-bold text-on-surface-variant leading-relaxed mb-6">
-                تم تسجيل بياناتك في مسابقة أهل القرآن الكبرى.<br />
-                يمكنك الآن تحميل استمارة التسجيل كصورة أو طباعتها أو حفظها كملف PDF.
+                يجب طباعة الاستمارة في ورقة واحدة وإحضارها معك في الموعد المحدد أعلاه.
+                <br />
+                <span className="text-secondary font-black">لا يسمح بدخول الاختبار بدون الاستمارة المطبوعة.</span>
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 mb-6">

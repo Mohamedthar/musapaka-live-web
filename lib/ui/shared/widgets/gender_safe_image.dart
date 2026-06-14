@@ -50,7 +50,7 @@ class _GenderSafeImageState extends State<GenderSafeImage> {
 
     if (!_shouldBlur || !_blurred) {
       imageWidget = GestureDetector(
-        onTap: _shouldBlur ? _toggle : widget.onImageTap,
+        onTap: (_shouldBlur && _blurred) ? _toggle : widget.onImageTap,
         child: imageWidget,
       );
     }

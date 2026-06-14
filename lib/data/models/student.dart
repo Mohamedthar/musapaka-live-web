@@ -80,7 +80,7 @@ class Student {
       birthCertificateUrl: json['birth_certificate_url'],
       birthDate: json['birth_date'] != null ? DateTime.tryParse(json['birth_date']) : null,
       createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'])
+          ? DateTime.tryParse(json['created_at'])?.toLocal()
           : null,
       studentCode: json['student_code'],
       ceremonyCode: json['ceremony_code'],
