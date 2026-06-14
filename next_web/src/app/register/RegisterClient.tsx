@@ -1,7 +1,7 @@
 'use client';
 /* Deployment trigger: 2026-05-19T23:36:27Z */
 import React, { useState, useEffect, useMemo } from 'react';
-import { CheckCircle2, ChevronLeft, ChevronRight, ShieldCheck, ArrowLeft, Send, CalendarX, Download, Printer, FileText } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, ShieldCheck, ArrowLeft, Send, CalendarX, Download, Printer, FileText, X, AlertTriangle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -54,6 +54,7 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [levelCounts, setLevelCounts] = useState<Record<string, number>>({});
   const [isCapturing, setIsCapturing] = useState(false);
+  const [showNotesModal, setShowNotesModal] = useState(false);
   const clearErr = (key: string) => setFieldErrors(p => { if (!p[key]) return p; const n = { ...p }; delete n[key]; return n; });
 
   const formattedStartDate = useMemo(() => {
@@ -486,6 +487,7 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
       localStorage.removeItem('musapaka_registration_draft');
       toast.success('تم التسجيل بنجاح!');
       setSuccess(true);
+      setShowNotesModal(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: unknown) {
       toast.dismiss(uploadToast);
@@ -674,18 +676,8 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
               </div>
 
               <h2 className="text-2xl sm:text-3xl font-black text-primary mb-3">تم التسجيل بنجاح!</h2>
-
-              {examSlot && (
-                <div className="bg-secondary-fixed/20 border border-secondary-fixed/40 rounded-xl p-4 mb-5 text-center">
-                  <p className="text-xs font-bold text-secondary mb-1">موعد الاختبار المحدد</p>
-                  <p className="text-base sm:text-lg font-black text-primary leading-snug">{examSlot}</p>
-                </div>
-              )}
-
               <p className="text-sm font-bold text-on-surface-variant leading-relaxed mb-6">
-                يجب طباعة الاستمارة في ورقة واحدة وإحضارها معك في الموعد المحدد أعلاه.
-                <br />
-                <span className="text-secondary font-black">لا يسمح بدخول الاختبار بدون الاستمارة المطبوعة.</span>
+                تم تسجيل بياناتك في مسابقة أهل القرآن الكبرى.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -729,6 +721,90 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
 
           <Footer />
         </div>
+
+        {/* ── NOTES MODAL ── */}
+        <AnimatePresence>
+          {showNotesModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 print:hidden"
+              style={{ backdropFilter: 'blur(4px)' }}
+              onClick={() => setShowNotesModal(false)}
+              dir="rtl"
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto"
+                style={{ fontFamily: 'var(--font-cairo), Cairo, sans-serif' }}
+              >
+                {/* Header */}
+                <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-5 border-b border-slate-100">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 bg-secondary-fixed/30 rounded-full flex items-center justify-center">
+                      <AlertTriangle size={18} className="text-secondary" />
+                    </div>
+                    <h3 className="text-lg font-black text-primary">ملاحظات هامة</h3>
+                  </div>
+                  <button
+                    onClick={() => setShowNotesModal(false)}
+                    className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    <X size={18} className="text-slate-600" />
+                  </button>
+                </div>
+
+                {/* Notes list */}
+                <div className="p-5 space-y-4">
+                  {[
+                    'القبول بشروط المسابقة، يحظر تقديم أي رسوم مالية',
+                    'كل متسابق يلتزم بالمواعيد المحدده له (التقديم - الاختبار - الحفلة)',
+                    'يتم التصفيه في المسابقة بوضع سؤال للتصفية في الامتحان سؤال في ضبط المتشابهات',
+                    'سيتم تكريم الاوائل الثلاثة على المنصة فقط والباقي في أماكنهم والرجاء الرضا بذلك',
+                    'عند عدم الحضور المكرم الحفل يحجب من الجائزة وتودع في الامانات',
+                    'سيتم تكريم الحاصلين علي درجة نجاح 95% فأكثر، ويحظر الجمع بين أكثر من جائزة',
+                  ].map((text, i) => (
+                    <div key={i} className="flex items-start gap-3">
+                      <div className="w-6 h-6 min-w-[24px] rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-xs font-black text-white">{i + 1}</span>
+                      </div>
+                      <span className="text-sm font-bold text-on-surface leading-relaxed">{text}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Footer warning */}
+                <div className="mx-5 mb-5 p-4 border-2 border-secondary/30 rounded-xl bg-secondary-fixed/10">
+                  <div className="flex items-start gap-2.5">
+                    <Printer size={18} className="text-secondary flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-black text-secondary mb-1">يجب طباعة الاستمارة وإحضارها</p>
+                      <p className="text-xs font-bold text-on-surface-variant leading-relaxed">
+                        يجب طباعة الاستمارة في ورقة واحدة وإحضارها معك في موعد الاختبار المحدد. لا يسمح بدخول الاختبار بدون الاستمارة المطبوعة.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Close button */}
+                <div className="px-5 pb-5">
+                  <button
+                    onClick={() => setShowNotesModal(false)}
+                    className="w-full py-3 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/85 active:scale-[0.98] transition-all cursor-pointer"
+                  >
+                    حسناً، فهمت
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div className="hidden print:block">
           <Step4Success
