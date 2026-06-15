@@ -488,16 +488,23 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
       return toast.error('يرجى الانتظار قليلاً قبل إرسال طلب آخر');
     }
 
-    // تجديد رمز Turnstile قبل الإرسال (الرمز ينتهي بعد 5 دقائق)
+    // تجديد رمز Turnstile قبل الإرسال إذا كان منتهياً
     let finalToken = turnstileToken;
     const widgetId = turnstileWidgetIdRef.current;
     const ts = typeof window !== 'undefined' ? (window as unknown as { turnstile?: { reset: (id: string) => void; getResponse: (id: string) => string | undefined } }).turnstile : undefined;
     if (widgetId && ts) {
-      ts.reset(widgetId);
-      for (let i = 0; i < 25; i++) {
-        await new Promise(r => setTimeout(r, 200));
-        const t = ts.getResponse(widgetId);
-        if (t) { finalToken = t; setTurnstileToken(t); break; }
+      // نجرب ناخد التوكين الحالي الأول بدون reset
+      const currentResponse = ts.getResponse(widgetId);
+      if (currentResponse) {
+        finalToken = currentResponse;
+      } else {
+        // التوكين منتهي، نعمل reset ونستنى توكين جديد
+        ts.reset(widgetId);
+        for (let i = 0; i < 25; i++) {
+          await new Promise(r => setTimeout(r, 200));
+          const t = ts.getResponse(widgetId);
+          if (t) { finalToken = t; setTurnstileToken(t); break; }
+        }
       }
     }
 
