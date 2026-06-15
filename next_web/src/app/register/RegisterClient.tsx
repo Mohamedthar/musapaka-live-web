@@ -152,6 +152,16 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
           if (draft.level) setFormData((p: typeof formData) => ({ ...p, level: draft.level }));
           if (draft.selectedRewaya) setFormData((p: typeof formData) => ({ ...p, selectedRewaya: draft.selectedRewaya }));
         } catch (_) {}
+
+        // استعادة روابط الصور المرفوعة سابقاً (لمنع إعادة الرفع)
+        const savedUrls = localStorage.getItem('musapaka_uploaded_urls');
+        if (savedUrls) {
+          try {
+            const urls = JSON.parse(savedUrls);
+            if (urls.profileUrl) cachedUploads.current.profileUrl = urls.profileUrl;
+            if (urls.birthCertUrl) cachedUploads.current.birthCertUrl = urls.birthCertUrl;
+          } catch (_) {}
+        }
       }
 
       try {
@@ -235,6 +245,10 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
         draft.birthDate = formData.birthDate;
       }
       localStorage.setItem('musapaka_registration_draft', JSON.stringify(draft));
+      // حفظ روابط الصور المرفوعة لمنع إعادة الرفع
+      if (cachedUploads.current.profileUrl || cachedUploads.current.birthCertUrl) {
+        localStorage.setItem('musapaka_uploaded_urls', JSON.stringify(cachedUploads.current));
+      }
     } catch (_) {}
   }, [formData, branchName, memorizationAmount, step]);
 
@@ -570,6 +584,7 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
       setCloudBirthCertUrl(result.data.birth_certificate_url || null);
 
       cachedUploads.current = {};
+      localStorage.removeItem('musapaka_uploaded_urls');
 
       localStorage.setItem('last_reg_time', Date.now().toString());
       localStorage.removeItem('musapaka_registration_draft');
