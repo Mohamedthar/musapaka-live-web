@@ -146,35 +146,54 @@ export default function FormInquiry() {
 
   const handleDownloadImage = async () => {
     setIsCapturing(true);
-    const toastId = toast.loading('جاري تجهيز الاستمارة...');
+    const toastId = toast.loading('جاري تجهيز استمارة البيانات...');
     try {
       const receiptCanvas = await captureElement('receipt');
       if (!receiptCanvas) throw new Error('الاستمارة غير موجودة');
 
+      toast.loading('جاري تحميل الاستمارة...', { id: toastId });
+      const receiptFilename = `استمارة_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.jpg`;
       const dataUrl = receiptCanvas.toDataURL('image/jpeg', 0.85);
       const link = document.createElement('a');
       link.href = dataUrl;
-      link.download = `استمارة_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.jpg`;
+      link.download = receiptFilename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
 
+      let evalFilename: string | null = null;
       const evalCanvas = await captureElement('evaluation-form');
       if (evalCanvas) {
-        await new Promise(r => setTimeout(r, 400));
+        toast.loading('جاري تحميل استمارة التقييم...', { id: toastId });
+        await new Promise(r => setTimeout(r, 500));
+        evalFilename = `استمارة_تقييم_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.jpg`;
         const dataUrl2 = evalCanvas.toDataURL('image/jpeg', 0.85);
         const link2 = document.createElement('a');
         link2.href = dataUrl2;
-        link2.download = `استمارة_تقييم_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.jpg`;
+        link2.download = evalFilename;
         document.body.appendChild(link2);
         link2.click();
         document.body.removeChild(link2);
       }
 
-      toast.success('تم تحميل الاستمارة! لو لم تظهر، تأكد من السماح بالتنزيلات.', { id: toastId, duration: 6000 });
+      // فتح الاستمارة في نافذة جديدة
+      await new Promise(r => setTimeout(r, 300));
+      window.open(dataUrl, '_blank');
+
+      if (evalFilename) {
+        toast.success(
+          `تم تحميل الاستمارتين وفتحها!\nالملفات في مجلد التحميلات:\n📄 ${receiptFilename}\n📄 ${evalFilename}`,
+          { id: toastId, duration: 8000 }
+        );
+      } else {
+        toast.success(
+          `تم تحميل الاستمارة وفتحها!\nالملف في مجلد التحميلات:\n📄 ${receiptFilename}`,
+          { id: toastId, duration: 8000 }
+        );
+      }
     } catch (err) {
       console.error(err);
-      toast.error('فشل تحميل الصورة', { id: toastId });
+      toast.error('فشل تجهيز الاستمارة — حاول مرة أخرى', { id: toastId });
     } finally {
       setIsCapturing(false);
     }
@@ -210,9 +229,13 @@ export default function FormInquiry() {
         pdf.addImage(evalData, 'JPEG', 0, 0, pdfWidth, Math.min(evalHeight, pdfHeight));
       }
 
-      pdf.save(`استمارة_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.pdf`);
+      const pdfFilename = `استمارة_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.pdf`;
+      pdf.save(pdfFilename);
 
-      toast.success('تم حفظ ملف PDF بنجاح!', { id: toastId });
+      toast.success(
+        `تم حفظ ملف PDF!\nالملف في مجلد التحميلات:\n📄 ${pdfFilename}\n\nيمكنك فتحه وطباعته من أي جهاز.`,
+        { id: toastId, duration: 8000 }
+      );
     } catch (err) {
       console.error(err);
       toast.error('فشل حفظ PDF', { id: toastId });

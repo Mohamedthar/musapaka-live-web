@@ -665,7 +665,7 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
     }
   };
 
-  const downloadCanvasAsImage = (canvas: HTMLCanvasElement, filename: string) => {
+  const downloadCanvasAsImage = (canvas: HTMLCanvasElement, filename: string): string | null => {
     try {
       const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
       const link = document.createElement('a');
@@ -674,31 +674,54 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      return true;
+      return dataUrl;
     } catch {
-      return false;
+      return null;
     }
   };
 
   const handleDownloadImage = async () => {
     setIsCapturing(true);
-    const toastId = toast.loading('جاري تجهيز الاستمارة...');
+    const toastId = toast.loading('جاري تجهيز استمارة البيانات...');
     try {
       const receiptCanvas = await captureElement('receipt');
       if (!receiptCanvas) throw new Error('الاستمارة غير موجودة');
 
-      downloadCanvasAsImage(receiptCanvas, `استمارة_${formData.name.replace(/\s+/g, '_')}.jpg`);
+      toast.loading('جاري تحميل استمارة البيانات...', { id: toastId });
+      const receiptFilename = `استمارة_${formData.name.replace(/\s+/g, '_')}.jpg`;
+      const receiptUrl = downloadCanvasAsImage(receiptCanvas, receiptFilename);
 
+      let evalUrl: string | null = null;
+      const evalFilename = `استمارة_تقييم_${formData.name.replace(/\s+/g, '_')}.jpg`;
       const evalCanvas = await captureElement('evaluation-form');
       if (evalCanvas) {
-        await new Promise(r => setTimeout(r, 400));
-        downloadCanvasAsImage(evalCanvas, `استمارة_تقييم_${formData.name.replace(/\s+/g, '_')}.jpg`);
+        toast.loading('جاري تحميل استمارة التقييم...', { id: toastId });
+        await new Promise(r => setTimeout(r, 500));
+        evalUrl = downloadCanvasAsImage(evalCanvas, evalFilename);
       }
 
-      toast.success('تم تحميل الاستمارة! لو لم تظهر، تأكد من السماح بالتنزيلات للموقع.', { id: toastId, duration: 6000 });
+      // فتح الاستمارة في تاب جديد عشان المستخدم يشوفها فوراً
+      if (receiptUrl) {
+        await new Promise(r => setTimeout(r, 300));
+        window.open(receiptUrl, '_blank');
+      }
+
+      if (receiptUrl && evalUrl) {
+        toast.success(
+          `تم تحميل الاستمارتين! تم فتح الاستمارة في نافذة جديدة.\nالملفات في مجلد التحميلات:\n📄 ${receiptFilename}\n📄 ${evalFilename}`,
+          { id: toastId, duration: 8000 }
+        );
+      } else if (receiptUrl) {
+        toast.success(
+          `تم تحميل الاستمارة وفتحها!\nالملف في مجلد التحميلات:\n📄 ${receiptFilename}`,
+          { id: toastId, duration: 8000 }
+        );
+      } else {
+        toast.error('فشل تحميل الاستمارة — لم يتم العثور على الملف', { id: toastId });
+      }
     } catch (err) {
       console.error(err);
-      toast.error('فشل تحميل الصورة', { id: toastId });
+      toast.error('فشل تجهيز الاستمارة — حاول مرة أخرى', { id: toastId });
     } finally {
       setIsCapturing(false);
     }
@@ -710,13 +733,15 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
 
   const handleDownloadPdf = async () => {
     setIsCapturing(true);
-    const toastId = toast.loading('جاري تجهيز ملف PDF...');
+    const toastId = toast.loading('جاري تجهيز استمارة البيانات...');
     try {
       const jsPdfModule = await import('jspdf');
       const jsPDF = jsPdfModule.default;
 
       const receiptCanvas = await captureElement('receipt');
       if (!receiptCanvas) throw new Error('الاستمارة غير موجودة');
+
+      toast.loading('جاري إنشاء ملف PDF...', { id: toastId });
 
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -734,12 +759,16 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
         pdf.addImage(evalData, 'JPEG', 0, 0, pdfWidth, Math.min(evalHeight, pdfHeight));
       }
 
-      pdf.save(`استمارة_${formData.name.replace(/\s+/g, '_')}.pdf`);
+      const pdfFilename = `استمارة_${formData.name.replace(/\s+/g, '_')}.pdf`;
+      pdf.save(pdfFilename);
 
-      toast.success('تم حفظ ملف PDF بنجاح!', { id: toastId });
+      toast.success(
+        `تم حفظ ملف PDF!\nالملف في مجلد التحميلات:\n📄 ${pdfFilename}\n\nيمكنك فتحه وطباعته من أي جهاز.`,
+        { id: toastId, duration: 8000 }
+      );
     } catch (err) {
       console.error(err);
-      toast.error('فشل حفظ PDF', { id: toastId });
+      toast.error('فشل حفظ PDF — حاول مرة أخرى', { id: toastId });
     } finally {
       setIsCapturing(false);
     }
