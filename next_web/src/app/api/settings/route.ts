@@ -28,9 +28,19 @@ export async function GET(request: Request) {
     }
 
     const levelCounts: Record<string, number> = {};
-    if (levelCountsRes.data) {
-      for (const row of levelCountsRes.data as { level: string; cnt: string }[]) {
+
+    // Try RPC first, fall back to SELECT with high limit
+    if (levelCountsRes.data && Array.isArray(levelCountsRes.data)) {
+      for (const row of levelCountsRes.data as { level: string; cnt: number | string }[]) {
         levelCounts[row.level] = Number(row.cnt);
+      }
+    } else {
+      // Fallback: direct SELECT with large limit
+      const { data: allLevels } = await supabase.from('students').select('level').limit(50000);
+      if (allLevels) {
+        for (const s of allLevels) {
+          levelCounts[s.level] = (levelCounts[s.level] || 0) + 1;
+        }
       }
     }
 
