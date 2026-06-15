@@ -176,14 +176,10 @@ export default function FormInquiry() {
         document.body.removeChild(link2);
       }
 
-      // فتح الاستمارة في نافذة جديدة
-      await new Promise(r => setTimeout(r, 300));
-      window.open(dataUrl, '_blank');
-
       if (evalFilename) {
-        toast.success('تم تحميل وفتح الملفات', { id: toastId, duration: 5000 });
+        toast.success('تم تحميل الملفات', { id: toastId, duration: 4000 });
       } else {
-        toast.success('تم تحميل وفتح الملف', { id: toastId, duration: 5000 });
+        toast.success('تم تحميل الملف', { id: toastId, duration: 4000 });
       }
     } catch (err) {
       console.error(err);
@@ -226,13 +222,7 @@ export default function FormInquiry() {
       const pdfFilename = `استمارة_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.pdf`;
       pdf.save(pdfFilename);
 
-      await new Promise(r => setTimeout(r, 500));
-      try {
-        const pdfBlobUrl = pdf.output('bloburl');
-        window.open(pdfBlobUrl, '_blank');
-      } catch { /* المتصفح قد يمنع الفتح التلقائي */ }
-
-      toast.success('تم حفظ وفتح الملف', { id: toastId, duration: 5000 });
+      toast.success('تم حفظ الملف', { id: toastId, duration: 4000 });
     } catch (err) {
       console.error(err);
       toast.error('فشل حفظ PDF', { id: toastId });

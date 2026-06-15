@@ -731,16 +731,10 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
         evalUrl = downloadCanvasAsImage(evalCanvas, evalFilename);
       }
 
-      // فتح الاستمارة في تاب جديد عشان المستخدم يشوفها فوراً
-      if (receiptUrl) {
-        await new Promise(r => setTimeout(r, 300));
-        window.open(receiptUrl, '_blank');
-      }
-
       if (receiptUrl && evalUrl) {
-        toast.success('تم تحميل وفتح الملفات', { id: toastId, duration: 5000 });
+        toast.success('تم تحميل الملفات', { id: toastId, duration: 4000 });
       } else if (receiptUrl) {
-        toast.success('تم تحميل وفتح الملف', { id: toastId, duration: 5000 });
+        toast.success('تم تحميل الملف', { id: toastId, duration: 4000 });
       } else {
         toast.error('فشل تحميل الاستمارة — لم يتم العثور على الملف', { id: toastId });
       }
@@ -787,14 +781,7 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
       const pdfFilename = `استمارة_${formData.name.replace(/\s+/g, '_')}.pdf`;
       pdf.save(pdfFilename);
 
-      // فتح الـ PDF تلقائياً في نافذة جديدة
-      await new Promise(r => setTimeout(r, 500));
-      try {
-        const pdfBlobUrl = pdf.output('bloburl');
-        window.open(pdfBlobUrl, '_blank');
-      } catch { /* المتصفح قد يمنع الفتح التلقائي */ }
-
-      toast.success('تم حفظ وفتح الملف', { id: toastId, duration: 5000 });
+      toast.success('تم حفظ الملف', { id: toastId, duration: 4000 });
     } catch (err) {
       console.error(err);
       toast.error('فشل حفظ PDF — حاول مرة أخرى', { id: toastId });
@@ -848,7 +835,7 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
         <div className="min-h-screen flex flex-col bg-surface print:hidden" dir="rtl" style={{ fontFamily: 'var(--font-cairo), Cairo, sans-serif' }}>
           <Header />
 
-          <main className="flex-1 flex items-center justify-center p-4 py-12">
+          <main className="flex-1 flex flex-col items-center p-4 py-8">
             <motion.div
               initial={{ opacity: 0, y: 20, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -905,6 +892,20 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
           </main>
 
           <Footer />
+
+          {/* Receipt مرئية على الشاشة */}
+          <div className="w-full max-w-[850px] mx-auto px-4 pb-8">
+            <Step4Success
+              formData={formData}
+              levels={levels}
+              getLevelContent={getLevelContent}
+              examSlot={examSlot}
+              profilePreview={cloudProfileUrl || profilePreview}
+              studentCode={studentCode}
+              branchName={branchName}
+              memorizationAmount={memorizationAmount}
+            />
+          </div>
         </div>
 
         {/* ── NOTES MODAL ── */}
