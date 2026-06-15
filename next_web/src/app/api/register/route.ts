@@ -46,18 +46,27 @@ export async function POST(request: Request) {
         return jsonResponse({ error: 'رمز التحقق مطلوب' }, 400, origin);
       }
 
-      const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          secret: process.env.TURNSTILE_SECRET_KEY,
-          response: token,
-        }),
-      });
+      try {
+        const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            secret: process.env.TURNSTILE_SECRET_KEY,
+            response: token,
+          }),
+          signal: AbortSignal.timeout(5000),
+        });
 
-      const verifyData = await verifyRes.json();
-      if (!verifyData.success) {
-        return jsonResponse({ error: 'فشل التحقق من أمان المتصفح.' }, 400, origin);
+        const verifyData = await verifyRes.json();
+        if (!verifyData.success) {
+          const codes = verifyData['error-codes'] || [];
+          if (codes.includes('timeout-or-duplicate')) {
+            return jsonResponse({ error: 'انتهت صلاحية التحقق الأمني. يرجى تحديث الصفحة والمحاولة مرة أخرى.' }, 400, origin);
+          }
+          return jsonResponse({ error: 'فشل التحقق من أمان المتصفح. يرجى تحديث الصفحة والمحاولة مرة أخرى.' }, 400, origin);
+        }
+      } catch {
+        return jsonResponse({ error: 'تعذر الاتصال بخدمة التحقق الأمني. يرجى المحاولة مرة أخرى.' }, 500, origin);
       }
     }
 

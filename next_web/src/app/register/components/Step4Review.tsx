@@ -14,6 +14,7 @@ interface Step4ReviewProps {
   isConfirmed: boolean;
   setIsConfirmed: (c: boolean) => void;
   setTurnstileToken: (t: string | null) => void;
+  onTurnstileWidgetLoad?: (widgetId: string) => void;
 }
 
 export default function Step4Review({
@@ -21,7 +22,8 @@ export default function Step4Review({
   setFormData,
   isConfirmed,
   setIsConfirmed,
-  setTurnstileToken
+  setTurnstileToken,
+  onTurnstileWidgetLoad,
 }: Step4ReviewProps) {
   const [turnstileError, setTurnstileError] = useState(false);
 
@@ -90,6 +92,7 @@ export default function Step4Review({
               onSuccess={(token) => { setTurnstileToken(token); setTurnstileError(false); }}
               onExpire={() => { setTurnstileToken(null); setTurnstileError(true); }}
               onError={() => { setTurnstileToken(null); setTurnstileError(true); }}
+              onWidgetLoad={onTurnstileWidgetLoad}
             />
             {turnstileError && (
               <p className="text-red-600 text-xs mt-2 font-semibold">

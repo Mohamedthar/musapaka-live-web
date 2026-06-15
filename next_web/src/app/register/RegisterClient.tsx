@@ -1,6 +1,6 @@
 'use client';
 /* Deployment trigger: 2026-05-19T23:36:27Z */
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { CheckCircle2, ChevronLeft, ChevronRight, ShieldCheck, ArrowLeft, Send, CalendarX, Download, Printer, FileText, X, AlertTriangle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
@@ -55,6 +55,7 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
   const [levelCounts, setLevelCounts] = useState<Record<string, number>>({});
   const [isCapturing, setIsCapturing] = useState(false);
   const [showNotesModal, setShowNotesModal] = useState(false);
+  const turnstileWidgetIdRef = useRef<string | null>(null);
   const clearErr = (key: string) => setFieldErrors(p => { if (!p[key]) return p; const n = { ...p }; delete n[key]; return n; });
 
   const formattedStartDate = useMemo(() => {
@@ -430,7 +431,7 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
     }
 
     if (!turnstileToken) {
-      return toast.error('يرجى إكمال التحقق الأمني (Turnstile)');
+      return toast.error('يرجى الضغط على مربع التحقق الأمني (أنا لست روبوت)');
     }
 
     if (!formData.memorizerName.trim()) return toast.error('اسم المحفظ مطلوب');
@@ -1050,6 +1051,7 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
                       isConfirmed={isConfirmed}
                       setIsConfirmed={setIsConfirmed}
                       setTurnstileToken={setTurnstileToken}
+                      onTurnstileWidgetLoad={(id) => { turnstileWidgetIdRef.current = id; }}
                     />
                   </motion.div>
                 )}
