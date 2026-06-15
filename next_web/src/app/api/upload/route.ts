@@ -81,7 +81,7 @@ export async function POST(request: Request) {
 
     const uploadResponse = await fetch(
       `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-      { method: 'POST', body: cloudFormData }
+      { method: 'POST', body: cloudFormData, signal: AbortSignal.timeout(25000) }
     );
 
     const result = await uploadResponse.json();

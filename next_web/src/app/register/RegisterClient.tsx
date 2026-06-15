@@ -44,6 +44,8 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
   const [studentCode, setStudentCode] = useState('');
   const [examDate, setExamDate] = useState<string | null>(null);
   const [examHour, setExamHour] = useState<number | null>(null);
+  const [cloudProfileUrl, setCloudProfileUrl] = useState<string | null>(null);
+  const [cloudBirthCertUrl, setCloudBirthCertUrl] = useState<string | null>(null);
   const [nameExists, setNameExists] = useState(false);
   const [isCheckingName, setIsCheckingName] = useState(false);
   const [idExists, setIdExists] = useState(false);
@@ -252,54 +254,94 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
     return { birthDate: '', age: null, isMale: null, isValid: false };
   }, [formData.nationalId]);
 
+  useEffect(() => {
+    return () => {
+      if (profilePreview) URL.revokeObjectURL(profilePreview);
+      if (birthCertPreview) URL.revokeObjectURL(birthCertPreview);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleImagePick = (e: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'birthCert') => {
     const file = e.target.files?.[0]; if (!file) return;
+
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      toast.error('صيغة الملف غير مدعومة. الصيغ المدعومة: JPEG, PNG, WebP, HEIC');
+      e.target.value = '';
+      return;
+    }
+
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error('حجم الملف كبير جداً — الحد الأقصى 10 ميجابايت');
+      e.target.value = '';
+      return;
+    }
+
     const url = URL.createObjectURL(file);
-    if (type === 'profile') { setProfileImage(file); setProfilePreview(url); clearErr('profile'); }
-    else { setBirthCertImage(file); setBirthCertPreview(url); clearErr('birthCert'); }
+    if (type === 'profile') {
+      if (profilePreview) URL.revokeObjectURL(profilePreview);
+      setProfileImage(file); setProfilePreview(url); clearErr('profile');
+    } else {
+      if (birthCertPreview) URL.revokeObjectURL(birthCertPreview);
+      setBirthCertImage(file); setBirthCertPreview(url); clearErr('birthCert');
+    }
+    e.target.value = '';
   };
 
   const compressImage = async (file: File): Promise<Blob> => {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target?.result as string;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 1200;
-          const MAX_HEIGHT = 1200;
-          let width = img.width;
-          let height = img.height;
+      const objectUrl = URL.createObjectURL(file);
+      const img = new Image();
+      const timeout = setTimeout(() => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error('استغرق ضغط الصورة وقتاً طويلاً جداً'));
+      }, 20000);
 
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
-          }
+      img.onload = () => {
+        clearTimeout(timeout);
+        URL.revokeObjectURL(objectUrl);
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1200;
+        const MAX_HEIGHT = 1200;
+        let width = img.width;
+        let height = img.height;
 
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-          canvas.toBlob(
-            (blob) => {
-              if (blob) resolve(blob);
-              else reject(new Error('Compression failed'));
-            },
-            'image/jpeg',
-            0.7
-          );
-        };
+        if (width === 0 || height === 0) {
+          reject(new Error('أبعاد الصورة غير صالحة'));
+          return;
+        }
+
+        if (width > height) {
+          if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+        } else {
+          if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { reject(new Error('فشل معالجة الصورة')); return; }
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            canvas.width = 0; canvas.height = 0;
+            if (blob) resolve(blob);
+            else reject(new Error('فشل ضغط الصورة'));
+          },
+          'image/jpeg',
+          0.7
+        );
       };
-      reader.onerror = (err) => reject(err);
+
+      img.onerror = () => {
+        clearTimeout(timeout);
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error('صيغة الصورة غير مدعومة من المتصفح — يرجى استخدام JPEG أو PNG'));
+      };
+
+      img.src = objectUrl;
     });
   };
 
@@ -448,23 +490,23 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
     const uploadToast = toast.loading('جاري تجهيز بيانات التسجيل...');
 
     try {
-      const [profileUrl, birthUrl] = await (async () => {
-            const [profileBlob, birthBlob] = await Promise.all([
-              profileImage ? compressImage(profileImage) : Promise.resolve(null),
-              birthCertImage ? compressImage(birthCertImage) : Promise.resolve(null),
-            ]);
+      // ضغط الصورتين بالتوازي (آمن، لا ينتج ملفات يتيمة)
+      const [profileBlob, birthBlob] = await Promise.all([
+        profileImage ? compressImage(profileImage) : Promise.resolve(null),
+        birthCertImage ? compressImage(birthCertImage) : Promise.resolve(null),
+      ]);
 
-            const [pUrl, bUrl] = await Promise.all([
-              profileBlob ? uploadToCloudinary(profileBlob) : Promise.resolve(null),
-              birthBlob ? uploadToCloudinary(birthBlob) : Promise.resolve(null),
-            ]);
+      // رفع الصور بالتسلسل: شهادة الميلاد أولاً ثم الصورة الشخصية
+      // لو فشلت الأولى، لا نرفع الثانية (نمنع الملفات اليتيمة على Cloudinary)
+      if (!birthBlob) throw new Error('فشل تجهيز شهادة الميلاد');
+      const birthUrl = await uploadToCloudinary(birthBlob);
 
-            if (!pUrl || !bUrl) {
-              throw new Error('فشل رفع الصور — يرجى المحاولة مرة أخرى');
-            }
+      if (!profileBlob) throw new Error('فشل تجهيز الصورة الشخصية');
+      const profileUrl = await uploadToCloudinary(profileBlob);
 
-            return [pUrl, bUrl];
-          })();
+      if (!birthUrl || !profileUrl) {
+        throw new Error('فشل رفع الصور — يرجى المحاولة مرة أخرى');
+      }
 
       const res = await fetch('/api/register', {
         method: 'POST',
@@ -510,6 +552,8 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
       setStudentCode(result.data.student_code);
       setExamDate(result.data.exam_date);
       setExamHour(result.data.exam_hour);
+      setCloudProfileUrl(result.data.profile_image_url || null);
+      setCloudBirthCertUrl(result.data.birth_certificate_url || null);
 
       localStorage.setItem('last_reg_time', Date.now().toString());
       localStorage.removeItem('musapaka_registration_draft');
@@ -829,7 +873,7 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
             levels={levels}
             getLevelContent={getLevelContent}
             examSlot={examSlot}
-            profilePreview={profilePreview}
+            profilePreview={cloudProfileUrl || profilePreview}
             studentCode={studentCode}
             branchName={branchName}
             memorizationAmount={memorizationAmount}
