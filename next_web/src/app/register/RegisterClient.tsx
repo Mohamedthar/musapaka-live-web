@@ -58,6 +58,7 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
   const [isCapturing, setIsCapturing] = useState(false);
   const [showNotesModal, setShowNotesModal] = useState(false);
   const turnstileWidgetIdRef = useRef<string | null>(null);
+  const cachedUploads = useRef<{ profileUrl?: string; birthCertUrl?: string }>({});
   const clearErr = (key: string) => setFieldErrors(p => { if (!p[key]) return p; const n = { ...p }; delete n[key]; return n; });
 
   const formattedStartDate = useMemo(() => {
@@ -490,23 +491,36 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
     const uploadToast = toast.loading('جاري تجهيز بيانات التسجيل...');
 
     try {
-      // ضغط الصورتين بالتوازي (آمن، لا ينتج ملفات يتيمة)
-      const [profileBlob, birthBlob] = await Promise.all([
-        profileImage ? compressImage(profileImage) : Promise.resolve(null),
-        birthCertImage ? compressImage(birthCertImage) : Promise.resolve(null),
-      ]);
+      let profileUrl: string | null = cachedUploads.current.profileUrl ?? null;
+      let birthUrl: string | null = cachedUploads.current.birthCertUrl ?? null;
 
-      // رفع الصور بالتسلسل: شهادة الميلاد أولاً ثم الصورة الشخصية
-      // لو فشلت الأولى، لا نرفع الثانية (نمنع الملفات اليتيمة على Cloudinary)
-      if (!birthBlob) throw new Error('فشل تجهيز شهادة الميلاد');
-      const birthUrl = await uploadToCloudinary(birthBlob);
+      if (!profileUrl || !birthUrl) {
+        // أول محاولة: ضغط ورفع الصور
+        const [profileBlob, birthBlob] = await Promise.all([
+          profileImage ? compressImage(profileImage) : Promise.resolve(null),
+          birthCertImage ? compressImage(birthCertImage) : Promise.resolve(null),
+        ]);
 
-      if (!profileBlob) throw new Error('فشل تجهيز الصورة الشخصية');
-      const profileUrl = await uploadToCloudinary(profileBlob);
+        if (!birthUrl) {
+          if (!birthBlob) throw new Error('فشل تجهيز شهادة الميلاد');
+          toast.loading('جاري رفع شهادة الميلاد...', { id: uploadToast });
+          birthUrl = await uploadToCloudinary(birthBlob);
+          cachedUploads.current.birthCertUrl = birthUrl;
+        }
+
+        if (!profileUrl) {
+          if (!profileBlob) throw new Error('فشل تجهيز الصورة الشخصية');
+          toast.loading('جاري رفع الصورة الشخصية...', { id: uploadToast });
+          profileUrl = await uploadToCloudinary(profileBlob);
+          cachedUploads.current.profileUrl = profileUrl;
+        }
+      }
 
       if (!birthUrl || !profileUrl) {
         throw new Error('فشل رفع الصور — يرجى المحاولة مرة أخرى');
       }
+
+      toast.loading('جاري إرسال بيانات التسجيل...', { id: uploadToast });
 
       const res = await fetch('/api/register', {
         method: 'POST',
@@ -554,6 +568,8 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
       setExamHour(result.data.exam_hour);
       setCloudProfileUrl(result.data.profile_image_url || null);
       setCloudBirthCertUrl(result.data.birth_certificate_url || null);
+
+      cachedUploads.current = {};
 
       localStorage.setItem('last_reg_time', Date.now().toString());
       localStorage.removeItem('musapaka_registration_draft');
