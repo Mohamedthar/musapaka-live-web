@@ -307,46 +307,42 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
     const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
-    const doUpload = async (attempt: number): Promise<string> => {
-      // Try direct Cloudinary upload first (faster, no Vercel bottleneck)
-      if (cloudName && uploadPreset) {
-        const fd = new FormData();
-        fd.append('file', fileOrBlob);
-        fd.append('upload_preset', uploadPreset);
-        const r = await fetch(
-          `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-          { method: 'POST', body: fd, signal: AbortSignal.timeout(20000) }
-        );
-        const res = await r.json();
-        if (!r.ok) throw new Error(res.error?.message || 'فشل في رفع الصورة');
-        return res.secure_url;
-      }
-
-      // Fallback: upload via our server (slower but works without client-side env)
+    // Direct Cloudinary upload (single attempt — no retry to avoid duplicates)
+    if (cloudName && uploadPreset) {
       const fd = new FormData();
       fd.append('file', fileOrBlob);
-      const r = await fetch('/api/upload', {
-        method: 'POST',
-        body: fd,
-        signal: AbortSignal.timeout(25000),
-      });
+      fd.append('upload_preset', uploadPreset);
+      const r = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        { method: 'POST', body: fd, signal: AbortSignal.timeout(30000) }
+      );
       const res = await r.json();
-      if (!r.ok) throw new Error(res.error || 'فشل في رفع الصورة');
-      return res.url;
-    };
+      if (!r.ok) throw new Error(res.error?.message || 'فشل في رفع الصورة');
+      return res.secure_url as string;
+    }
 
+    // Fallback: via server (with retry since Vercel cold starts can fail)
     let lastError: Error | null = null;
-    for (let attempt = 0; attempt < 3; attempt++) {
+    for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        return await doUpload(attempt);
+        const fd = new FormData();
+        fd.append('file', fileOrBlob);
+        const r = await fetch('/api/upload', {
+          method: 'POST',
+          body: fd,
+          signal: AbortSignal.timeout(30000),
+        });
+        const res = await r.json();
+        if (!r.ok) throw new Error(res.error || 'فشل في رفع الصورة');
+        return res.url as string;
       } catch (e) {
         lastError = e instanceof Error ? e : new Error('فشل رفع الصورة');
-        if (attempt < 2) {
-          await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+        if (attempt < 1 && e instanceof TypeError) {
+          await new Promise(r => setTimeout(r, 1500));
         }
       }
     }
-    throw lastError || new Error('فشل رفع الصورة بعد عدة محاولات');
+    throw lastError || new Error('فشل رفع الصورة');
   };
 
   const nextStep = () => {
