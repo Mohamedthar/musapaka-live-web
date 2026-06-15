@@ -10,7 +10,7 @@ import Footer from '@/components/Footer';
 
 const isFacebookBrowser = typeof navigator !== 'undefined' && (
   /FBAN|FBAV|Instagram|FB_IAB/i.test(navigator.userAgent) ||
-  (typeof document !== 'undefined' && /l\.facebook\.com|lm\.facebook\.com/.test(document.referrer))
+  (typeof document !== 'undefined' && /l\.facebook\.com|lm\.facebook\.com|m\.facebook\.com/.test(document.referrer))
 );
 
 const FormInquiry = dynamic(() => import('./components/FormInquiry'), {
