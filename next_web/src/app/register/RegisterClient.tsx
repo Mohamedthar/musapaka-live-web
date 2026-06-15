@@ -719,31 +719,15 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
       if (!receiptCanvas) throw new Error('الاستمارة غير موجودة');
 
       toast.loading('جاري تحميل استمارة البيانات...', { id: toastId });
-      const receiptFilename = `استمارة_${formData.name.replace(/\s+/g, '_')}.jpg`;
-      const receiptUrl = downloadCanvasAsImage(receiptCanvas, receiptFilename);
+      downloadCanvasAsImage(receiptCanvas, `استمارة_${formData.name.replace(/\s+/g, '_')}.jpg`);
 
-      let evalUrl: string | null = null;
-      const evalFilename = `استمارة_تقييم_${formData.name.replace(/\s+/g, '_')}.jpg`;
       const evalCanvas = await captureElement('evaluation-form');
       if (evalCanvas) {
-        toast.loading('جاري تحميل استمارة التقييم...', { id: toastId });
         await new Promise(r => setTimeout(r, 500));
-        evalUrl = downloadCanvasAsImage(evalCanvas, evalFilename);
+        downloadCanvasAsImage(evalCanvas, `استمارة_تقييم_${formData.name.replace(/\s+/g, '_')}.jpg`);
       }
 
-      // فتح الاستمارة في تاب جديد عشان المستخدم يشوفها فوراً
-      if (receiptUrl) {
-        await new Promise(r => setTimeout(r, 300));
-        window.open(receiptUrl, '_blank');
-      }
-
-      if (receiptUrl && evalUrl) {
-        toast.success('تم تحميل وفتح الملفات', { id: toastId, duration: 5000 });
-      } else if (receiptUrl) {
-        toast.success('تم تحميل وفتح الملف', { id: toastId, duration: 5000 });
-      } else {
-        toast.error('فشل تحميل الاستمارة — لم يتم العثور على الملف', { id: toastId });
-      }
+      toast.success('تم تحميل الملف', { id: toastId, duration: 4000 });
     } catch (err) {
       console.error(err);
       toast.error('فشل تجهيز الاستمارة — حاول مرة أخرى', { id: toastId });
@@ -785,16 +769,17 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
       }
 
       const pdfFilename = `استمارة_${formData.name.replace(/\s+/g, '_')}.pdf`;
-      pdf.save(pdfFilename);
+      const pdfBlob = pdf.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = pdfUrl;
+      link.download = pdfFilename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
 
-      // فتح الـ PDF تلقائياً في نافذة جديدة
-      await new Promise(r => setTimeout(r, 500));
-      try {
-        const pdfBlobUrl = pdf.output('bloburl');
-        window.open(pdfBlobUrl, '_blank');
-      } catch { /* المتصفح قد يمنع الفتح التلقائي */ }
-
-      toast.success('تم حفظ وفتح الملف', { id: toastId, duration: 5000 });
+      toast.success('تم تحميل الملف', { id: toastId, duration: 4000 });
     } catch (err) {
       console.error(err);
       toast.error('فشل حفظ PDF — حاول مرة أخرى', { id: toastId });

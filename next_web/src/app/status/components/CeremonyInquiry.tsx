@@ -113,9 +113,7 @@ export default function CeremonyInquiry() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      await new Promise(r => setTimeout(r, 300));
-      window.open(dataUrl, '_blank');
-      toast.success('تم تحميل وفتح الملف', { id: toastId, duration: 5000 });
+      toast.success('تم تحميل الملف', { id: toastId, duration: 4000 });
     } catch { toast.error('فشل تحميل الصورة', { id: toastId }); }
     finally { setIsCapturing(false); }
   };
@@ -139,15 +137,17 @@ export default function CeremonyInquiry() {
       const x = (pdfWidth - w) / 2;
       const y = (pdfHeight - h) / 2;
       pdf.addImage(imgData, 'JPEG', x, y, w, h);
-      pdf.save(`بطاقة_حفل_${data?.name?.replace(/\s+/g, '_') ?? 'طالب'}.pdf`);
+      const pdfBlob = pdf.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = pdfUrl;
+      link.download = `بطاقة_حفل_${data?.name?.replace(/\s+/g, '_') ?? 'طالب'}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
 
-      await new Promise(r => setTimeout(r, 500));
-      try {
-        const pdfBlobUrl = pdf.output('bloburl');
-        window.open(pdfBlobUrl, '_blank');
-      } catch { /* المتصفح قد يمنع الفتح التلقائي */ }
-
-      toast.success('تم حفظ وفتح الملف', { id: toastId });
+      toast.success('تم تحميل الملف', { id: toastId });
     } catch { toast.error('فشل تحميل PDF', { id: toastId }); }
     finally { setIsCapturing(false); }
   };

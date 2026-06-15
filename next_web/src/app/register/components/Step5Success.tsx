@@ -114,15 +114,7 @@ export default function Step5Success({
         }
       }
 
-      // فتح الاستمارة تلقائياً
-      await new Promise(r => setTimeout(r, 400));
-      window.open(receiptUrl, '_blank');
-
-      if (evalUrl) {
-        toast.success('تم تحميل وفتح الملفات', { id: toastId, duration: 5000 });
-      } else {
-        toast.success('تم تحميل وفتح الملف', { id: toastId, duration: 5000 });
-      }
+      toast.success('تم تحميل الملف', { id: toastId, duration: 4000 });
     } catch (err) {
       console.error(err);
       toast.error('فشل تحميل الصور، يرجى المحاولة مرة أخرى.', { id: toastId });

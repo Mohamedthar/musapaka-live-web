@@ -152,39 +152,27 @@ export default function FormInquiry() {
       if (!receiptCanvas) throw new Error('الاستمارة غير موجودة');
 
       toast.loading('جاري تحميل الاستمارة...', { id: toastId });
-      const receiptFilename = `استمارة_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.jpg`;
       const dataUrl = receiptCanvas.toDataURL('image/jpeg', 0.85);
       const link = document.createElement('a');
       link.href = dataUrl;
-      link.download = receiptFilename;
+      link.download = `استمارة_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.jpg`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
 
-      let evalFilename: string | null = null;
       const evalCanvas = await captureElement('evaluation-form');
       if (evalCanvas) {
-        toast.loading('جاري تحميل استمارة التقييم...', { id: toastId });
         await new Promise(r => setTimeout(r, 500));
-        evalFilename = `استمارة_تقييم_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.jpg`;
         const dataUrl2 = evalCanvas.toDataURL('image/jpeg', 0.85);
         const link2 = document.createElement('a');
         link2.href = dataUrl2;
-        link2.download = evalFilename;
+        link2.download = `استمارة_تقييم_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.jpg`;
         document.body.appendChild(link2);
         link2.click();
         document.body.removeChild(link2);
       }
 
-      // فتح الاستمارة في نافذة جديدة
-      await new Promise(r => setTimeout(r, 300));
-      window.open(dataUrl, '_blank');
-
-      if (evalFilename) {
-        toast.success('تم تحميل وفتح الملفات', { id: toastId, duration: 5000 });
-      } else {
-        toast.success('تم تحميل وفتح الملف', { id: toastId, duration: 5000 });
-      }
+      toast.success('تم تحميل الملف', { id: toastId, duration: 4000 });
     } catch (err) {
       console.error(err);
       toast.error('فشل تجهيز الاستمارة — حاول مرة أخرى', { id: toastId });
@@ -224,15 +212,17 @@ export default function FormInquiry() {
       }
 
       const pdfFilename = `استمارة_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.pdf`;
-      pdf.save(pdfFilename);
+      const pdfBlob = pdf.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = pdfUrl;
+      link.download = pdfFilename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
 
-      await new Promise(r => setTimeout(r, 500));
-      try {
-        const pdfBlobUrl = pdf.output('bloburl');
-        window.open(pdfBlobUrl, '_blank');
-      } catch { /* المتصفح قد يمنع الفتح التلقائي */ }
-
-      toast.success('تم حفظ وفتح الملف', { id: toastId, duration: 5000 });
+      toast.success('تم تحميل الملف', { id: toastId, duration: 4000 });
     } catch (err) {
       console.error(err);
       toast.error('فشل حفظ PDF', { id: toastId });
