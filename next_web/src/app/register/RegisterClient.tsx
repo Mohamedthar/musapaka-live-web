@@ -738,15 +738,9 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
       }
 
       if (receiptUrl && evalUrl) {
-        toast.success(
-          `تم تحميل الاستمارتين! تم فتح الاستمارة في نافذة جديدة.\nالملفات في مجلد التحميلات:\n📄 ${receiptFilename}\n📄 ${evalFilename}`,
-          { id: toastId, duration: 8000 }
-        );
+        toast.success('تم تحميل وفتح الملفات', { id: toastId, duration: 5000 });
       } else if (receiptUrl) {
-        toast.success(
-          `تم تحميل الاستمارة وفتحها!\nالملف في مجلد التحميلات:\n📄 ${receiptFilename}`,
-          { id: toastId, duration: 8000 }
-        );
+        toast.success('تم تحميل وفتح الملف', { id: toastId, duration: 5000 });
       } else {
         toast.error('فشل تحميل الاستمارة — لم يتم العثور على الملف', { id: toastId });
       }
@@ -800,10 +794,7 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
         window.open(pdfBlobUrl, '_blank');
       } catch { /* المتصفح قد يمنع الفتح التلقائي */ }
 
-      toast.success(
-        `تم حفظ وفتح ملف PDF!\nالملف في مجلد التحميلات:\n📄 ${pdfFilename}`,
-        { id: toastId, duration: 8000 }
-      );
+      toast.success('تم حفظ وفتح الملف', { id: toastId, duration: 5000 });
     } catch (err) {
       console.error(err);
       toast.error('فشل حفظ PDF — حاول مرة أخرى', { id: toastId });

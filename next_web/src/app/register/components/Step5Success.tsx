@@ -119,15 +119,9 @@ export default function Step5Success({
       window.open(receiptUrl, '_blank');
 
       if (evalUrl) {
-        toast.success(
-          `تم تحميل وفتح الاستمارتين!\n📄 ${receiptFilename}\n📄 ${evalFilename}`,
-          { id: toastId, duration: 8000 }
-        );
+        toast.success('تم تحميل وفتح الملفات', { id: toastId, duration: 5000 });
       } else {
-        toast.success(
-          `تم تحميل وفتح الاستمارة!\n📄 ${receiptFilename}`,
-          { id: toastId, duration: 8000 }
-        );
+        toast.success('تم تحميل وفتح الملف', { id: toastId, duration: 5000 });
       }
     } catch (err) {
       console.error(err);

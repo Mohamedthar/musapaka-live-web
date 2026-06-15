@@ -115,7 +115,7 @@ export default function CeremonyInquiry() {
       document.body.removeChild(link);
       await new Promise(r => setTimeout(r, 300));
       window.open(dataUrl, '_blank');
-      toast.success(`تم تحميل وفتح البطاقة!\n📄 ${filename}`, { id: toastId, duration: 6000 });
+      toast.success('تم تحميل وفتح الملف', { id: toastId, duration: 5000 });
     } catch { toast.error('فشل تحميل الصورة', { id: toastId }); }
     finally { setIsCapturing(false); }
   };
@@ -147,7 +147,7 @@ export default function CeremonyInquiry() {
         window.open(pdfBlobUrl, '_blank');
       } catch { /* المتصفح قد يمنع الفتح التلقائي */ }
 
-      toast.success('تم حفظ وفتح ملف PDF!', { id: toastId });
+      toast.success('تم حفظ وفتح الملف', { id: toastId });
     } catch { toast.error('فشل تحميل PDF', { id: toastId }); }
     finally { setIsCapturing(false); }
   };

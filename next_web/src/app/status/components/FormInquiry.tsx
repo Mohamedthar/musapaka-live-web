@@ -181,15 +181,9 @@ export default function FormInquiry() {
       window.open(dataUrl, '_blank');
 
       if (evalFilename) {
-        toast.success(
-          `تم تحميل الاستمارتين وفتحها!\nالملفات في مجلد التحميلات:\n📄 ${receiptFilename}\n📄 ${evalFilename}`,
-          { id: toastId, duration: 8000 }
-        );
+        toast.success('تم تحميل وفتح الملفات', { id: toastId, duration: 5000 });
       } else {
-        toast.success(
-          `تم تحميل الاستمارة وفتحها!\nالملف في مجلد التحميلات:\n📄 ${receiptFilename}`,
-          { id: toastId, duration: 8000 }
-        );
+        toast.success('تم تحميل وفتح الملف', { id: toastId, duration: 5000 });
       }
     } catch (err) {
       console.error(err);
@@ -238,10 +232,7 @@ export default function FormInquiry() {
         window.open(pdfBlobUrl, '_blank');
       } catch { /* المتصفح قد يمنع الفتح التلقائي */ }
 
-      toast.success(
-        `تم حفظ وفتح ملف PDF!\nالملف في مجلد التحميلات:\n📄 ${pdfFilename}`,
-        { id: toastId, duration: 8000 }
-      );
+      toast.success('تم حفظ وفتح الملف', { id: toastId, duration: 5000 });
     } catch (err) {
       console.error(err);
       toast.error('فشل حفظ PDF', { id: toastId });
