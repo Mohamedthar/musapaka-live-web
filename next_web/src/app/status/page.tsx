@@ -3,10 +3,15 @@
 import React, { Suspense, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { FileText, Award, CalendarCheck } from 'lucide-react';
+import { FileText, Award, CalendarCheck, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+
+const isFacebookBrowser = typeof navigator !== 'undefined' && (
+  /FBAN|FBAV|Instagram|FB_IAB/i.test(navigator.userAgent) ||
+  (typeof document !== 'undefined' && /l\.facebook\.com|lm\.facebook\.com/.test(document.referrer))
+);
 
 const FormInquiry = dynamic(() => import('./components/FormInquiry'), {
     loading: () => <div className="min-h-[400px] flex items-center justify-center"><div className="w-10 h-10 border-3 border-primary/25 border-t-primary rounded-full animate-spin" /></div>,
@@ -32,6 +37,65 @@ function StatusContent() {
   useEffect(() => {
     if (!currentTab) router.replace('/status?tab=form');
   }, [currentTab, router]);
+
+  if (isFacebookBrowser) {
+    const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center p-4" dir="rtl" style={{ fontFamily: 'var(--font-cairo), Cairo, sans-serif' }}>
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center border border-amber-200">
+          <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle size={40} className="text-amber-600" />
+          </div>
+
+          <h2 className="text-xl font-black text-primary mb-4">يرجى فتح الرابط في متصفح خارجي</h2>
+          <p className="text-sm font-bold text-on-surface-variant leading-relaxed mb-6">
+            متصفح فيسبوك المدمج لا يدعم تحميل وطباعة الاستمارات. لضمان تجربة كاملة، يرجى فتح الرابط في {isIOS ? 'Safari' : 'Google Chrome'}.
+          </p>
+
+          <div className="space-y-3">
+            {!isIOS && (
+              <button
+                onClick={() => {
+                  const url = currentUrl.replace(/^https?:\/\//, '');
+                  window.location.href = `intent://${url}#Intent;scheme=https;package=com.android.chrome;end`;
+                }}
+                className="w-full py-3.5 rounded-xl bg-primary text-white text-sm font-black hover:bg-primary/90 active:scale-[0.98] transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/><path d="M12 8v8M8 12h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                فتح في Google Chrome
+              </button>
+            )}
+
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(currentUrl).then(() => {}).catch(() => {});
+              }}
+              className="w-full py-3 rounded-xl border-2 border-slate-200 text-slate-700 text-sm font-black hover:bg-slate-50 active:scale-[0.98] transition-all cursor-pointer"
+            >
+              نسخ الرابط
+            </button>
+
+            {isIOS && (
+              <button
+                onClick={() => window.open(currentUrl, '_blank')}
+                className="w-full py-3 rounded-xl border-2 border-amber-300 text-amber-700 text-sm font-black hover:bg-amber-50 active:scale-[0.98] transition-all cursor-pointer"
+              >
+                فتح في Safari
+              </button>
+            )}
+          </div>
+
+          <p className="text-xs font-bold text-on-surface-variant/50 mt-6">
+            {isIOS
+              ? 'أو اضغط على أيقونة Safari في شريط أدوات فيسبوك السفلي'
+              : 'أو اضغط على ⋮ في الأعلى واختر "فتح في Chrome"'}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!currentTab) {
     return (
