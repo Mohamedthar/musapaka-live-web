@@ -483,7 +483,20 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
       return toast.error('يرجى الانتظار قليلاً قبل إرسال طلب آخر');
     }
 
-    if (!turnstileToken) {
+    // تجديد رمز Turnstile قبل الإرسال (الرمز ينتهي بعد 5 دقائق)
+    let finalToken = turnstileToken;
+    const widgetId = turnstileWidgetIdRef.current;
+    const ts = typeof window !== 'undefined' ? (window as unknown as { turnstile?: { reset: (id: string) => void; getResponse: (id: string) => string | undefined } }).turnstile : undefined;
+    if (widgetId && ts) {
+      ts.reset(widgetId);
+      for (let i = 0; i < 25; i++) {
+        await new Promise(r => setTimeout(r, 200));
+        const t = ts.getResponse(widgetId);
+        if (t) { finalToken = t; setTurnstileToken(t); break; }
+      }
+    }
+
+    if (!finalToken) {
       return toast.error('يرجى الضغط على مربع التحقق الأمني (أنا لست روبوت)');
     }
 
@@ -540,7 +553,7 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          token: turnstileToken,
+          token: finalToken,
           website_url_verification: honeypot,
           name: formData.name.trim(),
           phone: formData.phone.trim(),
