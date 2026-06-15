@@ -714,20 +714,6 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
     }
   };
 
-  const openFileForFacebook = (content: string, type: 'image' | 'pdf') => {
-    const w = window.open('', '_blank');
-    if (!w) {
-      toast.error('المنع التلقائي للنوافذ يمنع الفتح. اسمح بالنوافذ المنبثقة ثم حاول مرة أخرى.', { duration: 8000 });
-      return;
-    }
-    w.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>الاستمارة</title><style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f1f5f9;font-family:Cairo,sans-serif}img{max-width:100%;height:auto}embed,iframe{width:100%;height:100vh;border:none}.toolbar{position:fixed;bottom:0;left:0;right:0;background:#0f172a;color:white;padding:10px 16px;text-align:center;font-size:14px;font-weight:bold;z-index:10}@media print{body{background:white}}</style></head><body>${
-      type === 'image'
-        ? `<img src="${content}" alt="الاستمارة" />`
-        : `<embed src="${content}" type="application/pdf" />`
-    }<div class="toolbar">اضغط على <span style="color:#f59e0b">⋮</span> في الأعلى أو <span style="color:#f59e0b">${/iPhone|iPad/i.test(navigator.userAgent) ? 'Safari' : 'Chrome'}</span> لفتح الملف في المتصفح الخارجي للتحميل والطباعة</div></body></html>`);
-    w.document.close();
-  };
-
   const handleDownloadImage = async () => {
     setIsCapturing(true);
     const toastId = toast.loading('جاري تجهيز استمارة البيانات...');
@@ -735,34 +721,28 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
       const receiptCanvas = await captureElement('receipt');
       if (!receiptCanvas) throw new Error('الاستمارة غير موجودة');
 
-      const filename = `استمارة_${formData.name.replace(/\s+/g, '_')}.jpg`;
+      toast.loading('جاري تحميل استمارة البيانات...', { id: toastId });
       const dataUrl = receiptCanvas.toDataURL('image/jpeg', 0.85);
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = `استمارة_${formData.name.replace(/\s+/g, '_')}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
-      if (isFacebookBrowser) {
-        openFileForFacebook(dataUrl, 'image');
-        setIsCapturing(false);
-        return;
-      } else {
-        const link = document.createElement('a');
-        link.href = dataUrl;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        const evalCanvas = await captureElement('evaluation-form');
-        if (evalCanvas) {
-          await new Promise(r => setTimeout(r, 500));
-          const dataUrl2 = evalCanvas.toDataURL('image/jpeg', 0.85);
-          const link2 = document.createElement('a');
-          link2.href = dataUrl2;
-          link2.download = `استمارة_تقييم_${formData.name.replace(/\s+/g, '_')}.jpg`;
-          document.body.appendChild(link2);
-          link2.click();
-          document.body.removeChild(link2);
-        }
-        toast.success('تم تحميل الملف', { id: toastId, duration: 4000 });
+      const evalCanvas = await captureElement('evaluation-form');
+      if (evalCanvas) {
+        await new Promise(r => setTimeout(r, 500));
+        const dataUrl2 = evalCanvas.toDataURL('image/jpeg', 0.85);
+        const link2 = document.createElement('a');
+        link2.href = dataUrl2;
+        link2.download = `استمارة_تقييم_${formData.name.replace(/\s+/g, '_')}.jpg`;
+        document.body.appendChild(link2);
+        link2.click();
+        document.body.removeChild(link2);
       }
+
+      toast.success('تم تحميل الملف', { id: toastId, duration: 4000 });
     } catch (err) {
       console.error(err);
       toast.error('فشل تجهيز الاستمارة — حاول مرة أخرى', { id: toastId });
@@ -806,21 +786,15 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
       const pdfFilename = `استمارة_${formData.name.replace(/\s+/g, '_')}.pdf`;
       const pdfBlob = pdf.output('blob');
       const pdfUrl = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = pdfUrl;
+      link.download = pdfFilename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
 
-      if (isFacebookBrowser) {
-        openFileForFacebook(pdfUrl, 'pdf');
-        setIsCapturing(false);
-        return;
-      } else {
-        const link = document.createElement('a');
-        link.href = pdfUrl;
-        link.download = pdfFilename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        toast.success('تم تحميل الملف', { id: toastId, duration: 4000 });
-      }
-      setTimeout(() => URL.revokeObjectURL(pdfUrl), 5000);
+      toast.success('تم تحميل الملف', { id: toastId, duration: 4000 });
     } catch (err) {
       console.error(err);
       toast.error('فشل حفظ PDF — حاول مرة أخرى', { id: toastId });
@@ -873,27 +847,6 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
 
         <div className="min-h-screen flex flex-col bg-surface print:hidden" dir="rtl" style={{ fontFamily: 'var(--font-cairo), Cairo, sans-serif' }}>
           <Header />
-
-          {isFacebookBrowser && (
-            <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 text-center print:hidden">
-              <p className="text-sm font-black text-amber-800 mb-1">
-                متصفح فيسبوك لا يدعم تحميل الملفات
-              </p>
-              <p className="text-xs font-bold text-amber-700 mb-2">
-                اضغط على تحميل لعرض الاستمارة، ثم اضغط على ⋮ في الأعلى واختر &quot;فتح في {/iPhone|iPad/i.test(navigator.userAgent) ? 'Safari' : 'Chrome'}&quot;
-              </p>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(window.location.href).then(() => {
-                    toast.success('تم نسخ الرابط! الصقه في Chrome أو Safari');
-                  }).catch(() => {});
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 active:scale-95 transition-all cursor-pointer"
-              >
-                نسخ الرابط
-              </button>
-            </div>
-          )}
 
           <main className="flex-1 flex items-center justify-center p-4 py-12">
             <motion.div
@@ -1034,6 +987,68 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
           />
         </div>
       </>
+    );
+  }
+
+  // -- FACEBOOK INTERSTITIAL --------------------------------------------
+  if (isFacebookBrowser) {
+    const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    return (
+      <div className="min-h-screen bg-surface flex items-center justify-center p-4" dir="rtl" style={{ fontFamily: 'var(--font-cairo), Cairo, sans-serif' }}>
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center border border-amber-200">
+          <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle size={40} className="text-amber-600" />
+          </div>
+
+          <h2 className="text-xl font-black text-primary mb-4">يرجى فتح الرابط في متصفح خارجي</h2>
+          <p className="text-sm font-bold text-on-surface-variant leading-relaxed mb-6">
+            متصفح فيسبوك المدمج لا يدعم تحميل وطباعة الاستمارات. لضمان تجربة كاملة، يرجى فتح الرابط في {isIOS ? 'Safari' : 'Google Chrome'}.
+          </p>
+
+          <div className="space-y-3">
+            {!isIOS && (
+              <button
+                onClick={() => {
+                  const url = currentUrl.replace(/^https?:\/\//, '');
+                  window.location.href = `intent://${url}#Intent;scheme=https;package=com.android.chrome;end`;
+                }}
+                className="w-full py-3.5 rounded-xl bg-primary text-white text-sm font-black hover:bg-primary/90 active:scale-[0.98] transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/><path d="M12 8v8M8 12h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                فتح في Google Chrome
+              </button>
+            )}
+
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(currentUrl).then(() => {
+                  toast.success('تم نسخ الرابط! الصقه في ' + (isIOS ? 'Safari' : 'Chrome'));
+                }).catch(() => {});
+              }}
+              className="w-full py-3 rounded-xl border-2 border-slate-200 text-slate-700 text-sm font-black hover:bg-slate-50 active:scale-[0.98] transition-all cursor-pointer"
+            >
+              نسخ الرابط
+            </button>
+
+            {isIOS && (
+              <button
+                onClick={() => window.open(currentUrl, '_blank')}
+                className="w-full py-3 rounded-xl border-2 border-amber-300 text-amber-700 text-sm font-black hover:bg-amber-50 active:scale-[0.98] transition-all cursor-pointer"
+              >
+                فتح في Safari
+              </button>
+            )}
+          </div>
+
+          <p className="text-xs font-bold text-on-surface-variant/50 mt-6">
+            {isIOS
+              ? 'أو اضغط على أيقونة Safari في شريط أدوات فيسبوك السفلي'
+              : 'أو اضغط على ⋮ في الأعلى واختر "فتح في Chrome"'}
+          </p>
+        </div>
+      </div>
     );
   }
 
