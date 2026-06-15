@@ -105,10 +105,17 @@ export default function CeremonyInquiry() {
     try {
       const canvas = await captureTicket();
       if (!canvas) { toast.error('البطاقة غير موجودة', { id: toastId }); return; }
-      const link = document.createElement('a');
-      link.href = canvas.toDataURL('image/png');
-      link.download = `بطاقة_حفل_${data?.name?.replace(/\s+/g, '_') ?? 'طالب'}.png`;
-      link.click();
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `بطاقة_حفل_${data?.name?.replace(/\s+/g, '_') ?? 'طالب'}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }, 'image/png');
       toast.success('تم تحميل البطاقة بنجاح!', { id: toastId });
     } catch { toast.error('فشل تحميل الصورة', { id: toastId }); }
     finally { setIsCapturing(false); }
@@ -121,11 +128,18 @@ export default function CeremonyInquiry() {
       const canvas = await captureTicket();
       if (!canvas) { toast.error('البطاقة غير موجودة', { id: toastId }); return; }
       const { default: jsPDF } = await import('jspdf');
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
       const imgWidth = canvas.width / 2;
       const imgHeight = canvas.height / 2;
-      const pdf = new jsPDF({ orientation: imgWidth > imgHeight ? 'landscape' : 'portrait', unit: 'pt', format: [imgWidth, imgHeight] });
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      const scale = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      const w = imgWidth * scale;
+      const h = imgHeight * scale;
+      const x = (pdfWidth - w) / 2;
+      const y = (pdfHeight - h) / 2;
+      pdf.addImage(imgData, 'JPEG', x, y, w, h);
       pdf.save(`بطاقة_حفل_${data?.name?.replace(/\s+/g, '_') ?? 'طالب'}.pdf`);
       toast.success('تم تحميل ملف PDF بنجاح!', { id: toastId });
     } catch { toast.error('فشل تحميل PDF', { id: toastId }); }

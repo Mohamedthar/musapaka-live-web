@@ -121,20 +121,35 @@ export default function FormInquiry() {
       const receiptCanvas = await captureElement('receipt');
       if (!receiptCanvas) throw new Error('الاستمارة غير موجودة');
 
-      const link = document.createElement('a');
-      link.href = receiptCanvas.toDataURL('image/png');
-      link.download = `استمارة_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.png`;
-      link.click();
+      receiptCanvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `استمارة_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }, 'image/png');
 
       const evalCanvas = await captureElement('evaluation-form');
       if (evalCanvas) {
-        const link2 = document.createElement('a');
-        link2.href = evalCanvas.toDataURL('image/png');
-        link2.download = `استمارة_تقييم_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.png`;
-        link2.click();
+        await new Promise(r => setTimeout(r, 300));
+        evalCanvas.toBlob((blob) => {
+          if (!blob) return;
+          const url = URL.createObjectURL(blob);
+          const link2 = document.createElement('a');
+          link2.href = url;
+          link2.download = `استمارة_تقييم_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.png`;
+          document.body.appendChild(link2);
+          link2.click();
+          document.body.removeChild(link2);
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }, 'image/png');
       }
 
-      toast.success('تم تحميل الاستمارة بنجاح!', { id: toastId });
+      toast.success('تم تحميل الاستمارة! لو لم تظهر، تأكد من السماح بالتنزيلات.', { id: toastId, duration: 6000 });
     } catch (err) {
       console.error(err);
       toast.error('فشل تحميل الصورة', { id: toastId });
@@ -159,15 +174,18 @@ export default function FormInquiry() {
 
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
 
       const receiptHeight = (receiptCanvas.height * pdfWidth) / receiptCanvas.width;
-      pdf.addImage(receiptCanvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, receiptHeight);
+      const receiptData = receiptCanvas.toDataURL('image/jpeg', 0.92);
+      pdf.addImage(receiptData, 'JPEG', 0, 0, pdfWidth, Math.min(receiptHeight, pdfHeight));
 
       const evalCanvas = await captureElement('evaluation-form');
       if (evalCanvas) {
         const evalHeight = (evalCanvas.height * pdfWidth) / evalCanvas.width;
+        const evalData = evalCanvas.toDataURL('image/jpeg', 0.92);
         pdf.addPage();
-        pdf.addImage(evalCanvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, evalHeight);
+        pdf.addImage(evalData, 'JPEG', 0, 0, pdfWidth, Math.min(evalHeight, pdfHeight));
       }
 
       pdf.save(`استمارة_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.pdf`);

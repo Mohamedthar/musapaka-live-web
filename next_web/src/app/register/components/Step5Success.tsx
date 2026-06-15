@@ -54,15 +54,12 @@ export default function Step5Success({
     try {
       const html2canvas = (await import('html2canvas-pro')).default;
       
-      const captureElement = async (id: string, filename: string): Promise<boolean> => {
+      const captureElement = async (id: string, filename: string): Promise<HTMLCanvasElement | null> => {
         const el = document.getElementById(id);
-        if (!el) {
-          toast.error('لم يتم العثور على العنصر', { id: toastId });
-          return false;
-        }
+        if (!el) return null;
         
         const canvas = await html2canvas(el, {
-          scale: 2, // 2x resolution
+          scale: 2,
           useCORS: true,
           backgroundColor: '#ffffff',
           logging: false,
@@ -85,26 +82,34 @@ export default function Step5Success({
             }
           }
         });
+
+        canvas.toBlob((blob) => {
+          if (!blob) return;
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `${filename}.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          setTimeout(() => URL.revokeObjectURL(url), 2000);
+        }, 'image/png');
         
-        const dataUrl = canvas.toDataURL('image/png');
-        const link = document.createElement('a');
-        link.href = dataUrl;
-        link.download = `${filename}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        return true;
+        return canvas;
       };
 
-      const receiptOk = await captureElement('receipt', `استمارة_بيانات_${formData.name.replace(/\s+/g, '_')}`);
+      const receiptCanvas = await captureElement('receipt', `استمارة_بيانات_${formData.name.replace(/\s+/g, '_')}`);
       
       const evalFormEl = document.getElementById('evaluation-form');
       if (evalFormEl) {
+        await new Promise(r => setTimeout(r, 400));
         await captureElement('evaluation-form', `استمارة_تقييم_${formData.name.replace(/\s+/g, '_')}`);
       }
       
-      if (receiptOk) {
-        toast.success('تم تحميل الاستمارات كصور بنجاح!', { id: toastId });
+      if (receiptCanvas) {
+        toast.success('تم تحميل الاستمارات! لو لم تظهر، تأكد من السماح بالتنزيلات.', { id: toastId, duration: 6000 });
+      } else {
+        toast.error('لم يتم العثور على الاستمارة', { id: toastId });
       }
     } catch (err) {
       console.error(err);
