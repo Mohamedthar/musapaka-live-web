@@ -110,12 +110,12 @@ export default function CeremonyInquiry() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `بطاقة_حفل_${data?.name?.replace(/\s+/g, '_') ?? 'طالب'}.png`;
+        link.download = `بطاقة_حفل_${data?.name?.replace(/\s+/g, '_') ?? 'طالب'}.jpg`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         setTimeout(() => URL.revokeObjectURL(url), 1000);
-      }, 'image/png');
+      }, 'image/jpeg', 0.85);
       toast.success('تم تحميل البطاقة بنجاح!', { id: toastId });
     } catch { toast.error('فشل تحميل الصورة', { id: toastId }); }
     finally { setIsCapturing(false); }

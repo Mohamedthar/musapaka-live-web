@@ -88,12 +88,12 @@ export default function Step5Success({
           const url = URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
-          link.download = `${filename}.png`;
+          link.download = `${filename}.jpg`;
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
           setTimeout(() => URL.revokeObjectURL(url), 2000);
-        }, 'image/png');
+        }, 'image/jpeg', 0.85);
         
         return canvas;
       };

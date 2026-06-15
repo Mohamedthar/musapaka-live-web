@@ -72,46 +72,76 @@ export default function FormInquiry() {
 
     const parent = el.closest('.hidden.print\\:block') as HTMLElement | null;
     const wasHidden = parent ? parent.classList.contains('hidden') : false;
-    if (wasHidden) {
-      parent!.classList.remove('hidden');
-      parent!.style.opacity = '0';
-      parent!.style.position = 'fixed';
-      parent!.style.pointerEvents = 'none';
+
+    const originalDisplay = el.style.display;
+    const originalVisibility = el.style.visibility;
+
+    if (wasHidden && parent) {
+      parent.classList.remove('hidden');
+      parent.style.position = 'absolute';
+      parent.style.left = '-9999px';
+      parent.style.top = '0';
+      parent.style.width = '800px';
+      parent.style.visibility = 'visible';
+      parent.style.zIndex = '-1';
+      parent.style.display = 'block';
     }
 
-    await new Promise(r => requestAnimationFrame(r));
+    el.style.display = 'block';
+    el.style.visibility = 'visible';
 
-    const html2canvas = (await import('html2canvas-pro')).default;
-    const canvas = await html2canvas(el, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-      logging: false,
-      windowWidth: 850,
-      windowHeight: el.scrollHeight + 200,
-      onclone: (clonedDoc) => {
-        const clonedEl = clonedDoc.getElementById(id);
-        if (!clonedEl) return;
-        clonedEl.style.width = '800px';
-        clonedEl.style.height = 'auto';
-        let parent: HTMLElement | null = clonedEl.parentElement;
-        while (parent && parent !== clonedDoc.body) {
-          parent.style.display = 'block';
-          parent.style.height = 'auto';
-          parent.style.overflow = 'visible';
-          parent = parent.parentElement;
-        }
-      },
-    });
+    await new Promise(r => setTimeout(r, 150));
 
-    if (wasHidden) {
-      parent!.classList.add('hidden');
-      parent!.style.opacity = '';
-      parent!.style.position = '';
-      parent!.style.pointerEvents = '';
+    try {
+      const html2canvas = (await import('html2canvas-pro')).default;
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        windowWidth: 850,
+        windowHeight: Math.min(el.scrollHeight + 200, 6000),
+        onclone: (clonedDoc) => {
+          const clonedEl = clonedDoc.getElementById(id);
+          if (!clonedEl) return;
+          clonedEl.style.display = 'block';
+          clonedEl.style.visibility = 'visible';
+          clonedEl.style.width = '800px';
+          clonedEl.style.height = 'auto';
+          clonedEl.style.maxHeight = 'none';
+          clonedEl.style.overflow = 'visible';
+          let p: HTMLElement | null = clonedEl.parentElement;
+          while (p && p !== clonedDoc.body) {
+            p.style.display = 'block';
+            p.style.visibility = 'visible';
+            p.style.width = '800px';
+            p.style.height = 'auto';
+            p.style.maxHeight = 'none';
+            p.style.overflow = 'visible';
+            p.style.position = 'static';
+            p.style.left = 'auto';
+            p.style.top = 'auto';
+            p.style.zIndex = 'auto';
+            p = p.parentElement;
+          }
+        },
+      });
+      return canvas;
+    } finally {
+      el.style.display = originalDisplay;
+      el.style.visibility = originalVisibility;
+
+      if (wasHidden && parent) {
+        parent.classList.add('hidden');
+        parent.style.position = '';
+        parent.style.left = '';
+        parent.style.top = '';
+        parent.style.width = '';
+        parent.style.visibility = '';
+        parent.style.zIndex = '';
+        parent.style.display = '';
+      }
     }
-
-    return canvas;
   };
 
   const handleDownloadImage = async () => {
@@ -121,32 +151,24 @@ export default function FormInquiry() {
       const receiptCanvas = await captureElement('receipt');
       if (!receiptCanvas) throw new Error('الاستمارة غير موجودة');
 
-      receiptCanvas.toBlob((blob) => {
-        if (!blob) return;
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `استمارة_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-      }, 'image/png');
+      const dataUrl = receiptCanvas.toDataURL('image/jpeg', 0.85);
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = `استمارة_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
       const evalCanvas = await captureElement('evaluation-form');
       if (evalCanvas) {
-        await new Promise(r => setTimeout(r, 300));
-        evalCanvas.toBlob((blob) => {
-          if (!blob) return;
-          const url = URL.createObjectURL(blob);
-          const link2 = document.createElement('a');
-          link2.href = url;
-          link2.download = `استمارة_تقييم_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.png`;
-          document.body.appendChild(link2);
-          link2.click();
-          document.body.removeChild(link2);
-          setTimeout(() => URL.revokeObjectURL(url), 1000);
-        }, 'image/png');
+        await new Promise(r => setTimeout(r, 400));
+        const dataUrl2 = evalCanvas.toDataURL('image/jpeg', 0.85);
+        const link2 = document.createElement('a');
+        link2.href = dataUrl2;
+        link2.download = `استمارة_تقييم_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.jpg`;
+        document.body.appendChild(link2);
+        link2.click();
+        document.body.removeChild(link2);
       }
 
       toast.success('تم تحميل الاستمارة! لو لم تظهر، تأكد من السماح بالتنزيلات.', { id: toastId, duration: 6000 });
