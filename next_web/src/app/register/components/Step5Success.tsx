@@ -50,11 +50,11 @@ export default function Step5Success({
 
   const downloadAsImages = async () => {
     setIsDownloading(true);
-    const toastId = toast.loading('جاري تجهيز الاستمارات وتحميلها كصور...');
+    const toastId = toast.loading('جاري تجهيز الاستمارات...');
     try {
       const html2canvas = (await import('html2canvas-pro')).default;
       
-      const captureElement = async (id: string, filename: string): Promise<HTMLCanvasElement | null> => {
+      const captureElement = async (id: string): Promise<HTMLCanvasElement | null> => {
         const el = document.getElementById(id);
         if (!el) return null;
         
@@ -72,7 +72,6 @@ export default function Step5Success({
               clonedEl.style.transformOrigin = 'top center';
               clonedEl.style.width = '800px';
               clonedEl.style.height = 'auto';
-              
               const clonedParent = clonedEl.parentElement;
               if (clonedParent) {
                 clonedParent.style.height = 'auto';
@@ -82,34 +81,53 @@ export default function Step5Success({
             }
           }
         });
-
-        canvas.toBlob((blob) => {
-          if (!blob) return;
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `${filename}.jpg`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          setTimeout(() => URL.revokeObjectURL(url), 2000);
-        }, 'image/jpeg', 0.85);
-        
         return canvas;
       };
 
-      const receiptCanvas = await captureElement('receipt', `استمارة_بيانات_${formData.name.replace(/\s+/g, '_')}`);
+      const downloadImage = (canvas: HTMLCanvasElement, filename: string): string => {
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        return dataUrl;
+      };
+
+      toast.loading('جاري تجهيز استمارة البيانات...', { id: toastId });
+      const receiptCanvas = await captureElement('receipt');
+      if (!receiptCanvas) throw new Error('الاستمارة غير موجودة');
+      const receiptFilename = `استمارة_بيانات_${formData.name.replace(/\s+/g, '_')}.jpg`;
+      const receiptUrl = downloadImage(receiptCanvas, receiptFilename);
       
+      let evalUrl: string | null = null;
+      let evalFilename = '';
       const evalFormEl = document.getElementById('evaluation-form');
       if (evalFormEl) {
-        await new Promise(r => setTimeout(r, 400));
-        await captureElement('evaluation-form', `استمارة_تقييم_${formData.name.replace(/\s+/g, '_')}`);
+        toast.loading('جاري تجهيز استمارة التقييم...', { id: toastId });
+        await new Promise(r => setTimeout(r, 500));
+        const evalCanvas = await captureElement('evaluation-form');
+        if (evalCanvas) {
+          evalFilename = `استمارة_تقييم_${formData.name.replace(/\s+/g, '_')}.jpg`;
+          evalUrl = downloadImage(evalCanvas, evalFilename);
+        }
       }
-      
-      if (receiptCanvas) {
-        toast.success('تم تحميل الاستمارات! لو لم تظهر، تأكد من السماح بالتنزيلات.', { id: toastId, duration: 6000 });
+
+      // فتح الاستمارة تلقائياً
+      await new Promise(r => setTimeout(r, 400));
+      window.open(receiptUrl, '_blank');
+
+      if (evalUrl) {
+        toast.success(
+          `تم تحميل وفتح الاستمارتين!\n📄 ${receiptFilename}\n📄 ${evalFilename}`,
+          { id: toastId, duration: 8000 }
+        );
       } else {
-        toast.error('لم يتم العثور على الاستمارة', { id: toastId });
+        toast.success(
+          `تم تحميل وفتح الاستمارة!\n📄 ${receiptFilename}`,
+          { id: toastId, duration: 8000 }
+        );
       }
     } catch (err) {
       console.error(err);

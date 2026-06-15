@@ -232,8 +232,14 @@ export default function FormInquiry() {
       const pdfFilename = `استمارة_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.pdf`;
       pdf.save(pdfFilename);
 
+      await new Promise(r => setTimeout(r, 500));
+      try {
+        const pdfBlobUrl = pdf.output('bloburl');
+        window.open(pdfBlobUrl, '_blank');
+      } catch { /* المتصفح قد يمنع الفتح التلقائي */ }
+
       toast.success(
-        `تم حفظ ملف PDF!\nالملف في مجلد التحميلات:\n📄 ${pdfFilename}\n\nيمكنك فتحه وطباعته من أي جهاز.`,
+        `تم حفظ وفتح ملف PDF!\nالملف في مجلد التحميلات:\n📄 ${pdfFilename}`,
         { id: toastId, duration: 8000 }
       );
     } catch (err) {

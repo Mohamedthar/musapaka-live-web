@@ -105,18 +105,17 @@ export default function CeremonyInquiry() {
     try {
       const canvas = await captureTicket();
       if (!canvas) { toast.error('البطاقة غير موجودة', { id: toastId }); return; }
-      canvas.toBlob((blob) => {
-        if (!blob) return;
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `بطاقة_حفل_${data?.name?.replace(/\s+/g, '_') ?? 'طالب'}.jpg`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-      }, 'image/jpeg', 0.85);
-      toast.success('تم تحميل البطاقة بنجاح!', { id: toastId });
+      const filename = `بطاقة_حفل_${data?.name?.replace(/\s+/g, '_') ?? 'طالب'}.jpg`;
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      await new Promise(r => setTimeout(r, 300));
+      window.open(dataUrl, '_blank');
+      toast.success(`تم تحميل وفتح البطاقة!\n📄 ${filename}`, { id: toastId, duration: 6000 });
     } catch { toast.error('فشل تحميل الصورة', { id: toastId }); }
     finally { setIsCapturing(false); }
   };
@@ -141,7 +140,14 @@ export default function CeremonyInquiry() {
       const y = (pdfHeight - h) / 2;
       pdf.addImage(imgData, 'JPEG', x, y, w, h);
       pdf.save(`بطاقة_حفل_${data?.name?.replace(/\s+/g, '_') ?? 'طالب'}.pdf`);
-      toast.success('تم تحميل ملف PDF بنجاح!', { id: toastId });
+
+      await new Promise(r => setTimeout(r, 500));
+      try {
+        const pdfBlobUrl = pdf.output('bloburl');
+        window.open(pdfBlobUrl, '_blank');
+      } catch { /* المتصفح قد يمنع الفتح التلقائي */ }
+
+      toast.success('تم حفظ وفتح ملف PDF!', { id: toastId });
     } catch { toast.error('فشل تحميل PDF', { id: toastId }); }
     finally { setIsCapturing(false); }
   };
