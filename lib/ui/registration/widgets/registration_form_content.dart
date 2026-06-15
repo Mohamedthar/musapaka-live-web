@@ -664,7 +664,7 @@ class _RegistrationFormContentState extends State<RegistrationFormContent> {
 
   List<CompetitionLevel> get _filteredLevels {
     final age = int.tryParse(_ageCtrl.text);
-    if (age == null) return _levels;
+    if (age == null || age <= 0) return [];
     return _levels.where((l) => l.ageMatches(age)).toList();
   }
 
@@ -678,8 +678,11 @@ class _RegistrationFormContentState extends State<RegistrationFormContent> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.orange.shade200),
         ),
-        child: const Text('لا يوجد مستويات متاحة لهذا العمر',
-            style: TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF9A3412))),
+        child: Text(
+            (int.tryParse(_ageCtrl.text) == null || int.tryParse(_ageCtrl.text)! <= 0)
+                ? 'يرجى إدخال عمرك أولاً'
+                : 'لا يوجد مستويات متاحة لهذا العمر',
+            style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF9A3412))),
       );
     }
     return DropdownButtonFormField<CompetitionLevel>(

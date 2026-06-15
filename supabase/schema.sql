@@ -85,6 +85,7 @@ CREATE TABLE IF NOT EXISTS competition_levels (
     notes                TEXT,
     min_age              INTEGER,
     max_age              INTEGER,
+    age_op               TEXT,
     max_capacity         INTEGER,
     branches             TEXT[] DEFAULT '{}',
     require_custom_amount BOOLEAN DEFAULT false,

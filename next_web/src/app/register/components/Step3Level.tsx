@@ -34,7 +34,7 @@ export default function Step3Level({
   setMemorizationAmount
 }: Step3LevelProps) {
   const filteredLevels = useMemo(() => {
-    if (studentAge === null) return levels;
+    if (studentAge === null || studentAge === 0) return [];
     return levels.filter(l => {
       const op = l.age_op || l.birth_year_op;
       // gt: أكبر من (فقط) — السن > min_age
@@ -135,8 +135,12 @@ export default function Step3Level({
           </select>
           <ChevronDown size={14} className="sm:size-[16px] absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-primary/30 pointer-events-none" />
         </div>
-        {filteredLevels.length === 0 && studentAge !== null && (
-          <p className="text-[11px] font-bold text-amber-700 mt-2 mr-1">لا توجد مستويات متاحة لعمرك الحالي</p>
+        {filteredLevels.length === 0 && (
+          <p className="text-[11px] font-bold text-amber-700 mt-2 mr-1">
+            {studentAge === null || studentAge === 0
+              ? 'يرجى إدخال تاريخ الميلاد أولاً'
+              : 'لا توجد مستويات متاحة لعمرك الحالي'}
+          </p>
         )}
         {fieldErrors.level && <p className="text-[11px] font-bold text-amber-700 mt-1 mr-1">{fieldErrors.level}</p>}
       </div>
