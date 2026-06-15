@@ -1139,6 +1139,20 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
         
         {/* Stepper */}
         <div className="relative -mt-6 md:-mt-8 mb-5 tour-stepper">
+          {/* Progress Bar */}
+          <div className="max-w-md mx-auto mb-4 px-2">
+            <div className="w-full h-1.5 bg-primary/10 rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-primary rounded-full"
+                initial={{ width: `${((step - 1) / steps.length) * 100}%` }}
+                animate={{ width: `${(step / steps.length) * 100}%` }}
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              />
+            </div>
+            <p className="text-center text-[10px] font-bold text-primary/50 mt-1">
+              الخطوة {step} من {steps.length}
+            </p>
+          </div>
           <div className="flex items-center justify-center gap-0">
             {steps.map((s, i) => (
               <React.Fragment key={s.num}>
