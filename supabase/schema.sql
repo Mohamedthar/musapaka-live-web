@@ -1124,7 +1124,24 @@ $$;
 GRANT EXECUTE ON FUNCTION public_get_registration_status() TO anon, authenticated;
 
 -- -------------------------------------------------------------------
--- 8.5 استعلام حضور الحفل (للإدارة) — query_ceremony_attendance
+-- 8.5 دالة عد الطلاب لكل مستوى — get_level_counts
+-- -------------------------------------------------------------------
+DROP FUNCTION IF EXISTS get_level_counts();
+CREATE OR REPLACE FUNCTION get_level_counts()
+RETURNS TABLE(level TEXT, cnt BIGINT)
+LANGUAGE sql SECURITY DEFINER SET search_path = public
+AS $$
+  SELECT students.level, COUNT(*)::BIGINT
+  FROM students
+  WHERE students.level IS NOT NULL
+  GROUP BY students.level
+  ORDER BY cnt DESC;
+$$;
+
+GRANT EXECUTE ON FUNCTION get_level_counts() TO anon, authenticated;
+
+-- -------------------------------------------------------------------
+-- 8.6 استعلام حضور الحفل (للإدارة) — query_ceremony_attendance
 -- -------------------------------------------------------------------
 DROP FUNCTION IF EXISTS query_ceremony_attendance(TEXT, TEXT);
 CREATE OR REPLACE FUNCTION query_ceremony_attendance(p_national_id TEXT, p_phone TEXT DEFAULT NULL)

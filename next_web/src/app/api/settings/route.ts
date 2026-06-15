@@ -16,9 +16,7 @@ export async function GET(request: Request) {
     const [settingsRes, countRes, levelCountsRes] = await Promise.all([
       supabase.from('app_settings').select('*').eq('id', 1).single(),
       supabase.from('students').select('id', { count: 'exact', head: true }),
-      // TODO: Replace with RPC get_level_counts() when student count exceeds ~5000
-      // Currently fetches all rows to build per-level counts
-      supabase.from('students').select('level'),
+      supabase.rpc('get_level_counts'),
     ]);
 
     let statusData: Record<string, unknown> | null = null;
@@ -31,8 +29,8 @@ export async function GET(request: Request) {
 
     const levelCounts: Record<string, number> = {};
     if (levelCountsRes.data) {
-      for (const s of levelCountsRes.data) {
-        levelCounts[s.level] = (levelCounts[s.level] || 0) + 1;
+      for (const row of levelCountsRes.data as { level: string; cnt: string }[]) {
+        levelCounts[row.level] = Number(row.cnt);
       }
     }
 
