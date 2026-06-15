@@ -92,8 +92,8 @@ export async function POST(request: Request) {
     if (phone.length > 15) {
       return jsonResponse({ error: 'رقم الهاتف طويل جداً' }, 400, origin);
     }
-    if (age == null || typeof age !== 'number' || age < 5 || age > 100) {
-      return jsonResponse({ error: 'العمر يجب أن يكون بين 5 و 100' }, 400, origin);
+    if (age == null || typeof age !== 'number' || age < 1 || age > 100) {
+      return jsonResponse({ error: 'العمر يجب أن يكون بين 1 و 100' }, 400, origin);
     }
     if (!level) {
       return jsonResponse({ error: 'المستوى مطلوب' }, 400, origin);

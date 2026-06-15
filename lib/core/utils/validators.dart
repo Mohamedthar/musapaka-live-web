@@ -26,8 +26,8 @@ class Validator {
     if (age == null) {
       return 'العمر يجب ان يكون رقما';
     }
-    if (age < 5 || age > 100) {
-      return 'العمر يجب ان يكون بين 5 و 100';
+    if (age < 1 || age > 100) {
+      return 'العمر يجب ان يكون بين 1 و 100';
     }
     return null;
   }
