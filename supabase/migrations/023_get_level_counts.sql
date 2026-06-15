@@ -10,7 +10,7 @@ AS $$
   FROM students
   WHERE level IS NOT NULL
   GROUP BY level
-  ORDER BY cnt DESC;
+  ORDER BY COUNT(*) DESC;
 $$;
 
 GRANT EXECUTE ON FUNCTION get_level_counts() TO anon, authenticated;

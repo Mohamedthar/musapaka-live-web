@@ -1135,7 +1135,7 @@ AS $$
   FROM students
   WHERE students.level IS NOT NULL
   GROUP BY students.level
-  ORDER BY cnt DESC;
+  ORDER BY COUNT(*) DESC;
 $$;
 
 GRANT EXECUTE ON FUNCTION get_level_counts() TO anon, authenticated;
