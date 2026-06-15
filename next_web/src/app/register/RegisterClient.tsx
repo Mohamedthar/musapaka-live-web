@@ -10,6 +10,8 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import type { CompetitionLevel } from '@/lib/database.types';
 
+const isFacebookBrowser = typeof navigator !== 'undefined' && /FBAN|FBAV|Instagram/.test(navigator.userAgent);
+
 // Subcomponents
 import Step1Personal from './components/Step1Personal';
 import Step2Level from './components/Step3Level';
@@ -731,16 +733,33 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
       const receiptCanvas = await captureElement('receipt');
       if (!receiptCanvas) throw new Error('الاستمارة غير موجودة');
 
-      toast.loading('جاري تحميل استمارة البيانات...', { id: toastId });
-      downloadCanvasAsImage(receiptCanvas, `استمارة_${formData.name.replace(/\s+/g, '_')}.jpg`);
+      const filename = `استمارة_${formData.name.replace(/\s+/g, '_')}.jpg`;
+      const dataUrl = receiptCanvas.toDataURL('image/jpeg', 0.85);
 
-      const evalCanvas = await captureElement('evaluation-form');
-      if (evalCanvas) {
-        await new Promise(r => setTimeout(r, 500));
-        downloadCanvasAsImage(evalCanvas, `استمارة_تقييم_${formData.name.replace(/\s+/g, '_')}.jpg`);
+      if (isFacebookBrowser) {
+        window.open(dataUrl, '_blank');
+        toast.success('الاستمارة مفتوحة في نافذة جديدة. لو لم تظهر، انسخ الرابط وافتحه في Chrome.', { id: toastId, duration: 6000 });
+      } else {
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        const evalCanvas = await captureElement('evaluation-form');
+        if (evalCanvas) {
+          await new Promise(r => setTimeout(r, 500));
+          const dataUrl2 = evalCanvas.toDataURL('image/jpeg', 0.85);
+          const link2 = document.createElement('a');
+          link2.href = dataUrl2;
+          link2.download = `استمارة_تقييم_${formData.name.replace(/\s+/g, '_')}.jpg`;
+          document.body.appendChild(link2);
+          link2.click();
+          document.body.removeChild(link2);
+        }
+        toast.success('تم تحميل الملف', { id: toastId, duration: 4000 });
       }
-
-      toast.success('تم تحميل الملف', { id: toastId, duration: 4000 });
     } catch (err) {
       console.error(err);
       toast.error('فشل تجهيز الاستمارة — حاول مرة أخرى', { id: toastId });
@@ -784,15 +803,20 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
       const pdfFilename = `استمارة_${formData.name.replace(/\s+/g, '_')}.pdf`;
       const pdfBlob = pdf.output('blob');
       const pdfUrl = URL.createObjectURL(pdfBlob);
-      const link = document.createElement('a');
-      link.href = pdfUrl;
-      link.download = pdfFilename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
 
-      toast.success('تم تحميل الملف', { id: toastId, duration: 4000 });
+      if (isFacebookBrowser) {
+        window.open(pdfUrl, '_blank');
+        toast.success('الملف مفتوح في نافذة جديدة. لو لم يظهر، انسخ الرابط وافتحه في Chrome.', { id: toastId, duration: 6000 });
+      } else {
+        const link = document.createElement('a');
+        link.href = pdfUrl;
+        link.download = pdfFilename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success('تم تحميل الملف', { id: toastId, duration: 4000 });
+      }
+      setTimeout(() => URL.revokeObjectURL(pdfUrl), 5000);
     } catch (err) {
       console.error(err);
       toast.error('فشل حفظ PDF — حاول مرة أخرى', { id: toastId });
@@ -845,6 +869,29 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
 
         <div className="min-h-screen flex flex-col bg-surface print:hidden" dir="rtl" style={{ fontFamily: 'var(--font-cairo), Cairo, sans-serif' }}>
           <Header />
+
+          {isFacebookBrowser && (
+            <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 text-center">
+              <p className="text-sm font-black text-amber-800 mb-2">
+                متصفح فيسبوك لا يدعم تحميل الملفات
+              </p>
+              <p className="text-xs font-bold text-amber-700 mb-3">
+                لتحميل الاستمارة، انسخ الرابط وافتحه في متصفح Chrome أو Safari
+              </p>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href).then(() => {
+                    toast.success('تم نسخ الرابط! الصقه في Chrome أو Safari');
+                  }).catch(() => {
+                    toast.error('فشل نسخ الرابط');
+                  });
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 active:scale-95 transition-all cursor-pointer"
+              >
+                نسخ الرابط
+              </button>
+            </div>
+          )}
 
           <main className="flex-1 flex items-center justify-center p-4 py-12">
             <motion.div
