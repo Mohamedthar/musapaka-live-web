@@ -312,6 +312,12 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
 
   const compressImage = async (file: File): Promise<Blob> => {
     return new Promise((resolve, reject) => {
+      // HEIC/HEIF — المتصفح لا يستطيع فك ضغطها، نرسلها كما هي لـ Cloudinary
+      if (file.type === 'image/heic' || file.type === 'image/heif') {
+        resolve(file);
+        return;
+      }
+
       const objectUrl = URL.createObjectURL(file);
       const img = new Image();
       const timeout = setTimeout(() => {
@@ -358,7 +364,8 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
       img.onerror = () => {
         clearTimeout(timeout);
         URL.revokeObjectURL(objectUrl);
-        reject(new Error('صيغة الصورة غير مدعومة من المتصفح — يرجى استخدام JPEG أو PNG'));
+        // إذا فشل المتصفح في فك الصورة (ملف تالف أو صيغة غير مدعومة)، نرسل الملف الأصلي لـ Cloudinary
+        resolve(file);
       };
 
       img.src = objectUrl;
@@ -727,6 +734,24 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
     }
   };
 
+  const downloadCanvas = (canvas: HTMLCanvasElement, filename: string) => {
+    return new Promise<void>((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (!blob) { reject(new Error('فشل تحويل الصورة')); return; }
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        // Revoke after a delay to allow download to start
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        resolve();
+      }, 'image/jpeg', 0.85);
+    });
+  };
+
   const handleDownloadImage = async () => {
     setIsCapturing(true);
     const toastId = toast.loading('جاري تجهيز استمارة البيانات...');
@@ -735,24 +760,15 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
       if (!receiptCanvas) throw new Error('الاستمارة غير موجودة');
 
       toast.loading('جاري تحميل استمارة البيانات...', { id: toastId });
-      const dataUrl = receiptCanvas.toDataURL('image/jpeg', 0.85);
-      const link = document.createElement('a');
-      link.href = dataUrl;
-      link.download = `استمارة_${formData.name.replace(/\s+/g, '_')}.jpg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      await downloadCanvas(receiptCanvas, `استمارة_${formData.name.replace(/\s+/g, '_')}.jpg`);
 
       const evalCanvas = await captureElement('evaluation-form');
       if (evalCanvas) {
-        await new Promise(r => setTimeout(r, 500));
-        const dataUrl2 = evalCanvas.toDataURL('image/jpeg', 0.85);
-        const link2 = document.createElement('a');
-        link2.href = dataUrl2;
-        link2.download = `استمارة_تقييم_${formData.name.replace(/\s+/g, '_')}.jpg`;
-        document.body.appendChild(link2);
-        link2.click();
-        document.body.removeChild(link2);
+        await new Promise(r => setTimeout(r, 800));
+        await downloadCanvas(evalCanvas, `استمارة_تقييم_${formData.name.replace(/\s+/g, '_')}.jpg`);
+      } else {
+        toast.error('تعذر تجهيز استمارة التقييم — يرجى المحاولة مرة أخرى', { id: toastId, duration: 5000 });
+        return;
       }
 
       toast.success('تم تحميل الملف', { id: toastId, duration: 4000 });
