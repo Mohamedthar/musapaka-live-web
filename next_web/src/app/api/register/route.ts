@@ -173,31 +173,13 @@ export async function POST(request: Request) {
       }
     }
 
-    // Resolve IP geolocation BEFORE insert (with short timeout, never blocks registration)
-    let ipCity: string | null = null;
-    let ipRegion: string | null = null;
-    let ipLat: number | null = null;
-    let ipLng: number | null = null;
-    if (ip && ip !== 'unknown' && ip !== '127.0.0.1' && ip !== '::1' && !ip.startsWith('::ffff:')) {
-      try {
-        const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), 2000);
-        const geoRes = await fetch(
-          `https://ip-api.com/json/${ip}?fields=city,regionName,lat,lon`,
-          { signal: ctrl.signal }
-        );
-        clearTimeout(t);
-        if (geoRes.ok) {
-          const geo = await geoRes.json();
-          if (geo.lat != null && geo.lon != null) {
-            ipCity = geo.city || null;
-            ipRegion = geo.regionName || null;
-            ipLat = geo.lat;
-            ipLng = geo.lon;
-          }
-        }
-      } catch { /* geolocation failure is non-critical */ }
-    }
+    // Resolve IP geolocation from Vercel's built-in geo headers (no external API needed)
+    const ipCity = request.headers.get('x-vercel-ip-city') || null;
+    const ipRegion = request.headers.get('x-vercel-ip-country-region') || null;
+    const ipLatRaw = request.headers.get('x-vercel-ip-latitude');
+    const ipLngRaw = request.headers.get('x-vercel-ip-longitude');
+    const ipLat = ipLatRaw ? parseFloat(ipLatRaw) : null;
+    const ipLng = ipLngRaw ? parseFloat(ipLngRaw) : null;
 
     const studentData = {
       name,
