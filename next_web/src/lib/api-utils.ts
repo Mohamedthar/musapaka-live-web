@@ -86,12 +86,27 @@ export function getClientIp(request: Request): string {
 export function validateCsrf(request: Request): boolean {
   const origin = request.headers.get('origin');
   const referer = request.headers.get('referer');
+  const host = request.headers.get('host') || '';
 
   if (!origin && !referer) return false;
 
+  // Allow same-origin requests (Origin matches Host) — covers Vercel preview deployments
+  if (origin && host) {
+    try {
+      const originHost = new URL(origin).hostname;
+      const requestHost = host.split(':')[0];
+      if (originHost === requestHost) return true;
+    } catch { /* fall through to allowed origins check */ }
+  }
+
   const allowed = getAllowedOrigins();
 
+  // Also allow all Vercel preview deployments (*.vercel.app)
   if (origin) {
+    try {
+      const originHost = new URL(origin).hostname;
+      if (originHost.endsWith('.vercel.app')) return true;
+    } catch { /* fall through */ }
     return allowed.some((a) => originMatches(a, origin));
   }
 
