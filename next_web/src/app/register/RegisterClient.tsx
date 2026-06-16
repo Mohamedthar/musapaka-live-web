@@ -632,18 +632,55 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
     } catch (err: unknown) {
       toast.dismiss(uploadToast);
       resetTurnstile();
+
+      // Upload timeout — الصور أو السيرفر أخدوا وقت طويل
       if (err instanceof DOMException && err.name === 'TimeoutError') {
-        toast.error('انتهت مهلة الاتصال بالخادم - لم تفقد بياناتك، حاول مرة أخرى');
-      } else if (err instanceof TypeError && (err.message.includes('fetch') || err.message.includes('network') || err.message.includes('Network'))) {
-        toast.error('فشل الاتصال بالخادم - تحقق من اتصالك بالإنترنت وحاول مرة أخرى');
-      } else {
+        toast.error(
+          'انتهت مهلة الاتصال — قد يكون الإنترنت بطيئاً. لم تفقد بياناتك، حاول مرة أخرى.',
+          { duration: 6000 }
+        );
+      }
+      // Network down — النت مفصول
+      else if (err instanceof TypeError && (err.message.includes('fetch') || err.message.includes('network') || err.message.includes('Network'))) {
+        toast.error(
+          'تعذر الاتصال بالخادم — تأكد من اتصالك بالإنترنت ثم حاول مرة أخرى.',
+          { duration: 6000 }
+        );
+      }
+      // Server returned an error with a message
+      else {
         const msg = err instanceof Error ? err.message : 'حدث خطأ غير متوقع';
+
+        // Duplicate name or national ID
         if (msg.includes('مسبقاً') || msg.includes('موجود')) {
-          toast.error(msg);
-        } else if (msg.includes('فشل رفع') || msg.includes('فشل في رفع')) {
-          toast.error('فشل رفع الصور - لم تفقد بياناتك، حاول مرة أخرى');
-        } else {
-          toast.error(msg);
+          toast.error(msg, { duration: 6000 });
+        }
+        // Image upload failed
+        else if (msg.includes('فشل رفع') || msg.includes('فشل في رفع') || msg.includes('الصورة') || msg.includes('الصور')) {
+          toast.error(
+            'فشل رفع الصور — قد يكون الإنترنت بطيئاً أو حجم الصورة كبيراً جداً. لم تفقد بياناتك، حاول مجدداً.',
+            { duration: 7000 }
+          );
+        }
+        // Invalid memorizer phone
+        else if (msg.includes('المحفظ') || msg.includes('محفظ')) {
+          toast.error(msg, { duration: 5000 });
+        }
+        // Age mismatch
+        else if (msg.includes('العمر') || msg.includes('عمر')) {
+          toast.error(msg, { duration: 5000 });
+        }
+        // Level capacity full
+        else if (msg.includes('ممتلئ')) {
+          toast.error(msg, { duration: 5000 });
+        }
+        // Turnstile / security
+        else if (msg.includes('تحقق') || msg.includes('أمان')) {
+          toast.error(msg, { duration: 5000 });
+        }
+        // Generic fallback — show the server's message as-is
+        else {
+          toast.error(msg, { duration: 6000 });
         }
       }
     } finally {
