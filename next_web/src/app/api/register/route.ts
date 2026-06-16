@@ -313,25 +313,28 @@ export async function POST(request: Request) {
       return jsonResponse({ error: 'حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى.' }, 500, origin);
     }
 
-    // Resolve IP geolocation in background (non-blocking)
-    if (newStudent?.id && ip !== 'unknown') {
-      const _ip = ip as string;
-      Promise.resolve().then(async () => {
-        try {
-          const geoRes = await fetch(`https://ip-api.com/json/${_ip}?fields=city,regionName,lat,lon`, { signal: AbortSignal.timeout(3000) });
-          if (geoRes.ok) {
-            const geo = await geoRes.json();
-            if (geo.lat != null && geo.lon != null) {
-              await supabase.from('students').update({
-                ip_city: geo.city || null,
-                ip_region: geo.regionName || null,
-                ip_lat: geo.lat,
-                ip_lng: geo.lon,
-              }).eq('id', newStudent.id);
-            }
+    // Resolve IP geolocation (non-blocking — wraps in try so registration never fails)
+    if (newStudent?.id && ip !== 'unknown' && ip !== '127.0.0.1' && ip !== '::1') {
+      try {
+        const ctrl = new AbortController();
+        const timeout = setTimeout(() => ctrl.abort(), 3000);
+        const geoRes = await fetch(
+          `https://ip-api.com/json/${ip}?fields=city,regionName,lat,lon`,
+          { signal: ctrl.signal }
+        );
+        clearTimeout(timeout);
+        if (geoRes.ok) {
+          const geo = await geoRes.json();
+          if (geo.lat != null && geo.lon != null && geo.status !== 'fail') {
+            await supabase.from('students').update({
+              ip_city: geo.city || null,
+              ip_region: geo.regionName || null,
+              ip_lat: geo.lat,
+              ip_lng: geo.lon,
+            }).eq('id', newStudent.id);
           }
-        } catch { /* geolocation failure is non-critical */ }
-      });
+        }
+      } catch { /* geolocation failure is non-critical */ }
     }
 
     return jsonResponse({ success: true, data: newStudent }, 200, origin);
