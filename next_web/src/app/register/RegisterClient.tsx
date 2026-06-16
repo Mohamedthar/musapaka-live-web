@@ -482,24 +482,32 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
     const widgetId = turnstileWidgetIdRef.current;
     const ts = typeof window !== 'undefined' ? (window as unknown as { turnstile?: { reset: (id: string) => void; getResponse: (id: string) => string | undefined } }).turnstile : undefined;
     if (widgetId && ts) {
-      // نجرب ناخد التوكين الحالي الأول بدون reset
       const currentResponse = ts.getResponse(widgetId);
       if (currentResponse) {
         finalToken = currentResponse;
+        setTurnstileToken(currentResponse);
       } else {
-        // التوكين منتهي، نعمل reset ونستنى توكين جديد
+        // التوكين منتهي — نعمل reset للمستخدم يحل التحدي من جديد
         ts.reset(widgetId);
-        for (let i = 0; i < 25; i++) {
-          await new Promise(r => setTimeout(r, 200));
-          const t = ts.getResponse(widgetId);
-          if (t) { finalToken = t; setTurnstileToken(t); break; }
-        }
+        setTurnstileToken(null);
+        return toast.error('انتهت صلاحية التحقق الأمني، يرجى إعادة الضغط على مربع التحقق (أنا لست روبوت)');
       }
     }
 
     if (!finalToken) {
       return toast.error('يرجى الضغط على مربع التحقق الأمني (أنا لست روبوت)');
     }
+
+    // Helper to reset Turnstile after failed submission
+    const resetTurnstile = () => {
+      try {
+        const id = turnstileWidgetIdRef.current;
+        if (id && ts) {
+          ts.reset(id);
+          setTurnstileToken(null);
+        }
+      } catch (_) {}
+    };
 
     if (!formData.memorizerName.trim()) return toast.error('اسم المحفظ مطلوب');
     if (!formData.memorizerPhone.trim()) return toast.error('رقم هاتف المحفظ مطلوب');
@@ -616,6 +624,7 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: unknown) {
       toast.dismiss(uploadToast);
+      resetTurnstile();
       if (err instanceof DOMException && err.name === 'TimeoutError') {
         toast.error('انتهت مهلة الاتصال بالخادم - لم تفقد بياناتك، حاول مرة أخرى');
       } else if (err instanceof TypeError && (err.message.includes('fetch') || err.message.includes('network') || err.message.includes('Network'))) {

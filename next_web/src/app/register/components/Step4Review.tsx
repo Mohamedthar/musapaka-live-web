@@ -96,8 +96,8 @@ export default function Step4Review({
               onWidgetLoad={onTurnstileWidgetLoad}
             />
             {turnstileError && (
-              <p className="text-red-600 text-xs mt-2 font-semibold">
-                فشل التحقق الأمني. يرجى إعادة المحاولة أو تحديث الصفحة.
+              <p className="text-amber-600 text-xs mt-2 font-semibold text-center">
+                انتهت صلاحية التحقق الأمني — يرجى إعادة الضغط على المربع أعلاه
               </p>
             )}
           </>
