@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     }
 
     const ip = getClientIp(request);
-    if (!checkRateLimit(ip, 10)) {
+    if (!checkRateLimit(ip, 60)) {
       return jsonResponse({ error: 'طلبات كثيرة جداً. حاول بعد دقيقة.' }, 429, origin);
     }
 
