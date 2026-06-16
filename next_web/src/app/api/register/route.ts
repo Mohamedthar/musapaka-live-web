@@ -173,6 +173,32 @@ export async function POST(request: Request) {
       }
     }
 
+    // Resolve IP geolocation BEFORE insert (with short timeout, never blocks registration)
+    let ipCity: string | null = null;
+    let ipRegion: string | null = null;
+    let ipLat: number | null = null;
+    let ipLng: number | null = null;
+    if (ip && ip !== 'unknown' && ip !== '127.0.0.1' && ip !== '::1' && !ip.startsWith('::ffff:')) {
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 2000);
+        const geoRes = await fetch(
+          `https://ip-api.com/json/${ip}?fields=city,regionName,lat,lon`,
+          { signal: ctrl.signal }
+        );
+        clearTimeout(t);
+        if (geoRes.ok) {
+          const geo = await geoRes.json();
+          if (geo.lat != null && geo.lon != null) {
+            ipCity = geo.city || null;
+            ipRegion = geo.regionName || null;
+            ipLat = geo.lat;
+            ipLng = geo.lon;
+          }
+        }
+      } catch { /* geolocation failure is non-critical */ }
+    }
+
     const studentData = {
       name,
       phone,
@@ -191,6 +217,10 @@ export async function POST(request: Request) {
       registration_ip: ip,
       branch_name: body.branch_name?.trim() || null,
       memorization_amount: body.memorization_amount ?? null,
+      ip_city: ipCity,
+      ip_region: ipRegion,
+      ip_lat: ipLat,
+      ip_lng: ipLng,
     };
 
     // 3. Check for duplicate name or national ID
@@ -311,30 +341,6 @@ export async function POST(request: Request) {
         return jsonResponse({ error: errMsg }, 409, origin);
       }
       return jsonResponse({ error: 'حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى.' }, 500, origin);
-    }
-
-    // Resolve IP geolocation (non-blocking — wraps in try so registration never fails)
-    if (newStudent?.id && ip !== 'unknown' && ip !== '127.0.0.1' && ip !== '::1') {
-      try {
-        const ctrl = new AbortController();
-        const timeout = setTimeout(() => ctrl.abort(), 3000);
-        const geoRes = await fetch(
-          `https://ip-api.com/json/${ip}?fields=city,regionName,lat,lon`,
-          { signal: ctrl.signal }
-        );
-        clearTimeout(timeout);
-        if (geoRes.ok) {
-          const geo = await geoRes.json();
-          if (geo.lat != null && geo.lon != null && geo.status !== 'fail') {
-            await supabase.from('students').update({
-              ip_city: geo.city || null,
-              ip_region: geo.regionName || null,
-              ip_lat: geo.lat,
-              ip_lng: geo.lon,
-            }).eq('id', newStudent.id);
-          }
-        }
-      } catch { /* geolocation failure is non-critical */ }
     }
 
     return jsonResponse({ success: true, data: newStudent }, 200, origin);
