@@ -8,6 +8,7 @@ import '../../../data/models/competition_level.dart';
 import '../../../services/supabase_service.dart';
 import '../../../services/cloudinary_service.dart';
 import '../../../core/utils/validators.dart';
+import '../../../core/utils/text_controller_ext.dart';
 import '../../../core/utils/app_logger.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -174,7 +175,7 @@ class _RegistrationFormContentState extends State<RegistrationFormContent> {
           if (age >= 0 && age < 100) {
             final String ageStr = age.toString();
             if (_ageCtrl.text != ageStr) {
-              _ageCtrl.text = ageStr;
+              _ageCtrl.setText(ageStr);
             }
           }
           setState(() {});

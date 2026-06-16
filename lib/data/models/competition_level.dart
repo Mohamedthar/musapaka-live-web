@@ -69,7 +69,7 @@ class CompetitionLevel {
       notes: json['notes'],
       minAge: json['min_age'],
       maxAge: json['max_age'],
-      ageOp: json['age_op'] ?? json['age_op'],
+      ageOp: json['age_op'],
       maxCapacity: json['max_capacity'],
       isActive: json['is_active'] ?? true,
       levelCode: json['level_code'],

@@ -24,14 +24,14 @@ export default function LevelsClient({ initialLevels, initialError }: Props) {
   const cardsRef = useRef<HTMLDivElement>(null);
 
   const formatAge = (l: CompetitionLevel) => {
-    const op = l.age_op || l.birth_year_op;
+    const op = l.age_op;
     if (op === 'gt') return `السن > ${l.min_age}`;
     if (op === 'gte') return `السن ≥ ${l.min_age}`;
     if (op === 'lt') return `السن < ${l.max_age}`;
     if (op === 'lte') return `السن ≤ ${l.max_age}`;
     if (op === 'range') return `من ${l.min_age} إلى ${l.max_age} سنة`;
-    if (l.min_age && l.max_age) return `فوق ${l.min_age} - ${l.max_age} فأقل`;
-    if (l.min_age) return `فوق ${l.min_age} عام`;
+    if (l.min_age && l.max_age) return `${l.min_age} - ${l.max_age} سنة`;
+    if (l.min_age) return `${l.min_age} عاماً فأكثر`;
     if (l.max_age) return `${l.max_age} فأقل`;
     return 'جميع الأعمار';
   };

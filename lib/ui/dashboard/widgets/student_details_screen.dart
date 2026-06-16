@@ -3,6 +3,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../data/models/student.dart';
 import '../../../services/supabase_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/phone_utils.dart';
+import '../../../core/utils/text_controller_ext.dart';
 import '../../../core/utils/validators.dart';
 import '../../shared/widgets/gender_safe_image.dart';
 import '../../shared/widgets/full_screen_image_viewer.dart';
@@ -27,7 +29,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
     super.initState();
     _student = widget.student;
     if (_student.score != null) {
-      _scoreController.text = _student.score.toString();
+      _scoreController.setText(_student.score.toString());
     }
   }
 
@@ -172,7 +174,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
             ),
             const Divider(),
             _buildInfoRow('العمر', '${_student.age} سنة'),
-            _buildInfoRow('هاتف ولي الأمر', _student.phone),
+            _buildInfoRow('هاتف ولي الأمر', _student.phone, onTap: () => openWhatsApp(_student.phone)),
             if (_student.gender != null)
               _buildInfoRow('النوع', _student.gender!),
             if (_student.nationalId != null)
@@ -180,7 +182,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
             if (_student.memorizerName != null && _student.memorizerName!.isNotEmpty)
               _buildInfoRow('اسم المحفظ', _student.memorizerName!),
             if (_student.memorizerPhone != null && _student.memorizerPhone!.isNotEmpty)
-              _buildInfoRow('هاتف المحفظ', _student.memorizerPhone!),
+              _buildInfoRow('هاتف المحفظ', _student.memorizerPhone!, onTap: () => openWhatsApp(_student.memorizerPhone!)),
             if (_student.memorizerAddress != null && _student.memorizerAddress!.isNotEmpty)
               _buildInfoRow('عنوان المحفظ', _student.memorizerAddress!),
             if (_student.location != null && _student.location!.isNotEmpty)
@@ -194,7 +196,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, String value, {VoidCallback? onTap}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -207,13 +209,33 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
               fontSize: 14,
             ),
           ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
+          onTap != null
+              ? GestureDetector(
+                  onTap: onTap,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.phone_outlined, size: 14, color: Colors.green.shade700),
+                      const SizedBox(width: 4),
+                      Text(
+                        value,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: Colors.green,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : Text(
+                  value,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
         ],
       ),
     );

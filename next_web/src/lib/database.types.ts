@@ -27,7 +27,6 @@ export interface CompetitionLevel {
   max_score?: number | null;
   passing_percentage?: number | null;
   age_op?: string | null;
-  birth_year_op?: string | null;
 }
 
 export interface StudentStatus {

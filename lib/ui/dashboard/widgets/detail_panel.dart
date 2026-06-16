@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../core/utils/phone_utils.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../core/utils/validators.dart';
 import '../../shared/widgets/full_screen_image_viewer.dart';
@@ -231,11 +232,11 @@ class StudentDetailPanel extends StatelessWidget {
 
               // Card 2: التواصل والمحفظ
               _infoGroup('بيانات التواصل والمحفظ', Icons.contact_phone_rounded, [
-                _infoItem(Icons.phone_outlined, 'رقم هاتف الطالب / ولي الأمر', student.phone),
+                _infoItem(Icons.phone_outlined, 'رقم هاتف الطالب / ولي الأمر', student.phone, onTap: () => openWhatsApp(student.phone)),
                 if (student.memorizerName != null)
                   _infoItem(Icons.person_outline, 'اسم محفظ الطالب', student.memorizerName!),
                 if (student.memorizerPhone != null)
-                  _infoItem(Icons.phone_iphone_rounded, 'هاتف محفظ الطالب', student.memorizerPhone!),
+                  _infoItem(Icons.phone_iphone_rounded, 'هاتف محفظ الطالب', student.memorizerPhone!, onTap: () => openWhatsApp(student.memorizerPhone!)),
                 if (student.memorizerAddress != null)
                   _infoItem(Icons.location_on_outlined, 'عنوان محفظ الطالب', student.memorizerAddress!),
               ]),
@@ -682,7 +683,7 @@ class StudentDetailPanel extends StatelessWidget {
     );
   }
 
-  Widget _infoItem(IconData icon, String label, String val) => Padding(
+  Widget _infoItem(IconData icon, String label, String val, {VoidCallback? onTap}) => Padding(
         padding: const EdgeInsets.only(bottom: 12),
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Padding(
@@ -698,12 +699,24 @@ class StudentDetailPanel extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
               flex: 3,
-              child: Text(val,
-                  textAlign: TextAlign.left,
-                  style: const TextStyle(fontFamily: 'Cairo', 
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black87))),
+              child: onTap != null
+                  ? GestureDetector(
+                      onTap: onTap,
+                      child: Text(val,
+                          textAlign: TextAlign.left,
+                          style: const TextStyle(fontFamily: 'Cairo', 
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.green,
+                              decoration: TextDecoration.underline,
+                              decorationColor: Colors.green)),
+                    )
+                  : Text(val,
+                      textAlign: TextAlign.left,
+                      style: const TextStyle(fontFamily: 'Cairo', 
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.black87))),
         ]),
       );
 

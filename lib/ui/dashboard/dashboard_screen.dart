@@ -15,6 +15,7 @@ import '../../services/print_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/validators.dart';
 import '../../core/utils/responsive.dart';
+import '../../core/utils/text_controller_ext.dart';
 import '../levels/levels_screen.dart';
 import '../auth/splash_screen.dart';
 import '../settings/settings_screen.dart';
@@ -215,7 +216,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           if (_editBirthDate != birthDate) {
             setState(() {
               _editBirthDate = birthDate;
-              _editBirthDateCtrl.text = "${birthDate.year}-${birthDate.month.toString().padLeft(2, '0')}-${birthDate.day.toString().padLeft(2, '0')}";
+              _editBirthDateCtrl.setText("${birthDate.year}-${birthDate.month.toString().padLeft(2, '0')}-${birthDate.day.toString().padLeft(2, '0')}");
             });
           }
 
@@ -227,7 +228,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           if (age >= 0 && age < 100) {
             final String ageStr = age.toString();
             if (_editAgeCtrl.text != ageStr) {
-              _editAgeCtrl.text = ageStr;
+              _editAgeCtrl.setText(ageStr);
             }
           }
         } catch (e, stackTrace) {
@@ -244,8 +245,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           setState(() {
             _editGender = null;
             _editBirthDate = null;
-            _editBirthDateCtrl.text = '';
-            _editAgeCtrl.text = '';
+            _editBirthDateCtrl.setText('');
+            _editAgeCtrl.setText('');
           });
         }
       }
@@ -400,11 +401,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _selectStudent(Student s) {
     setState(() {
       _selected = s;
-      _scoreCtrl.text = s.score != null ? AppTheme.formatScore(s.score!) : '';
-      _rewayaScoreCtrl.text = s.rewayaScore != null ? AppTheme.formatScore(s.rewayaScore!) : '';
-      _tajweedScoreCtrl.text = s.tajweedScore != null ? AppTheme.formatScore(s.tajweedScore!) : '';
-      _voiceScoreCtrl.text = s.voiceScore != null ? AppTheme.formatScore(s.voiceScore!) : '';
-      _meaningScoreCtrl.text = s.meaningScore != null ? AppTheme.formatScore(s.meaningScore!) : '';
+      _scoreCtrl.setText(s.score != null ? AppTheme.formatScore(s.score!) : '');
+      _rewayaScoreCtrl.setText(s.rewayaScore != null ? AppTheme.formatScore(s.rewayaScore!) : '');
+      _tajweedScoreCtrl.setText(s.tajweedScore != null ? AppTheme.formatScore(s.tajweedScore!) : '');
+      _voiceScoreCtrl.setText(s.voiceScore != null ? AppTheme.formatScore(s.voiceScore!) : '');
+      _meaningScoreCtrl.setText(s.meaningScore != null ? AppTheme.formatScore(s.meaningScore!) : '');
       _showEditPanel = false;
       _showAddPanel = false;
     });
@@ -940,18 +941,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _onEditStudent(Student s) {
     setState(() {
       _editingStudent = s;
-      _editNameCtrl.text = s.name;
-      _editPhoneCtrl.text = s.phone;
-      _editNationalIdCtrl.text = s.nationalId ?? '';
-      _editAgeCtrl.text = s.age.toString();
-      _editMemorizerNameCtrl.text = s.memorizerName ?? '';
-      _editMemorizerPhoneCtrl.text = s.memorizerPhone ?? '';
-      _editMemorizerAddressCtrl.text = s.memorizerAddress ?? '';
-      _editLocationCtrl.text = s.location ?? '';
+      _editNameCtrl.setText(s.name);
+      _editPhoneCtrl.setText(s.phone);
+      _editNationalIdCtrl.setText(s.nationalId ?? '');
+      _editAgeCtrl.setText(s.age.toString());
+      _editMemorizerNameCtrl.setText(s.memorizerName ?? '');
+      _editMemorizerPhoneCtrl.setText(s.memorizerPhone ?? '');
+      _editMemorizerAddressCtrl.setText(s.memorizerAddress ?? '');
+      _editLocationCtrl.setText(s.location ?? '');
       _editBirthDate = s.birthDate;
-      _editBirthDateCtrl.text = s.birthDate != null 
+      _editBirthDateCtrl.setText(s.birthDate != null 
           ? "${s.birthDate!.year}-${s.birthDate!.month.toString().padLeft(2, '0')}-${s.birthDate!.day.toString().padLeft(2, '0')}" 
-          : '';
+          : '');
       _editGender = s.gender ?? 'ذكر';
       _editSelectedLevel = s.level;
       _editSelectedRewaya = s.selectedRewaya;
@@ -1098,6 +1099,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _editPhoneCtrl.text.trim() == _editMemorizerPhoneCtrl.text.trim()) {
       AppTheme.showSnack(context, 'رقم هاتف الطالب / ولي الأمر يجب أن يكون مختلفاً عن رقم هاتف المحفظ', color: Colors.red);
       return;
+    }
+
+    // Validate selected level matches student age
+    final editAge = int.tryParse(_editAgeCtrl.text.trim());
+    if (editAge != null && _editSelectedLevel != null) {
+      final selLevel = CompetitionLevel.findByTitle(_levels, _editSelectedLevel);
+      if (selLevel != null && !selLevel.ageMatches(editAge)) {
+        AppTheme.showSnack(
+          context,
+          'العمر ($editAge سنة) غير مناسب لمستوى "${_editSelectedLevel}" — ${selLevel.ageDescription}',
+          color: Colors.red,
+        );
+        return;
+      }
     }
 
     setState(() => _isEditSaving = true);

@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/phone_utils.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../core/utils/validators.dart';
 import '../../../data/models/competition_level.dart';
@@ -550,12 +551,25 @@ class StudentTable extends StatelessWidget {
           student,
         ),
         _td(
-          Text(
-            student.phone,
-            style: const TextStyle(
-              fontFamily: 'Cairo',
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+          GestureDetector(
+            onTap: () => openWhatsApp(student.phone),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.phone_outlined, size: 14, color: Colors.green.shade700),
+                const SizedBox(width: 4),
+                Text(
+                  student.phone,
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.green.shade700,
+                    decoration: TextDecoration.underline,
+                    decorationColor: Colors.green.shade300,
+                  ),
+                ),
+              ],
             ),
           ),
           student,
