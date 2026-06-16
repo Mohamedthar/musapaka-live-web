@@ -6,6 +6,7 @@ class DashboardTopBar extends StatelessWidget {
   final VoidCallback onRefresh;
   final VoidCallback onExportExcel;
   final VoidCallback onExportPDF;
+  final VoidCallback? onOpenMap;
   final bool showAddPanel;
   final VoidCallback onToggleAddPanel;
   final Color primaryColor;
@@ -18,6 +19,7 @@ class DashboardTopBar extends StatelessWidget {
     required this.onRefresh,
     required this.onExportExcel,
     required this.onExportPDF,
+    this.onOpenMap,
     required this.showAddPanel,
     required this.onToggleAddPanel,
     required this.primaryColor,
@@ -58,6 +60,12 @@ class DashboardTopBar extends StatelessWidget {
               ),
             ]),
           ),
+          if (onOpenMap != null)
+            IconButton(
+                icon: const Icon(Icons.map_rounded, size: 20, color: Colors.blue),
+                onPressed: onOpenMap,
+                tooltip: 'خريطة أماكن التسجيل',
+                visualDensity: VisualDensity.compact),
           IconButton(
               icon: Icon(Icons.refresh_rounded, color: primaryColor),
               onPressed: onRefresh,

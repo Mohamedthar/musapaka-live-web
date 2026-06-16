@@ -28,6 +28,10 @@ class Student {
   final double? meaningScore;
   final String? branchName;
   final int? memorizationAmount;
+  final String? ipCity;
+  final String? ipRegion;
+  final double? ipLat;
+  final double? ipLng;
 
   Student({
     this.id,
@@ -59,6 +63,10 @@ class Student {
     this.meaningScore,
     this.branchName,
     this.memorizationAmount,
+    this.ipCity,
+    this.ipRegion,
+    this.ipLat,
+    this.ipLng,
   });
 
   factory Student.fromJson(Map<String, dynamic> json) {
@@ -94,6 +102,10 @@ class Student {
       meaningScore: (json['meaning_score'] as num?)?.toDouble(),
       branchName: json['branch_name'],
       memorizationAmount: json['memorization_amount'] as int?,
+      ipCity: json['ip_city'],
+      ipRegion: json['ip_region'],
+      ipLat: (json['ip_lat'] as num?)?.toDouble(),
+      ipLng: (json['ip_lng'] as num?)?.toDouble(),
     );
   }
 
@@ -126,6 +138,10 @@ class Student {
       if (meaningScore != null) 'meaning_score': meaningScore,
       if (branchName != null) 'branch_name': branchName,
       if (memorizationAmount != null) 'memorization_amount': memorizationAmount,
+      if (ipCity != null) 'ip_city': ipCity,
+      if (ipRegion != null) 'ip_region': ipRegion,
+      if (ipLat != null) 'ip_lat': ipLat,
+      if (ipLng != null) 'ip_lng': ipLng,
     };
   }
 

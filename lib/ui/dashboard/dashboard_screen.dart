@@ -17,6 +17,7 @@ import '../../core/utils/validators.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/utils/text_controller_ext.dart';
 import '../levels/levels_screen.dart';
+import 'widgets/registration_map_screen.dart';
 import '../auth/splash_screen.dart';
 import '../settings/settings_screen.dart';
 import '../statistics/statistics_screen.dart';
@@ -1358,6 +1359,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         onRefresh: _load,
         onExportExcel: () => _showExportDialog(isExcel: true),
         onExportPDF: () => _showExportDialog(isExcel: false),
+        onOpenMap: () => Navigator.push(context, MaterialPageRoute(
+          builder: (_) => RegistrationMapScreen(students: _students),
+        )),
         showAddPanel: _showAddPanel,
         onToggleAddPanel: _onToggleAddStudentPanel,
         primaryColor: _primary,

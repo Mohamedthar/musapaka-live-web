@@ -559,6 +559,9 @@ class ExportService {
       _ColDef('المستوى', 120, false, (s) => s.level),
       _ColDef('رقم الهاتف', 95, false, (s) => s.phone),
       _ColDef('اسم المحفظ', 130, false, (s) => s.memorizerName ?? '-'),
+      _ColDef('هاتف المحفظ', 95, false, (s) => s.memorizerPhone ?? '-'),
+      _ColDef('المدينة', 100, false, (s) => s.ipCity ?? '-'),
+      _ColDef('المنطقة', 100, false, (s) => s.ipRegion ?? '-'),
       _ColDef('العنوان', 150, false, (s) => s.location ?? '-'),
     ];
 
