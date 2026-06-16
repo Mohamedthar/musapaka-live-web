@@ -53,6 +53,7 @@ export default function Step4Review({
             onChange={v => setFormData((p) => ({ ...p, memorizerPhone: v }))}
             placeholder="01xxxxxxxxx"
             type="tel"
+            required
           />
           <Field
             label="عنوان المحفِّظ"

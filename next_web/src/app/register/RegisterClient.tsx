@@ -383,28 +383,17 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
       return res.secure_url as string;
     }
 
-    // Fallback: via server (with retry since Vercel cold starts can fail)
-    let lastError: Error | null = null;
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        const fd = new FormData();
-        fd.append('file', fileOrBlob);
-        const r = await fetch('/api/upload', {
-          method: 'POST',
-          body: fd,
-          signal: AbortSignal.timeout(30000),
-        });
-        const res = await r.json();
-        if (!r.ok) throw new Error(res.error || 'فشل في رفع الصورة');
-        return res.url as string;
-      } catch (e) {
-        lastError = e instanceof Error ? e : new Error('فشل رفع الصورة');
-        if (attempt < 1 && e instanceof TypeError) {
-          await new Promise(r => setTimeout(r, 1500));
-        }
-      }
-    }
-    throw lastError || new Error('فشل رفع الصورة');
+    // Fallback: via server (single attempt — no retry to avoid duplicate uploads)
+    const fd = new FormData();
+    fd.append('file', fileOrBlob);
+    const r = await fetch('/api/upload', {
+      method: 'POST',
+      body: fd,
+      signal: AbortSignal.timeout(30000),
+    });
+    const res = await r.json();
+    if (!r.ok) throw new Error(res.error || 'فشل في رفع الصورة');
+    return res.url as string;
   };
 
   const nextStep = () => {
@@ -513,8 +502,10 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
     }
 
     if (!formData.memorizerName.trim()) return toast.error('اسم المحفظ مطلوب');
+    if (!formData.memorizerPhone.trim()) return toast.error('رقم هاتف المحفظ مطلوب');
+    else if (!/^(010|011|012|015)\d{8}$/.test(formData.memorizerPhone.trim())) return toast.error('رقم هاتف المحفظ غير صحيح');
 
-    if (formData.phone.trim() && formData.memorizerPhone.trim() && formData.phone.trim() === formData.memorizerPhone.trim()) {
+    if (formData.phone.trim() && formData.phone.trim() === formData.memorizerPhone.trim()) {
       return toast.error('لا يمكن استخدام نفس رقم هاتف الطالب وولي الأمر');
     }
 
@@ -540,11 +531,16 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
           birthCertImage ? compressImage(birthCertImage) : Promise.resolve(null),
         ]);
 
+        const saveCache = () => {
+          try { localStorage.setItem('musapaka_uploaded_urls', JSON.stringify(cachedUploads.current)); } catch (_) {}
+        };
+
         if (!birthUrl) {
           if (!birthBlob) throw new Error('فشل تجهيز شهادة الميلاد');
           toast.loading('جاري رفع شهادة الميلاد...', { id: uploadToast });
           birthUrl = await uploadToCloudinary(birthBlob);
           cachedUploads.current.birthCertUrl = birthUrl;
+          saveCache();
         }
 
         if (!profileUrl) {
@@ -552,6 +548,7 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
           toast.loading('جاري رفع الصورة الشخصية...', { id: uploadToast });
           profileUrl = await uploadToCloudinary(profileBlob);
           cachedUploads.current.profileUrl = profileUrl;
+          saveCache();
         }
       }
 
