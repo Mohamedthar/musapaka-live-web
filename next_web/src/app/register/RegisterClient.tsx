@@ -995,7 +995,6 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
             getLevelContent={getLevelContent}
             examSlot={examSlot}
             profilePreview={cloudProfileUrl || profilePreview}
-            birthCertPreview={cloudBirthCertUrl || birthCertPreview}
             studentCode={studentCode}
             branchName={branchName}
             memorizationAmount={memorizationAmount}

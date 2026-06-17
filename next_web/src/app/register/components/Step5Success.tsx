@@ -25,7 +25,6 @@ interface Step5SuccessProps {
   getLevelContent: () => string;
   examSlot: string;
   profilePreview: string | null;
-  birthCertPreview: string | null;
   studentCode: string;
   branchName: string;
   memorizationAmount: number | null;
@@ -38,7 +37,6 @@ export default function Step5Success({
   getLevelContent,
   examSlot,
   profilePreview,
-  birthCertPreview,
   studentCode,
   branchName,
   onNewSearch
@@ -201,16 +199,6 @@ export default function Step5Success({
                     </div>
                   </div>
                 </div>
-
-                <div style={{ height: '24pt' }} />
-
-                {/* ── BIRTH CERTIFICATE ── */}
-                {birthCertPreview && (
-                  <div style={{ border: '1pt solid #e2e8f0', borderRadius: '10pt', padding: '10pt 12pt', backgroundColor: 'white', textAlign: 'center' }}>
-                    <p style={{ fontSize: '12pt', fontWeight: 700, color: '#0f172a', margin: '0 0 8pt 0', fontFamily: '"Cairo", sans-serif' }}>صورة شهادة الميلاد</p>
-                    <img src={birthCertPreview} alt="شهادة الميلاد" style={{ maxWidth: '100%', maxHeight: '300pt', borderRadius: '6pt', objectFit: 'contain' }} />
-                  </div>
-                )}
 
                 <div style={{ height: '24pt' }} />
 
