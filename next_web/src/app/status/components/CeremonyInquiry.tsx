@@ -99,25 +99,6 @@ export default function CeremonyInquiry() {
     return canvas;
   };
 
-  const handleDownloadImage = async () => {
-    setIsCapturing(true);
-    const toastId = toast.loading('جاري تجهيز البطاقة...');
-    try {
-      const canvas = await captureTicket();
-      if (!canvas) { toast.error('البطاقة غير موجودة', { id: toastId }); return; }
-      const filename = `بطاقة_حفل_${data?.name?.replace(/\s+/g, '_') ?? 'طالب'}.jpg`;
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-      const link = document.createElement('a');
-      link.href = dataUrl;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success('تم تحميل الملف', { id: toastId, duration: 4000 });
-    } catch { toast.error('فشل تحميل الصورة', { id: toastId }); }
-    finally { setIsCapturing(false); }
-  };
-
   const handleDownloadPdf = async () => {
     setIsCapturing(true);
     const toastId = toast.loading('جاري تجهيز ملف PDF...');
@@ -236,17 +217,13 @@ export default function CeremonyInquiry() {
                   <div className="absolute -top-1 -right-1 text-lg" style={{ filter: 'drop-shadow(0 1pt 1pt rgba(0,0,0,0.15))' }}>🎊</div>
                 </div>
                 <h2 className="text-xl font-black text-slate-800 mb-1">مبروك! أنت مؤهل للحضور</h2>
-                <p className="text-sm font-bold text-slate-500 leading-relaxed">يمكنك الآن تحميل بطاقة الدعوة كصورة أو طباعتها.</p>
+                <p className="text-sm font-bold text-slate-500 leading-relaxed">يمكنك الآن طباعة بطاقة الدعوة أو حفظها كملف PDF.</p>
               </div>
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 mb-6">
-            <button onClick={handleDownloadImage} disabled={isCapturing}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-800 hover:bg-slate-900 disabled:bg-slate-500 text-white text-sm font-bold active:scale-95 transition-all shadow-sm cursor-pointer">
-              <Download size={16} /> {isCapturing ? 'جاري...' : 'حفظ كصورة'}
-            </button>
             <button onClick={handleDownloadPdf} disabled={isCapturing}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-700 hover:bg-slate-800 disabled:bg-slate-500 text-white text-sm font-bold active:scale-95 transition-all shadow-sm cursor-pointer">
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/85 active:scale-95 transition-all shadow-sm cursor-pointer">
               <Download size={16} /> {isCapturing ? 'جاري...' : 'حفظ PDF'}
             </button>
           </div>
@@ -337,7 +314,7 @@ export default function CeremonyInquiry() {
         {/* Footer hint - only for eligible */}
         {isEligible && (
         <p className="text-center text-xs text-slate-400 mt-5 font-semibold print:hidden">
-          يرجى الاحتفاظ بالبطاقة كصورة أو طباعتها للدخول بها إلى الحفل
+          يرجى طباعة البطاقة أو حفظها كملف PDF للدخول بها إلى الحفل
         </p>
         )}
       </>

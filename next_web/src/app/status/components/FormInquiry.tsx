@@ -242,43 +242,6 @@ export default function FormInquiry() {
     }
   };
 
-  const handleDownloadImage = async () => {
-    setIsCapturing(true);
-    const toastId = toast.loading('جاري تجهيز الاستمارات...');
-    try {
-      const { receiptCanvas, evalCanvas } = await captureBoth();
-      if (!receiptCanvas) throw new Error('الاستمارة غير موجودة');
-
-      toast.loading('جاري تحميل استمارة البيانات...', { id: toastId });
-      const dataUrl = receiptCanvas.toDataURL('image/jpeg', 0.85);
-      const link = document.createElement('a');
-      link.href = dataUrl;
-      link.download = `استمارة_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.jpg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      if (evalCanvas) {
-        await new Promise(r => setTimeout(r, 800));
-        toast.loading('جاري تحميل استمارة التقييم...', { id: toastId });
-        const dataUrl2 = evalCanvas.toDataURL('image/jpeg', 0.85);
-        const link2 = document.createElement('a');
-        link2.href = dataUrl2;
-        link2.download = `استمارة_تقييم_${studentData?.name?.replace(/\s+/g, '_') || 'student'}.jpg`;
-        document.body.appendChild(link2);
-        link2.click();
-        document.body.removeChild(link2);
-      }
-
-      toast.success('تم تحميل الملفات', { id: toastId, duration: 4000 });
-    } catch (err) {
-      console.error(err);
-      toast.error('فشل تجهيز الاستمارة — حاول مرة أخرى', { id: toastId });
-    } finally {
-      setIsCapturing(false);
-    }
-  };
-
   const handlePrint = () => {
     window.print();
   };
@@ -393,19 +356,10 @@ export default function FormInquiry() {
           </h2>
           <p className="text-sm font-bold text-on-surface-variant text-center leading-relaxed mb-6">
             {studentData.level}<br />
-            يمكنك الآن تحميل استمارة التسجيل كصورة أو طباعتها أو حفظها كملف PDF.
+            يمكنك الآن طباعة الاستمارة أو حفظها كملف PDF.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 mb-6">
-            <button
-              onClick={handleDownloadImage}
-              disabled={isCapturing}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-secondary text-white text-sm font-bold hover:bg-secondary/85 active:scale-95 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            >
-              <Download size={16} />
-              <span>{isCapturing ? 'جاري...' : 'تحميل كصورة'}</span>
-            </button>
-
             <button
               onClick={handlePrint}
               disabled={isCapturing}

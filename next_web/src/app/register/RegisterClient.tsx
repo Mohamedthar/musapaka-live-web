@@ -774,52 +774,6 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
     }
   };
 
-  const downloadCanvas = (canvas: HTMLCanvasElement, filename: string) => {
-    return new Promise<void>((resolve, reject) => {
-      canvas.toBlob((blob) => {
-        if (!blob) { reject(new Error('فشل تحويل الصورة')); return; }
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        // Revoke after a delay to allow download to start
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
-        resolve();
-      }, 'image/jpeg', 0.85);
-    });
-  };
-
-  const handleDownloadImage = async () => {
-    setIsCapturing(true);
-    const toastId = toast.loading('جاري تجهيز استمارة البيانات...');
-    try {
-      const receiptCanvas = await captureElement('receipt');
-      if (!receiptCanvas) throw new Error('الاستمارة غير موجودة');
-
-      toast.loading('جاري تحميل استمارة البيانات...', { id: toastId });
-      await downloadCanvas(receiptCanvas, `استمارة_${formData.name.replace(/\s+/g, '_')}.jpg`);
-
-      const evalCanvas = await captureElement('evaluation-form');
-      if (evalCanvas) {
-        await new Promise(r => setTimeout(r, 800));
-        await downloadCanvas(evalCanvas, `استمارة_تقييم_${formData.name.replace(/\s+/g, '_')}.jpg`);
-      } else {
-        toast.error('تعذر تجهيز استمارة التقييم — يرجى المحاولة مرة أخرى', { id: toastId, duration: 5000 });
-        return;
-      }
-
-      toast.success('تم تحميل الملف', { id: toastId, duration: 4000 });
-    } catch (err) {
-      console.error(err);
-      toast.error('فشل تجهيز الاستمارة — حاول مرة أخرى', { id: toastId });
-    } finally {
-      setIsCapturing(false);
-    }
-  };
-
   const handlePrint = () => {
     window.print();
   };
@@ -935,15 +889,6 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 mb-6">
-                <button
-                  onClick={handleDownloadImage}
-                  disabled={isCapturing}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-secondary text-white text-sm font-bold hover:bg-secondary/85 active:scale-95 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  <Download size={16} />
-                  <span>{isCapturing ? 'جاري...' : 'تحميل كصورة'}</span>
-                </button>
-
                 <button
                   onClick={handlePrint}
                   disabled={isCapturing}

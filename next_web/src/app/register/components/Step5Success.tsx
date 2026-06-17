@@ -48,82 +48,6 @@ export default function Step5Success({
   const scaleRef = useRef(1);
   const receiptHeightRef = useRef(0);
   const evalHeightRef = useRef(0);
-  const [isDownloading, setIsDownloading] = useState(false);
-
-  const downloadAsImages = async () => {
-    setIsDownloading(true);
-    const toastId = toast.loading('جاري تجهيز الاستمارات...');
-    try {
-      const html2canvas = (await import('html2canvas-pro')).default;
-      
-      const captureElement = async (id: string): Promise<HTMLCanvasElement | null> => {
-        const el = document.getElementById(id);
-        if (!el) return null;
-        
-        const canvas = await html2canvas(el, {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: '#ffffff',
-          logging: false,
-          windowWidth: 850,
-          windowHeight: el.scrollHeight + 150,
-          onclone: (clonedDoc) => {
-            const clonedEl = clonedDoc.getElementById(id);
-            if (clonedEl) {
-              clonedEl.style.transform = 'none';
-              clonedEl.style.transformOrigin = 'top center';
-              clonedEl.style.width = '800px';
-              clonedEl.style.height = 'auto';
-              const clonedParent = clonedEl.parentElement;
-              if (clonedParent) {
-                clonedParent.style.height = 'auto';
-                clonedParent.style.overflow = 'visible';
-                clonedParent.style.transform = 'none';
-              }
-            }
-          }
-        });
-        return canvas;
-      };
-
-      const downloadImage = (canvas: HTMLCanvasElement, filename: string): string => {
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        const link = document.createElement('a');
-        link.href = dataUrl;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        return dataUrl;
-      };
-
-      toast.loading('جاري تجهيز استمارة البيانات...', { id: toastId });
-      const receiptCanvas = await captureElement('receipt');
-      if (!receiptCanvas) throw new Error('الاستمارة غير موجودة');
-      const receiptFilename = `استمارة_بيانات_${formData.name.replace(/\s+/g, '_')}.jpg`;
-      const receiptUrl = downloadImage(receiptCanvas, receiptFilename);
-      
-      let evalUrl: string | null = null;
-      let evalFilename = '';
-      const evalFormEl = document.getElementById('evaluation-form');
-      if (evalFormEl) {
-        toast.loading('جاري تجهيز استمارة التقييم...', { id: toastId });
-        await new Promise(r => setTimeout(r, 500));
-        const evalCanvas = await captureElement('evaluation-form');
-        if (evalCanvas) {
-          evalFilename = `استمارة_تقييم_${formData.name.replace(/\s+/g, '_')}.jpg`;
-          evalUrl = downloadImage(evalCanvas, evalFilename);
-        }
-      }
-
-      toast.success('تم تحميل الملف', { id: toastId, duration: 4000 });
-    } catch (err) {
-      console.error(err);
-      toast.error('فشل تحميل الصور، يرجى المحاولة مرة أخرى.', { id: toastId });
-    } finally {
-      setIsDownloading(false);
-    }
-  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -218,16 +142,6 @@ export default function Step5Success({
           
           {/* Action buttons group */}
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            <button 
-              onClick={downloadAsImages} 
-              disabled={isDownloading}
-              title="حفظ كصور"
-              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-900 disabled:bg-slate-500 text-white font-bold text-xs sm:text-sm py-2.5 px-4 rounded-xl shadow-sm hover:shadow active:scale-95 transition-all cursor-pointer whitespace-nowrap"
-            >
-              <Download size={15} className={isDownloading ? 'animate-spin' : ''} />
-              <span>{isDownloading ? 'جاري الحفظ...' : 'حفظ كصور'}</span>
-            </button>
-
             <button 
               onClick={() => window.print()} 
               title="طباعة الاستمارة"
