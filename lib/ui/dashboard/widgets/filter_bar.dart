@@ -801,8 +801,8 @@ class _CustomDateRangePickerState extends State<_CustomDateRangePicker> {
   }
 
   void _confirm() {
-    final start = widget.initialStart ?? _startDate;
-    final end = widget.initialEnd ?? _endDate;
+    final start = _startDate;
+    final end = _endDate;
     Navigator.pop(context, DateTimeRange(start: start, end: end));
   }
 

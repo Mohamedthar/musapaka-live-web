@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/phone_utils.dart';
@@ -26,6 +27,7 @@ class StudentTable extends StatelessWidget {
   final Function(Student) onPrint;
   final Function(Student) onDelete;
   final Function(Student, double)? onAddScore;
+  final Function(Student) onToggleCleared;
   final ScreenType? screenType;
 
   const StudentTable({
@@ -46,6 +48,7 @@ class StudentTable extends StatelessWidget {
     required this.onPrint,
     required this.onDelete,
     required this.onAddScore,
+    required this.onToggleCleared,
     this.screenType,
   });
 
@@ -67,7 +70,8 @@ class StudentTable extends StatelessWidget {
             4: FlexColumnWidth(2.2),
             5: FlexColumnWidth(0.8),
             6: FlexColumnWidth(1.4),
-            7: FixedColumnWidth(50),
+            7: FixedColumnWidth(55),
+            8: FixedColumnWidth(50),
           },
           children: [
             TableRow(
@@ -80,10 +84,11 @@ class StudentTable extends StatelessWidget {
                 _thSortable('المستوى', 3),
                 _thSortable('العمر', 4, alignment: Alignment.center),
                 _thSortable('الدرجة', 5, alignment: Alignment.center),
+                _thCleared(),
                 _th(''),
               ],
             ),
-            ...students.map(_tableRow),
+            ...students.map((s) => _tableRow(ctx, s)),
           ],
         );
 
@@ -153,7 +158,9 @@ class StudentTable extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _actionsMenu(student),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 4),
+                      _clearedIcon(student),
+                      const SizedBox(width: 4),
                       Expanded(child: _mobileHeader(student, isSelected)),
                     ],
                   ),
@@ -428,7 +435,19 @@ class StudentTable extends StatelessWidget {
     );
   }
 
-  TableRow _tableRow(Student student) {
+  Widget _thCleared() => const TableCell(
+        child: Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 4, vertical: 14),
+            child: Tooltip(
+              message: 'متابعة',
+              child: Icon(Icons.fact_check_outlined, size: 18, color: Colors.white70),
+            ),
+          ),
+        ),
+      );
+
+  TableRow _tableRow(BuildContext context, Student student) {
     final isSelected = selectedIds.contains(student.id);
     return TableRow(
       decoration: BoxDecoration(
@@ -569,6 +588,16 @@ class StudentTable extends StatelessWidget {
                     decorationColor: Colors.green.shade300,
                   ),
                 ),
+                const SizedBox(width: 6),
+                GestureDetector(
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: student.phone));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('تم النسخ', style: TextStyle(fontFamily: 'Cairo')), duration: Duration(seconds: 1), behavior: SnackBarBehavior.floating, width: 120),
+                    );
+                  },
+                  child: const Icon(Icons.copy_rounded, size: 13, color: Colors.grey),
+                ),
               ],
             ),
           ),
@@ -652,6 +681,7 @@ class StudentTable extends StatelessWidget {
             child: Center(child: _scoreWidget(student)),
           ),
         ),
+        _tdCleared(student),
         _td(_actionsMenu(student)),
       ],
     );
@@ -666,6 +696,27 @@ class StudentTable extends StatelessWidget {
             child: child,
           ),
         ),
+      );
+
+  Widget _clearedIcon(Student student) => Tooltip(
+        message: student.isCleared ? 'تمت المتابعة - لا توجد مشاكل' : 'متابعة - اضغط للتأكيد',
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => onToggleCleared(student),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Icon(
+              student.isCleared ? Icons.check_circle : Icons.check_circle_outline,
+              size: 24,
+              color: student.isCleared ? Colors.green.shade600 : Colors.grey.shade400,
+            ),
+          ),
+        ),
+      );
+
+  Widget _tdCleared(Student student) => TableCell(
+        verticalAlignment: TableCellVerticalAlignment.middle,
+        child: Center(child: _clearedIcon(student)),
       );
 
   Widget _actionsMenu(Student student) {

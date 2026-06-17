@@ -319,7 +319,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                          (_maxAgeFilter == null || s.age <= _maxAgeFilter!);
       final matchesScore = (_minScoreFilter == null || (s.score ?? 0) >= _minScoreFilter!) &&
                            (_maxScoreFilter == null || (s.score ?? 0) <= _maxScoreFilter!);
-      final matchesSearch = s.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+      final matchesSearch = _searchQuery.isEmpty ||
+          s.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           (s.phone.contains(_searchQuery)) ||
           (s.nationalId?.contains(_searchQuery) ?? false) ||
           (s.memorizerName?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false) ||
@@ -1407,7 +1408,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         onMinScoreChanged: (val) => setState(() => _minScoreFilter = val),
                         onMaxScoreChanged: (val) => setState(() => _maxScoreFilter = val),
                         searchController: _searchCtrl,
-                        onSearchChanged: (val) => setState(() => _searchQuery = val),
+                        onSearchChanged: (val) => setState(() { _searchQuery = val.trim(); _resetPagination(); }),
                         selectedIdsCount: _selectedIds.length,
                         onBulkDelete: _bulkDeleteSelected,
                         onBulkPrint: _bulkPrintSelected,
@@ -1482,6 +1483,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   } catch (e) {
                                     if (!context.mounted) return;
                                     AppTheme.showSnack(context, 'خطأ في حفظ الدرجة', color: AppTheme.errorColor);
+                                  }
+                                },
+                                onToggleCleared: (s) async {
+                                  if (s.id == null) return;
+                                  final newValue = !s.isCleared;
+                                  try {
+                                    await _service.toggleCleared(s.id!, newValue);
+                                    setState(() {
+                                      final i = _students.indexWhere((st) => st.id == s.id);
+                                      if (i != -1) _students[i] = _students[i].copyWith(isCleared: newValue);
+                                      if (_selected?.id == s.id) _selected = _selected!.copyWith(isCleared: newValue);
+                                    });
+                                  } catch (e) {
+                                    if (!context.mounted) return;
+                                    AppTheme.showSnack(context, 'خطأ في تحديث حالة المتابعة', color: AppTheme.errorColor);
                                   }
                                 },
                                 screenType: screenType,
