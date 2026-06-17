@@ -20,7 +20,13 @@ const MAGIC_BYTES: Record<string, number[][]> = {
   'image/heif': [[0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x68, 0x65, 0x69, 0x63]],
 };
 
+const ALLOWED_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif']);
+
 async function validateMagicBytes(file: File): Promise<boolean> {
+  // HEIC/HEIF — skip magic bytes check, Cloudinary handles them
+  const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+  if (ext === '.heic' || ext === '.heif') return true;
+
   const buffer = await file.arrayBuffer();
   const bytes = new Uint8Array(buffer);
   const signatures = MAGIC_BYTES[file.type] || MAGIC_BYTES['image/jpeg'];
@@ -59,8 +65,9 @@ export async function POST(request: Request) {
       return jsonResponse({ error: 'حجم الملف كبير جداً (الحد الأقصى 5 ميجابايت)' }, 400, origin);
     }
 
-    if (!ALLOWED_TYPES.has(file.type)) {
-      return jsonResponse({ error: 'نوع الملف غير مدعوم. الأنواع المدعومة: JPEG, PNG, WebP' }, 400, origin);
+    const fileExt = '.' + file.name.split('.').pop()?.toLowerCase();
+    if (!ALLOWED_TYPES.has(file.type) && !ALLOWED_EXTENSIONS.has(fileExt)) {
+      return jsonResponse({ error: 'نوع الملف غير مدعوم. الأنواع المدعومة: JPEG, PNG, WebP, HEIC' }, 400, origin);
     }
 
     const validBytes = await validateMagicBytes(file);

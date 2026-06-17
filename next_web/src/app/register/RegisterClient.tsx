@@ -286,7 +286,10 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
     const file = e.target.files?.[0]; if (!file) return;
 
     const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif'];
+    const fileExt = '.' + file.name.split('.').pop()?.toLowerCase();
+    const isAllowed = ALLOWED_TYPES.includes(file.type) || allowedExtensions.includes(fileExt);
+    if (!isAllowed) {
       toast.error('صيغة الملف غير مدعومة. الصيغ المدعومة: JPEG, PNG, WebP, HEIC');
       e.target.value = '';
       return;

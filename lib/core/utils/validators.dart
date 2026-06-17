@@ -104,7 +104,7 @@ class Validator {
 
   static bool isValidImageType(String fileName) {
     final extension = fileName.split('.').last.toLowerCase();
-    return extension == 'jpg' || extension == 'jpeg' || extension == 'png';
+    return extension == 'jpg' || extension == 'jpeg' || extension == 'png' || extension == 'webp' || extension == 'heic' || extension == 'heif';
   }
 
   static bool isValidImageUrl(String? url) {
