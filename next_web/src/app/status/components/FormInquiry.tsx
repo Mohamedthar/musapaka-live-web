@@ -66,6 +66,104 @@ export default function FormInquiry() {
     setNationalId('');
   };
 
+  const captureBoth = async (): Promise<{ receiptCanvas: HTMLCanvasElement | null; evalCanvas: HTMLCanvasElement | null }> => {
+    const receiptEl = document.getElementById('receipt');
+    const evalEl = document.getElementById('evaluation-form');
+
+    const parent = (receiptEl || evalEl)?.closest('.hidden.print\\:block') as HTMLElement | null;
+    const wasHidden = parent ? parent.classList.contains('hidden') : false;
+
+    if (wasHidden && parent) {
+      parent.classList.remove('hidden');
+      parent.style.position = 'absolute';
+      parent.style.left = '-9999px';
+      parent.style.top = '0';
+      parent.style.width = '800px';
+      parent.style.visibility = 'visible';
+      parent.style.zIndex = '-1';
+      parent.style.display = 'block';
+    }
+
+    [receiptEl, evalEl].forEach(el => {
+      if (el) { el.style.display = 'block'; el.style.visibility = 'visible'; }
+    });
+
+    await new Promise(r => setTimeout(r, 200));
+
+    const html2canvas = (await import('html2canvas-pro')).default;
+
+    const makeOnclone = (id: string) => (clonedDoc: Document) => {
+      const clonedEl = clonedDoc.getElementById(id);
+      if (!clonedEl) return;
+      clonedEl.style.display = 'block';
+      clonedEl.style.visibility = 'visible';
+      clonedEl.style.width = '800px';
+      clonedEl.style.height = 'auto';
+      clonedEl.style.maxHeight = 'none';
+      clonedEl.style.overflow = 'visible';
+      let p: HTMLElement | null = clonedEl.parentElement;
+      while (p && p !== clonedDoc.body) {
+        p.style.display = 'block';
+        p.style.visibility = 'visible';
+        p.style.width = '800px';
+        p.style.height = 'auto';
+        p.style.maxHeight = 'none';
+        p.style.overflow = 'visible';
+        p.style.position = 'static';
+        p.style.left = 'auto';
+        p.style.top = 'auto';
+        p.style.zIndex = 'auto';
+        p = p.parentElement;
+      }
+    };
+
+    let receiptCanvas: HTMLCanvasElement | null = null;
+    let evalCanvas: HTMLCanvasElement | null = null;
+
+    try {
+      if (receiptEl) {
+        receiptCanvas = await html2canvas(receiptEl, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          logging: false,
+          windowWidth: 850,
+          windowHeight: Math.min(receiptEl.scrollHeight + 200, 6000),
+          onclone: makeOnclone('receipt'),
+        });
+      }
+
+      if (evalEl) {
+        evalCanvas = await html2canvas(evalEl, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          logging: false,
+          windowWidth: 850,
+          windowHeight: Math.min(evalEl.scrollHeight + 200, 6000),
+          onclone: makeOnclone('evaluation-form'),
+        });
+      }
+    } finally {
+      [receiptEl, evalEl].forEach(el => {
+        if (el) { el.style.display = ''; el.style.visibility = ''; }
+      });
+
+      if (wasHidden && parent) {
+        parent.classList.add('hidden');
+        parent.style.position = '';
+        parent.style.left = '';
+        parent.style.top = '';
+        parent.style.width = '';
+        parent.style.visibility = '';
+        parent.style.zIndex = '';
+        parent.style.display = '';
+      }
+    }
+
+    return { receiptCanvas, evalCanvas };
+  };
+
   const captureElement = async (id: string): Promise<HTMLCanvasElement | null> => {
     const el = document.getElementById(id);
     if (!el) return null;
@@ -146,12 +244,12 @@ export default function FormInquiry() {
 
   const handleDownloadImage = async () => {
     setIsCapturing(true);
-    const toastId = toast.loading('جاري تجهيز استمارة البيانات...');
+    const toastId = toast.loading('جاري تجهيز الاستمارات...');
     try {
-      const receiptCanvas = await captureElement('receipt');
+      const { receiptCanvas, evalCanvas } = await captureBoth();
       if (!receiptCanvas) throw new Error('الاستمارة غير موجودة');
 
-      toast.loading('جاري تحميل الاستمارة...', { id: toastId });
+      toast.loading('جاري تحميل استمارة البيانات...', { id: toastId });
       const dataUrl = receiptCanvas.toDataURL('image/jpeg', 0.85);
       const link = document.createElement('a');
       link.href = dataUrl;
@@ -160,9 +258,9 @@ export default function FormInquiry() {
       link.click();
       document.body.removeChild(link);
 
-      const evalCanvas = await captureElement('evaluation-form');
       if (evalCanvas) {
-        await new Promise(r => setTimeout(r, 500));
+        await new Promise(r => setTimeout(r, 800));
+        toast.loading('جاري تحميل استمارة التقييم...', { id: toastId });
         const dataUrl2 = evalCanvas.toDataURL('image/jpeg', 0.85);
         const link2 = document.createElement('a');
         link2.href = dataUrl2;
@@ -172,7 +270,7 @@ export default function FormInquiry() {
         document.body.removeChild(link2);
       }
 
-      toast.success('تم تحميل الملف', { id: toastId, duration: 4000 });
+      toast.success('تم تحميل الملفات', { id: toastId, duration: 4000 });
     } catch (err) {
       console.error(err);
       toast.error('فشل تجهيز الاستمارة — حاول مرة أخرى', { id: toastId });
@@ -192,7 +290,7 @@ export default function FormInquiry() {
       const jsPdfModule = await import('jspdf');
       const jsPDF = jsPdfModule.default;
 
-      const receiptCanvas = await captureElement('receipt');
+      const { receiptCanvas, evalCanvas } = await captureBoth();
       if (!receiptCanvas) throw new Error('الاستمارة غير موجودة');
 
       const pdf = new jsPDF('p', 'mm', 'a4');
@@ -203,7 +301,6 @@ export default function FormInquiry() {
       const receiptData = receiptCanvas.toDataURL('image/jpeg', 0.92);
       pdf.addImage(receiptData, 'JPEG', 0, 0, pdfWidth, Math.min(receiptHeight, pdfHeight));
 
-      const evalCanvas = await captureElement('evaluation-form');
       if (evalCanvas) {
         const evalHeight = (evalCanvas.height * pdfWidth) / evalCanvas.width;
         const evalData = evalCanvas.toDataURL('image/jpeg', 0.92);
