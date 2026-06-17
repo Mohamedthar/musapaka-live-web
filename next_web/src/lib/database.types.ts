@@ -45,6 +45,7 @@ export interface StudentStatus {
   location?: string;
   student_code?: string;
   profile_image_url?: string;
+  birth_certificate_url?: string;
   exam_date?: string;
   exam_hour?: number;
   selected_rewaya?: string | null;

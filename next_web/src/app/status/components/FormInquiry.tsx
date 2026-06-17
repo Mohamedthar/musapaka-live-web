@@ -344,6 +344,7 @@ export default function FormInquiry() {
             <Step5Success
               formData={formData} levels={levels} getLevelContent={getLevelContent}
               examSlot={examSlot} profilePreview={studentData.profile_image_url || null}
+              birthCertPreview={studentData.birth_certificate_url || null}
               studentCode={studentData.student_code || ''}
               branchName={studentData.branch_name || ''}
               memorizationAmount={studentData.memorization_amount ?? null}

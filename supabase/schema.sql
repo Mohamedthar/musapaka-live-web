@@ -914,6 +914,7 @@ RETURNS TABLE (
     location          TEXT,
     birth_date        DATE,
     selected_rewaya   TEXT,
+    birth_certificate_url TEXT,
     level_code        CHAR(1)
 )
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
@@ -925,7 +926,7 @@ BEGIN
         s.exam_date, s.exam_hour, s.score, s.profile_image_url,
         s.age, s.gender, s.phone, s.national_id, s.memorizer_name,
         s.memorizer_phone, s.memorizer_address, s.location,
-        s.birth_date, s.selected_rewaya,
+        s.birth_date, s.selected_rewaya, s.birth_certificate_url,
         cl.level_code
     FROM students s
     LEFT JOIN competition_levels cl ON cl.id = s.level_id
