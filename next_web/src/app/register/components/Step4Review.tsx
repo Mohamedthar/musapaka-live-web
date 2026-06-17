@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { UserCircle, Phone, MapPin } from 'lucide-react';
 import { Turnstile } from '@marsidev/react-turnstile';
 import type { RegistrationFormData } from '@/lib/database.types';
@@ -26,6 +26,38 @@ export default function Step4Review({
   onTurnstileWidgetLoad,
 }: Step4ReviewProps) {
   const [turnstileError, setTurnstileError] = useState(false);
+  const turnstileWidgetId = useRef<string | null>(null);
+  const expiryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearExpiryTimer = () => {
+    if (expiryTimer.current) { clearTimeout(expiryTimer.current); expiryTimer.current = null; }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => () => clearExpiryTimer(), []);
+
+  const handleTokenSuccess = (token: string) => {
+    setTurnstileToken(token);
+    setTurnstileError(false);
+    clearExpiryTimer();
+    // تجديد تلقائي قبل ٦٠ ثانية من انتهاء الصلاحية (الصلاحية ٣٠٠ ثانية)
+    expiryTimer.current = setTimeout(() => {
+      const id = turnstileWidgetId.current;
+      if (id) {
+        try {
+          const ts = (window as unknown as { turnstile?: { reset: (id: string) => void; getResponse: (id: string) => string | undefined } }).turnstile;
+          if (ts) ts.reset(id);
+        } catch { /* ignore */ }
+      }
+      setTurnstileToken(null);
+      setTurnstileError(true);
+    }, 240_000); // 4 دقائق
+  };
+
+  const handleWidgetLoad = (widgetId: string) => {
+    turnstileWidgetId.current = widgetId;
+    onTurnstileWidgetLoad?.(widgetId);
+  };
 
   return (
     <div className="space-y-5">
@@ -90,10 +122,10 @@ export default function Step4Review({
             <Turnstile
               siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
               options={{ appearance: 'always' }}
-              onSuccess={(token) => { setTurnstileToken(token); setTurnstileError(false); }}
-              onExpire={() => { setTurnstileToken(null); setTurnstileError(true); }}
-              onError={() => { setTurnstileToken(null); setTurnstileError(true); }}
-              onWidgetLoad={onTurnstileWidgetLoad}
+              onSuccess={handleTokenSuccess}
+              onExpire={() => { clearExpiryTimer(); setTurnstileToken(null); setTurnstileError(true); }}
+              onError={() => { clearExpiryTimer(); setTurnstileToken(null); setTurnstileError(true); }}
+              onWidgetLoad={handleWidgetLoad}
             />
             {turnstileError && (
               <p className="text-amber-600 text-xs mt-2 font-semibold text-center">
