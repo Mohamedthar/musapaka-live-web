@@ -96,9 +96,13 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-8 border-t border-white/[0.04]" />
-        <div className="pt-5 flex justify-center">
+        <div className="pt-5 flex flex-col items-center gap-2">
           <p className="text-white/15 text-xs lg:text-sm font-bold tracking-widest">
             جميع الحقوق محفوظة &copy; {year} مسابقة أهل القرآن الكبرى
+          </p>
+          <p className="text-white/25 text-xs font-bold">
+            Developed by: Mohamed Tharwat Elashry —{' '}
+            <a href="tel:01023240169" className="hover:text-secondary-fixed transition-colors" dir="ltr">01023240169</a>
           </p>
         </div>
       </div>
