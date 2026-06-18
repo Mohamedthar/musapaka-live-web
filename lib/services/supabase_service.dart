@@ -7,7 +7,7 @@ import '../core/error/error_handler.dart';
 class SupabaseService {
   final SupabaseClient _client = Supabase.instance.client;
 
-  static const String _studentColumns = 'id, student_code, ceremony_code, name, phone, national_id, age, gender, level, level_id, selected_rewaya, branch_name, memorization_amount, memorizer_name, memorizer_phone, memorizer_address, location, birth_date, score, rewaya_score, tajweed_score, voice_score, meaning_score, profile_image_url, birth_certificate_url, exam_date, exam_hour, is_cleared, notes, created_at, updated_at';
+  static const String _studentColumns = 'id, student_code, ceremony_code, name, phone, national_id, age, gender, level, level_id, selected_rewaya, branch_name, memorization_amount, memorizer_name, memorizer_phone, memorizer_address, location, birth_date, score, rewaya_score, tajweed_score, voice_score, meaning_score, profile_image_url, birth_certificate_url, exam_date, exam_hour, follow_up_status, notes, created_at, updated_at';
 
   Future<List<Student>> getAllStudents({int? limit, int? offset}) async {
     try {
@@ -129,11 +129,11 @@ class SupabaseService {
     }
   }
 
-  Future<void> toggleCleared(int id, bool isCleared) async {
+  Future<void> toggleFollowUpStatus(int id, int status) async {
     try {
       await _client
           .from(AppConstants.tableName)
-          .update({'is_cleared': isCleared, 'updated_at': DateTime.now().toIso8601String()})
+          .update({'follow_up_status': status, 'updated_at': DateTime.now().toIso8601String()})
           .eq('id', id);
     } catch (e) {
       throw Exception('فشل في تحديث حالة المتابعة: ${AppErrorHandler.extractMessage(e)}');

@@ -698,21 +698,42 @@ class StudentTable extends StatelessWidget {
         ),
       );
 
-  Widget _clearedIcon(Student student) => Tooltip(
-        message: student.isCleared ? 'تمت المتابعة - لا توجد مشاكل' : 'متابعة - اضغط للتأكيد',
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () => onToggleCleared(student),
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Icon(
-              student.isCleared ? Icons.check_circle : Icons.check_circle_outline,
-              size: 24,
-              color: student.isCleared ? Colors.green.shade600 : Colors.grey.shade400,
-            ),
-          ),
+  Widget _clearedIcon(Student student) {
+    final status = student.followUpStatus;
+    IconData icon;
+    Color color;
+    String tooltip;
+
+    switch (status) {
+      case 1:
+        icon = Icons.send_rounded;
+        color = Colors.blue.shade500;
+        tooltip = 'تم إرسال رسالة - اضغط لتأكيد المتابعة';
+        break;
+      case 2:
+        icon = Icons.check_circle;
+        color = Colors.green.shade600;
+        tooltip = 'تمت المتابعة - لا توجد مشاكل';
+        break;
+      default:
+        icon = Icons.radio_button_unchecked;
+        color = Colors.grey.shade400;
+        tooltip = 'متابعة - اضغط للإرسال';
+        break;
+    }
+
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => onToggleCleared(student),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Icon(icon, size: 24, color: color),
         ),
-      );
+      ),
+    );
+  }
 
   Widget _tdCleared(Student student) => TableCell(
         verticalAlignment: TableCellVerticalAlignment.middle,

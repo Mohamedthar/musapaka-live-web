@@ -1487,13 +1487,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 },
                                 onToggleCleared: (s) async {
                                   if (s.id == null) return;
-                                  final newValue = !s.isCleared;
+                                  // Cycle: 0 → 1 → 2 → 0
+                                  final newValue = (s.followUpStatus + 1) % 3;
                                   try {
-                                    await _service.toggleCleared(s.id!, newValue);
+                                    await _service.toggleFollowUpStatus(s.id!, newValue);
                                     setState(() {
                                       final i = _students.indexWhere((st) => st.id == s.id);
-                                      if (i != -1) _students[i] = _students[i].copyWith(isCleared: newValue);
-                                      if (_selected?.id == s.id) _selected = _selected!.copyWith(isCleared: newValue);
+                                      if (i != -1) _students[i] = _students[i].copyWith(followUpStatus: newValue);
+                                      if (_selected?.id == s.id) _selected = _selected!.copyWith(followUpStatus: newValue);
                                     });
                                   } catch (e) {
                                     if (!context.mounted) return;

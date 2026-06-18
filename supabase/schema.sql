@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS students (
     exam_date           DATE,
     exam_hour           INTEGER,
     is_waitlisted       BOOLEAN DEFAULT false,
-    is_cleared          BOOLEAN DEFAULT false,
+    follow_up_status    SMALLINT DEFAULT 0,
     notes               TEXT,
     created_at          TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at          TIMESTAMP WITH TIME ZONE DEFAULT NOW()

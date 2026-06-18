@@ -21,7 +21,7 @@ class Student {
   final DateTime? examDate;
   final int? examHour;
   final bool isWaitlisted;
-  final bool isCleared;
+  final int followUpStatus; // 0=default, 1=message sent, 2=cleared
   final String? selectedRewaya;
   final double? rewayaScore;
   final double? tajweedScore;
@@ -53,7 +53,7 @@ class Student {
     this.examDate,
     this.examHour,
     this.isWaitlisted = false,
-    this.isCleared = false,
+    this.followUpStatus = 0,
     this.selectedRewaya,
     this.rewayaScore,
     this.tajweedScore,
@@ -89,7 +89,7 @@ class Student {
       examDate: json['exam_date'] != null ? DateTime.tryParse(json['exam_date']) : null,
       examHour: json['exam_hour'],
       isWaitlisted: json['is_waitlisted'] ?? false,
-      isCleared: json['is_cleared'] ?? false,
+      followUpStatus: json['follow_up_status'] ?? 0,
       selectedRewaya: json['selected_rewaya'],
       rewayaScore: (json['rewaya_score'] as num?)?.toDouble(),
       tajweedScore: (json['tajweed_score'] as num?)?.toDouble(),
@@ -122,7 +122,7 @@ class Student {
       if (examDate != null) 'exam_date': examDate!.toIso8601String().split('T')[0],
       if (examHour != null) 'exam_hour': examHour,
       'is_waitlisted': isWaitlisted,
-      'is_cleared': isCleared,
+      'follow_up_status': followUpStatus,
       if (selectedRewaya != null) 'selected_rewaya': selectedRewaya,
       if (rewayaScore != null) 'rewaya_score': rewayaScore,
       if (tajweedScore != null) 'tajweed_score': tajweedScore,
@@ -187,7 +187,7 @@ class Student {
     Object? examDate = _unset,
     Object? examHour = _unset,
     bool? isWaitlisted,
-    bool? isCleared,
+    int? followUpStatus,
     Object? selectedRewaya = _unset,
     Object? rewayaScore = _unset,
     Object? tajweedScore = _unset,
@@ -219,7 +219,7 @@ class Student {
       examDate: identical(examDate, _unset) ? this.examDate : examDate as DateTime?,
       examHour: identical(examHour, _unset) ? this.examHour : examHour as int?,
       isWaitlisted: isWaitlisted ?? this.isWaitlisted,
-      isCleared: isCleared ?? this.isCleared,
+      followUpStatus: followUpStatus ?? this.followUpStatus,
       selectedRewaya: identical(selectedRewaya, _unset) ? this.selectedRewaya : selectedRewaya as String?,
       rewayaScore: identical(rewayaScore, _unset) ? this.rewayaScore : rewayaScore as double?,
       tajweedScore: identical(tajweedScore, _unset) ? this.tajweedScore : tajweedScore as double?,
