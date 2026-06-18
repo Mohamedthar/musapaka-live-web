@@ -571,7 +571,11 @@ class StudentTable extends StatelessWidget {
         ),
         _td(
           GestureDetector(
-            onTap: () => openWhatsApp(student.phone),
+            onTap: () => openWhatsApp(student.phone, message:
+              'السلام عليكم ورحمة الله وبركاته\n'
+              'حضرتك سجلت باسم ${student.name} في مسابقة أهل القرآن الكبرى بالديدامون\n'
+              'هل فيه مشكلة واجهتك في التقديم؟\n'
+              'وهل نزلت الاستمارة على الهاتف أم حصلت مشكلة في تنزيلها؟'),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [

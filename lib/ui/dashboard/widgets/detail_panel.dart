@@ -232,7 +232,11 @@ class StudentDetailPanel extends StatelessWidget {
 
               // Card 2: التواصل والمحفظ
               _infoGroup('بيانات التواصل والمحفظ', Icons.contact_phone_rounded, [
-                _infoItem(Icons.phone_outlined, 'رقم هاتف الطالب / ولي الأمر', student.phone, onTap: () => openWhatsApp(student.phone)),
+                _infoItem(Icons.phone_outlined, 'رقم هاتف الطالب / ولي الأمر', student.phone, onTap: () => openWhatsApp(student.phone, message:
+                  'السلام عليكم ورحمة الله وبركاته\n'
+                  'حضرتك سجلت باسم ${student.name} في مسابقة أهل القرآن الكبرى بالديدامون\n'
+                  'هل فيه مشكلة واجهتك في التقديم؟\n'
+                  'وهل نزلت الاستمارة على الهاتف أم حصلت مشكلة في تنزيلها؟')),
                 if (student.memorizerName != null)
                   _infoItem(Icons.person_outline, 'اسم محفظ الطالب', student.memorizerName!),
                 if (student.memorizerPhone != null)

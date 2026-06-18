@@ -174,7 +174,11 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
             ),
             const Divider(),
             _buildInfoRow('العمر', '${_student.age} سنة'),
-            _buildInfoRow('هاتف ولي الأمر', _student.phone, onTap: () => openWhatsApp(_student.phone)),
+            _buildInfoRow('هاتف ولي الأمر', _student.phone, onTap: () => openWhatsApp(_student.phone, message:
+              'السلام عليكم ورحمة الله وبركاته\n'
+              'حضرتك سجلت باسم ${_student.name} في مسابقة أهل القرآن الكبرى بالديدامون\n'
+              'هل فيه مشكلة واجهتك في التقديم؟\n'
+              'وهل نزلت الاستمارة على الهاتف أم حصلت مشكلة في تنزيلها؟')),
             if (_student.gender != null)
               _buildInfoRow('النوع', _student.gender!),
             if (_student.nationalId != null)
