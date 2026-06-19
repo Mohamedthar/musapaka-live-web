@@ -341,7 +341,11 @@ ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Allow public insert to admins" ON admins;
 DROP POLICY IF EXISTS "Allow admin insert to admins" ON admins;
+DROP POLICY IF EXISTS "Allow first admin creation" ON admins;
 CREATE POLICY "Allow admin insert to admins" ON admins FOR INSERT WITH CHECK (is_admin());
+CREATE POLICY "Allow first admin creation" ON admins FOR INSERT WITH CHECK (
+    is_admin() OR NOT EXISTS (SELECT 1 FROM public.admins)
+);
 
 DROP POLICY IF EXISTS "Allow admin select from admins" ON admins;
 CREATE POLICY "Allow admin select from admins" ON admins FOR SELECT USING (is_admin());
@@ -756,6 +760,22 @@ END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public;
 
 GRANT EXECUTE ON FUNCTION is_admin() TO anon, authenticated;
+
+-- -------------------------------------------------------------------
+-- 7.1b التحقق من وجود مدير (يتجاوز RLS)
+-- -------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION has_admins()
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+    RETURN EXISTS (SELECT 1 FROM public.admins LIMIT 1);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION has_admins() TO anon, authenticated;
 
 -- -------------------------------------------------------------------
 -- 7.2 إحصائيات أساسية (بدون فلاتر)

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/error/error_handler.dart';
+import '../../core/utils/app_logger.dart';
 import 'admin_login_screen.dart';
 import 'create_admin_screen.dart';
 import '../dashboard/dashboard_screen.dart';
@@ -40,15 +42,12 @@ class _SplashScreenState extends State<SplashScreen> {
         return;
       }
 
-      // Check if any admin exists in the database
-      final response = await supabase
-          .from('admins')
-          .select('id')
-          .limit(1);
+      // Check if any admin exists using SECURITY DEFINER RPC (bypasses RLS)
+      final hasAdmins = await supabase.rpc('has_admins');
 
       if (!mounted) return;
 
-      if (response.isEmpty) {
+      if (hasAdmins == false || hasAdmins == null) {
         // No admin found, navigate to Create Admin
         Navigator.pushReplacement(
           context,
@@ -62,10 +61,26 @@ class _SplashScreenState extends State<SplashScreen> {
         );
       }
     } catch (e) {
+      AppLogger.error('فشل التحقق من حالة الأدمن', tag: 'splash', error: e);
       if (!mounted) return;
+
+      final classified = AppErrorHandler.classify(e, context: 'splash_init');
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذر الاتصال بالخادم. تحقق من اتصالك بالإنترنت وحاول مرة أخرى.')),
+        SnackBar(
+          content: Text(
+            classified.userMessage,
+            style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, color: Colors.white),
+            textAlign: TextAlign.right,
+          ),
+          backgroundColor: const Color(0xFFD32F2F),
+          behavior: SnackBarBehavior.floating,
+          width: 380,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          duration: const Duration(seconds: 5),
+        ),
       );
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const AdminLoginScreen()),

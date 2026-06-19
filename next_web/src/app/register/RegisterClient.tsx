@@ -15,6 +15,14 @@ const isFacebookBrowser = typeof navigator !== 'undefined' && (
   (typeof document !== 'undefined' && /l\.facebook\.com|lm\.facebook\.com|m\.facebook\.com/.test(document.referrer))
 );
 
+function isNetworkError(err: unknown): boolean {
+  if (err instanceof TypeError) {
+    const msg = err.message;
+    return /fetch|network|Network|Failed to fetch|Load failed|cors/i.test(msg);
+  }
+  return false;
+}
+
 // Subcomponents
 import Step1Personal from './components/Step1Personal';
 import Step2Level from './components/Step3Level';
@@ -32,6 +40,8 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [levels, setLevels] = useState<CompetitionLevel[]>([]);
+  const [levelsLoadFailed, setLevelsLoadFailed] = useState(false);
+  const [levelsLoadError, setLevelsLoadError] = useState('');
   const [success, setSuccess] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [registrationAllowed, setRegistrationAllowed] = useState(initialAllowed);
@@ -215,15 +225,24 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
 
         if (levelsJson.levels?.length) {
           setLevels(levelsJson.levels);
+          setLevelsLoadFailed(false);
+          setLevelsLoadError('');
           const preselected = searchParams.get('level');
           if (preselected && levelsJson.levels.some((l: { title: string }) => l.title === preselected)) {
             setFormData(p => ({ ...p, level: preselected }));
           } else {
             setFormData(p => ({ ...p, level: '', selectedRewaya: '' }));
           }
+        } else {
+          const apiError = levelsJson.error || 'الخادم لم يرجع أي مستويات';
+          console.error('[Levels API]', levelsJson);
+          setLevelsLoadFailed(true);
+          setLevelsLoadError(apiError);
         }
       } catch (err) {
         console.error("Error loading data:", err);
+        setLevelsLoadFailed(true);
+        setLevelsLoadError(err instanceof Error ? err.message : 'فشل الاتصال بالخادم');
       }
     };
     load();
@@ -538,12 +557,12 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
     setLoading(true);
     const uploadToast = toast.loading('جاري تجهيز بيانات التسجيل...');
 
-    try {
-      let profileUrl: string | null = cachedUploads.current.profileUrl ?? null;
-      let birthUrl: string | null = cachedUploads.current.birthCertUrl ?? null;
+    // --- Phase 1: Image upload with dedicated error handling ---
+    let profileUrl: string | null = cachedUploads.current.profileUrl ?? null;
+    let birthUrl: string | null = cachedUploads.current.birthCertUrl ?? null;
 
+    try {
       if (!profileUrl || !birthUrl) {
-        // أول محاولة: ضغط ورفع الصور
         const [profileBlob, birthBlob] = await Promise.all([
           profileImage ? compressImage(profileImage) : Promise.resolve(null),
           birthCertImage ? compressImage(birthCertImage) : Promise.resolve(null),
@@ -573,9 +592,34 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
       if (!birthUrl || !profileUrl) {
         throw new Error('فشل رفع الصور — يرجى المحاولة مرة أخرى');
       }
+    } catch (uploadErr: unknown) {
+      toast.dismiss(uploadToast);
+      setLoading(false);
+      console.error('[Upload phase]', uploadErr);
 
-      toast.loading('جاري إرسال بيانات التسجيل...', { id: uploadToast });
+      if (isNetworkError(uploadErr)) {
+        toast.error(
+          'فشل رفع الصور — تأكد من اتصالك بالإنترنت. بيانات النموذج محفوظة ويمكنك المحاولة مرة أخرى.',
+          { duration: 7000 }
+        );
+        return;
+      }
+      if (uploadErr instanceof DOMException && uploadErr.name === 'TimeoutError') {
+        toast.error(
+          'انتهت مهلة رفع الصور — قد يكون الإنترنت بطيئاً أو حجم الصورة كبيراً. لم تفقد بياناتك، حاول مرة أخرى.',
+          { duration: 6000 }
+        );
+        return;
+      }
+      const uploadMsg = uploadErr instanceof Error ? uploadErr.message : 'فشل رفع الصور';
+      toast.error(uploadMsg, { duration: 6000 });
+      return;
+    }
 
+    // --- Phase 2: Registration API call ---
+    toast.loading('جاري إرسال بيانات التسجيل...', { id: uploadToast });
+
+    try {
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -635,54 +679,32 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
     } catch (err: unknown) {
       toast.dismiss(uploadToast);
       resetTurnstile();
+      console.error('[Registration phase]', err);
 
-      // Upload timeout — الصور أو السيرفر أخدوا وقت طويل
       if (err instanceof DOMException && err.name === 'TimeoutError') {
         toast.error(
           'انتهت مهلة الاتصال — قد يكون الإنترنت بطيئاً. لم تفقد بياناتك، حاول مرة أخرى.',
           { duration: 6000 }
         );
-      }
-      // Network down — النت مفصول
-      else if (err instanceof TypeError && (err.message.includes('fetch') || err.message.includes('network') || err.message.includes('Network'))) {
+      } else if (isNetworkError(err)) {
         toast.error(
           'تعذر الاتصال بالخادم — تأكد من اتصالك بالإنترنت ثم حاول مرة أخرى.',
           { duration: 6000 }
         );
-      }
-      // Server returned an error with a message
-      else {
+      } else {
         const msg = err instanceof Error ? err.message : 'حدث خطأ غير متوقع';
 
-        // Duplicate name or national ID
         if (msg.includes('مسبقاً') || msg.includes('موجود')) {
           toast.error(msg, { duration: 6000 });
-        }
-        // Image upload failed
-        else if (msg.includes('فشل رفع') || msg.includes('فشل في رفع') || msg.includes('الصورة') || msg.includes('الصور')) {
-          toast.error(
-            'فشل رفع الصور — قد يكون الإنترنت بطيئاً أو حجم الصورة كبيراً جداً. لم تفقد بياناتك، حاول مجدداً.',
-            { duration: 7000 }
-          );
-        }
-        // Invalid memorizer phone
-        else if (msg.includes('المحفظ') || msg.includes('محفظ')) {
+        } else if (msg.includes('المحفظ') || msg.includes('محفظ')) {
           toast.error(msg, { duration: 5000 });
-        }
-        // Age mismatch
-        else if (msg.includes('العمر') || msg.includes('عمر')) {
+        } else if (msg.includes('العمر') || msg.includes('عمر')) {
           toast.error(msg, { duration: 5000 });
-        }
-        // Level capacity full
-        else if (msg.includes('ممتلئ')) {
+        } else if (msg.includes('ممتلئ')) {
           toast.error(msg, { duration: 5000 });
-        }
-        // Turnstile / security
-        else if (msg.includes('تحقق') || msg.includes('أمان')) {
+        } else if (msg.includes('تحقق') || msg.includes('أمان')) {
           toast.error(msg, { duration: 5000 });
-        }
-        // Generic fallback — show the server's message as-is
-        else {
+        } else {
           toast.error(msg, { duration: 6000 });
         }
       }
@@ -1263,6 +1285,8 @@ export default function RegisterClient({ initialAllowed, initialCapacityFull, re
                       fieldErrors={fieldErrors}
                       clearErr={clearErr}
                       levels={levels}
+                      levelsLoadFailed={levelsLoadFailed}
+                      levelsLoadError={levelsLoadError}
                       studentAge={extractedInfo.age}
                       levelCounts={levelCounts}
                       branchName={branchName}

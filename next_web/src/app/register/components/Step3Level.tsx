@@ -12,6 +12,8 @@ interface Step3LevelProps {
   fieldErrors: Record<string, string>;
   clearErr: (key: string) => void;
   levels: CompetitionLevel[];
+  levelsLoadFailed: boolean;
+  levelsLoadError: string;
   studentAge: number | null;
   levelCounts: Record<string, number>;
   branchName: string;
@@ -26,6 +28,7 @@ export default function Step3Level({
   fieldErrors,
   clearErr,
   levels,
+  levelsLoadFailed,
   studentAge,
   levelCounts,
   branchName,
@@ -135,13 +138,21 @@ export default function Step3Level({
           </select>
           <ChevronDown size={14} className="sm:size-[16px] absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-primary/30 pointer-events-none" />
         </div>
-        {filteredLevels.length === 0 && (
+        {levelsLoadFailed ? (
+          <p className="text-[11px] font-bold text-red-700 mt-2 mr-1">
+            فشل تحميل المستويات — تأكد من اتصالك بالإنترنت ثم حدث الصفحة.
+          </p>
+        ) : levels.length === 0 ? (
+          <p className="text-[11px] font-bold text-amber-700 mt-2 mr-1">
+            لا توجد مستويات متاحة حالياً للتسجيل. يرجى التواصل مع إدارة المسابقة.
+          </p>
+        ) : filteredLevels.length === 0 ? (
           <p className="text-[11px] font-bold text-amber-700 mt-2 mr-1">
             {studentAge === null || studentAge === 0
               ? 'يرجى إدخال تاريخ الميلاد أولاً'
               : 'لا توجد مستويات متاحة لعمرك الحالي'}
           </p>
-        )}
+        ) : null}
         {fieldErrors.level && <p className="text-[11px] font-bold text-amber-700 mt-1 mr-1">{fieldErrors.level}</p>}
       </div>
 

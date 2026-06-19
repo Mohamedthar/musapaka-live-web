@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/error/error_handler.dart';
 import '../../core/utils/app_logger.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../shared/widgets/hero_branding.dart';
@@ -54,7 +55,8 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       });
     } catch (e) {
       AppLogger.error('Login failed', tag: 'auth', error: e);
-      setState(() => _errorMessage = 'حدث خطأ غير متوقع. حاول مرة أخرى.');
+      final classified = AppErrorHandler.classify(e);
+      setState(() => _errorMessage = classified.userMessage);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
