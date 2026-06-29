@@ -11,6 +11,10 @@ class DashboardSidebar extends StatefulWidget {
   final VoidCallback onToggleCollapse;
   final String settingsSection;
   final Function(String) onSettingsSectionChanged;
+  final bool showSettings;
+  final bool showAdminSection;
+  final String adminName;
+  final String adminRoleLabel;
 
   const DashboardSidebar({
     super.key,
@@ -22,6 +26,10 @@ class DashboardSidebar extends StatefulWidget {
     required this.onToggleCollapse,
     required this.settingsSection,
     required this.onSettingsSectionChanged,
+    this.showSettings = true,
+    this.showAdminSection = true,
+    this.adminName = '',
+    this.adminRoleLabel = '',
   });
 
   @override
@@ -228,18 +236,19 @@ class _DashboardSidebarState extends State<DashboardSidebar>
                           ),
 
                           // ── Settings parent item ──────────────────────────
-                          _sideItem(
-                            Icons.settings_rounded,
-                            'إعدادات النظام',
-                            isSettings,
-                            showLabels: showLabels,
-                            onTap: () {
-                              widget.onViewChanged(DashboardView.settings);
-                            },
-                          ),
+                          if (widget.showSettings)
+                            _sideItem(
+                              Icons.settings_rounded,
+                              'إعدادات النظام',
+                              isSettings,
+                              showLabels: showLabels,
+                              onTap: () {
+                                widget.onViewChanged(DashboardView.settings);
+                              },
+                            ),
 
                           // ── Settings sub-items (only when in settings & expanded) ──
-                          if (isSettings && showLabels) ...[
+                          if (isSettings && showLabels && widget.showSettings) ...[
                             _subItem(
                               icon: Icons.calendar_today_rounded,
                               label: 'المواعيد وجدول الفترات',
@@ -252,6 +261,13 @@ class _DashboardSidebarState extends State<DashboardSidebar>
                               isActive: widget.settingsSection == 'backup',
                               onTap: () => widget.onSettingsSectionChanged('backup'),
                             ),
+                            if (widget.showAdminSection)
+                              _subItem(
+                                icon: Icons.admin_panel_settings_rounded,
+                                label: 'إدارة المسؤولين',
+                                isActive: widget.settingsSection == 'admins',
+                                onTap: () => widget.onSettingsSectionChanged('admins'),
+                              ),
                           ],
                         ],
                       ),
@@ -259,6 +275,64 @@ class _DashboardSidebarState extends State<DashboardSidebar>
                   ),
 
                   Divider(color: Colors.white.withValues(alpha: 0.08), height: 1),
+
+                  // ── Admin profile section ───────────────────────────
+                  if (showLabels && widget.adminName.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 36, height: 36,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Center(
+                              child: Text(
+                                widget.adminName.isNotEmpty ? widget.adminName[0] : '',
+                                style: const TextStyle(
+                                  fontFamily: 'Cairo',
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  widget.adminName,
+                                  style: const TextStyle(
+                                    fontFamily: 'Cairo',
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (widget.adminRoleLabel.isNotEmpty)
+                                  Text(
+                                    widget.adminRoleLabel,
+                                    style: TextStyle(
+                                      fontFamily: 'Cairo',
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.white.withValues(alpha: 0.55),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
                   const SizedBox(height: 4),
                   _sideItem(
                     Icons.logout_rounded,

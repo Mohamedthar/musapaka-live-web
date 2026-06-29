@@ -11,6 +11,7 @@ import '../../../core/utils/validators.dart';
 import '../../../core/utils/text_controller_ext.dart';
 import '../../../core/utils/app_logger.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../dashboard/widgets/slot_picker.dart';
 
 // دالة ضغط الصور في مسار منفصل لمنع تجميد الواجهة
 Uint8List _compressImage(Uint8List bytes) {
@@ -58,6 +59,7 @@ class _RegistrationFormContentState extends State<RegistrationFormContent> {
   bool _isLoading = false;
   List<CompetitionLevel> _levels = [];
   bool _isLoadingLevels = true;
+  SlotInfo? _selectedSlot; // موعد مختار يدوياً (null = تلقائي)
   Timer? _nameDebounce;
   bool _isDuplicateName = false;
   bool _isCheckingName = false;
@@ -318,6 +320,8 @@ class _RegistrationFormContentState extends State<RegistrationFormContent> {
         selectedRewaya: (_selectedLevelObj!.hasRewaya) ? _selectedRewaya : null,
         branchName: _selectedBranch,
         memorizationAmount: _memorizationAmount,
+        examDate: _selectedSlot?.date,
+        examHour: _selectedSlot?.hour,
       ));
 
       if (mounted) {
@@ -341,6 +345,7 @@ class _RegistrationFormContentState extends State<RegistrationFormContent> {
       _memorizationAmount = null;
       _gender = 'ذكر';
       _profileBytes = null; _birthCertBytes = null;
+      _selectedSlot = null;
     });
   }
 
@@ -558,6 +563,12 @@ class _RegistrationFormContentState extends State<RegistrationFormContent> {
                   ]),
                 ]),
 
+                // ── Section 5: موعد الاختبار (اختياري) ─────
+                _sectionHeader('موعد الاختبار (اختياري)', Icons.schedule_rounded),
+                _fieldGroup([
+                  _buildSlotPickerRow(),
+                ]),
+
                 const SizedBox(height: 24),
 
                 SizedBox(
@@ -667,6 +678,128 @@ class _RegistrationFormContentState extends State<RegistrationFormContent> {
     final age = int.tryParse(_ageCtrl.text);
     if (age == null || age <= 0) return [];
     return _levels.where((l) => l.ageMatches(age)).toList();
+  }
+
+  // ── Slot Picker Row ──────────────────────────────────────
+  Widget _buildSlotPickerRow() {
+    final hasSlot = _selectedSlot != null;
+
+    if (hasSlot) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Selected slot card — clean, matching field group style
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: _primary.withValues(alpha: 0.12)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 42, height: 42,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [_primary.withValues(alpha: 0.1), _primary.withValues(alpha: 0.04)],
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.check_circle_rounded, color: Color(0xFF03121C), size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('تم تحديد موعد',
+                          style: TextStyle(fontFamily: 'Cairo', fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF9CA3AF))),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${_selectedSlot!.hourLabel} — ${_formatSlotDate(_selectedSlot!.date)}',
+                        style: const TextStyle(fontFamily: 'Cairo', fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF03121C)),
+                      ),
+                    ],
+                  ),
+                ),
+                InkWell(
+                  onTap: () => setState(() => _selectedSlot = null),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    width: 32, height: 32,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Icon(Icons.close_rounded, size: 16, color: Colors.grey.shade500),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: _openSlotPicker,
+            icon: const Icon(Icons.swap_horiz_rounded, size: 15),
+            label: const Text('تغيير الموعد', style: TextStyle(fontFamily: 'Cairo', fontSize: 11.5, fontWeight: FontWeight.w700)),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: _primary,
+              side: BorderSide(color: _primary.withValues(alpha: 0.15)),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        OutlinedButton.icon(
+          onPressed: _openSlotPicker,
+          icon: Icon(Icons.schedule_rounded, size: 18, color: _primary.withValues(alpha: 0.7)),
+          label: const Text('اختيار موعد محدد للاختبار',
+              style: TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700)),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: _primary,
+            side: BorderSide(color: _primary.withValues(alpha: 0.15)),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'اتركه فارغاً ليتم تعيين أقرب موعد تلقائياً',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey.shade400),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _openSlotPicker() async {
+    final picked = await SlotPicker.show(
+      context,
+      primaryColor: _primary,
+      initialDate: _selectedSlot?.date,
+      initialHour: _selectedSlot?.hour,
+    );
+    if (picked != null && mounted) {
+      setState(() => _selectedSlot = picked);
+    }
+  }
+
+  String _formatSlotDate(DateTime d) {
+    const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+    const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+    return '${days[d.weekday % 7]} ${d.day} ${months[d.month - 1]}';
   }
 
   Widget _buildLevelDropdown() {

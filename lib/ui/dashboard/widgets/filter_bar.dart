@@ -242,7 +242,7 @@ class _SearchBar extends StatelessWidget {
         onChanged: onChanged,
         style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.primaryColor),
         decoration: InputDecoration(
-          hintText: 'بحث...',
+          hintText: 'بحث بالاسم، رقم الهاتف، رقم المحفظ...',
           hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13, fontWeight: FontWeight.normal),
           prefixIcon: Icon(Icons.search_rounded, size: 18, color: Colors.grey.shade400),
           border: InputBorder.none,

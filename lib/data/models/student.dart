@@ -158,6 +158,8 @@ class Student {
       'meaning_score': meaningScore,
       'branch_name': branchName,
       'memorization_amount': memorizationAmount,
+      'exam_date': examDate != null ? examDate!.toIso8601String().split('T')[0] : null,
+      'exam_hour': examHour,
     };
   }
 

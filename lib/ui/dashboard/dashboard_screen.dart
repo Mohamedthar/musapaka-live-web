@@ -8,6 +8,7 @@ import 'package:file_picker/file_picker.dart';
 
 import '../../data/models/student.dart';
 import '../../data/models/competition_level.dart';
+import '../../data/models/admin.dart';
 import '../../services/supabase_service.dart';
 import '../../services/cloudinary_service.dart';
 import '../../services/export_service.dart';
@@ -37,6 +38,7 @@ import 'widgets/resizable_panel.dart';
 
 import '../../core/utils/image_utils.dart';
 import '../../core/utils/app_logger.dart';
+import 'widgets/slot_picker.dart';
 
 final _compressForEdit = compressImage;
 
@@ -111,8 +113,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String? _editSelectedRewaya;
   String? _editBranchName;
   int? _editMemorizationAmount;
+  SlotInfo? _editSelectedSlot; // موعد مختار يدوياً عند التعديل
   DateTime? _editBirthDate;
   String _exportFolderPath = '';
+  bool _isViewer = false;
+  bool _isSuperAdmin = false;
+  String _adminName = '';
+  String _adminRoleLabel = '';
 
   @override
   void initState() { 
@@ -130,6 +137,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _editNameCtrl.addListener(_onEditNameChanged);
     _load();
     _loadExportFolder();
+    _loadAdminRole();
+  }
+
+  Future<void> _loadAdminRole() async {
+    try {
+      final admin = await _service.getCurrentAdmin();
+      if (mounted) {
+        setState(() {
+          _isViewer = admin?.isViewer ?? false;
+          _isSuperAdmin = admin?.isSuperAdmin ?? false;
+          _adminName = admin?.name ?? '';
+          _adminRoleLabel = admin?.roleLabel ?? '';
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadExportFolder() async {
@@ -324,6 +346,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           (s.phone.contains(_searchQuery)) ||
           (s.nationalId?.contains(_searchQuery) ?? false) ||
           (s.memorizerName?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false) ||
+          (s.memorizerPhone?.contains(_searchQuery) ?? false) ||
           (s.location?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
       final matchesStart = _dateFilterStart == null || (s.createdAt != null && s.createdAt!.isAfter(_dateFilterStart!.subtract(const Duration(seconds: 1))));
       final matchesEnd = _dateFilterEnd == null || (s.createdAt != null && s.createdAt!.isBefore(_dateFilterEnd!.add(const Duration(days: 1))));
@@ -959,6 +982,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _editSelectedRewaya = s.selectedRewaya;
       _editBranchName = s.branchName;
       _editMemorizationAmount = s.memorizationAmount;
+      _editSelectedSlot = null;
       _editProfileBytes = null;
       _editBirthCertBytes = null;
       _originalProfileBytes = null;
@@ -1038,6 +1062,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
            _editBranchName != s.branchName ||
            _editMemorizationAmount != s.memorizationAmount ||
            _editBirthDate != s.birthDate ||
+           _editSelectedSlot != null ||
            !listEquals(_editProfileBytes, _originalProfileBytes) ||
            !listEquals(_editBirthCertBytes, _originalBirthCertBytes);
   }
@@ -1148,6 +1173,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         memorizationAmount: _editMemorizationAmount,
         profileImageUrl: newProfileUrl,
         birthCertificateUrl: newBirthCertUrl,
+        examDate: _editSelectedSlot != null ? _editSelectedSlot!.date : _editingStudent!.examDate,
+        examHour: _editSelectedSlot != null ? _editSelectedSlot!.hour : _editingStudent!.examHour,
       ));
 
       setState(() {
@@ -1284,9 +1311,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _editingStudent = null;
           _editProfileBytes = null;
           _editBirthCertBytes = null;
+          _editSelectedSlot = null;
         });
       }
     });
+  }
+
+  Future<void> _openEditSlotPicker() async {
+    final picked = await SlotPicker.show(
+      context,
+      primaryColor: AppTheme.primaryColor,
+      initialDate: _editingStudent?.examDate,
+      initialHour: _editingStudent?.examHour,
+      excludeStudentId: _editingStudent?.id,
+    );
+    if (picked != null && mounted) {
+      setState(() => _editSelectedSlot = picked);
+    }
   }
 
   void _onToggleAddStudentPanel() {
@@ -1574,7 +1615,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 isNameDuplicate: _isEditNameDuplicate,
                 isIdChecking: _isEditIdChecking,
                 isIdDuplicate: _isEditIdDuplicate,
-                 
+                examDate: _editingStudent!.examDate,
+                examHour: _editingStudent!.examHour,
+                selectedSlot: _editSelectedSlot,
+                onSlotChanged: (slot) => setState(() => _editSelectedSlot = slot),
+                onOpenSlotPicker: _openEditSlotPicker,
                 onSave: _saveEdit,
                 onClose: () => _handleCloseEditPanel(onClose: () => setState(() { _showEditPanel = false; _editingStudent = null; })),
                 width: double.infinity,
@@ -1648,6 +1693,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 _settingsSection = section;
                 _currentView = DashboardView.settings;
               }),
+              showSettings: !_isViewer,
+              showAdminSection: _isSuperAdmin,
+              adminName: _adminName,
+              adminRoleLabel: _adminRoleLabel,
             ),
             Expanded(
               child: getActiveView(),
@@ -1688,13 +1737,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   isSelected: _currentView == DashboardView.levels,
                   onTap: () => setState(() => _currentView = DashboardView.levels),
                 ),
-                _buildNavItem(
-                  index: 3,
-                  icon: Icons.settings_rounded,
-                  label: 'الإعدادات',
-                  isSelected: _currentView == DashboardView.settings,
-                  onTap: () => setState(() => _currentView = DashboardView.settings),
-                ),
+                if (!_isViewer)
+                  _buildNavItem(
+                    index: 3,
+                    icon: Icons.settings_rounded,
+                    label: 'الإعدادات',
+                    isSelected: _currentView == DashboardView.settings,
+                    onTap: () => setState(() => _currentView = DashboardView.settings),
+                  ),
               ],
             ),
           )

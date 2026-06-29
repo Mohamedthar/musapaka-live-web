@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/error/error_handler.dart';
 import '../../core/utils/app_logger.dart';
 import '../../data/repositories/auth_repository.dart';
@@ -40,6 +41,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       final phone = _phoneController.text.trim();
       final password = _passwordController.text;
       await _authRepo.signInWithPhone(phone, password);
+
+      // حفظ إصدار المصادقة الحالي عشان ما يتطردش غلط
+      await _saveAuthVersion();
+
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const DashboardScreen()),
@@ -59,6 +64,19 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       setState(() => _errorMessage = classified.userMessage);
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _saveAuthVersion() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final version = await supabase.rpc('get_auth_version') as int?;
+      if (version != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('auth_version', version);
+      }
+    } catch (e) {
+      AppLogger.error('فشل حفظ إصدار المصادقة', tag: 'auth', error: e);
     }
   }
 

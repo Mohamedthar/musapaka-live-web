@@ -4,11 +4,13 @@ import 'package:intl/intl.dart' as intl;
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/responsive.dart';
 import '../../data/models/exam_schedule_slot.dart';
+import '../../data/models/admin.dart';
 import '../../services/supabase_service.dart';
 import '../../ui/dashboard/widgets/stats_cards.dart';
 import 'models/day_block.dart';
 import 'widgets/section_card.dart';
 import 'widgets/form_fields.dart';
+import 'widgets/admin_management.dart';
 import 'backup_tab.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -45,6 +47,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // FAQ state
   List<Map<String, dynamic>> _faqs = [];
 
+  // Admin management state
+  Admin? _currentAdmin;
+  bool _adminLoading = true;
+
   late String _activeSection;
 
   Color get _primary => widget.primaryColor ?? AppTheme.primaryColor;
@@ -75,13 +81,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _load() async {
     setState(() { _loading = true; });
     try {
-      final row = await _service.getSettings();
+      final results = await Future.wait([
+        _service.getSettings(),
+        _loadAdminInfo(),
+      ]);
+      final row = results[0] as Map<String, dynamic>?;
       if (!mounted) return;
       if (row != null) _apply(row);
     } catch (e) {
       if (mounted) AppTheme.showError(context, e, contextLabel: 'تحميل الإعدادات');
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _loadAdminInfo() async {
+    try {
+      final admin = await _service.getCurrentAdmin();
+      if (mounted) setState(() { _currentAdmin = admin; _adminLoading = false; });
+    } catch (e) {
+      if (mounted) setState(() => _adminLoading = false);
     }
   }
 
@@ -323,6 +342,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildBackupSection(),
           const SizedBox(height: 24),
           _buildFaqsSection(),
+        ]));
+      case 'admins':
+        return KeyedSubtree(key: const ValueKey('admins'), child: Column(children: [
+          _buildAdminsSection(),
         ]));
       default:
         return KeyedSubtree(key: const ValueKey('dates'), child: Column(children: [
@@ -839,6 +862,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: BackupTab(key: _backupKey, primary: _primary, onRestored: _load),
+      ),
+    );
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // Admins Section
+  // ────────────────────────────────────────────────────────────
+  Widget _buildAdminsSection() {
+    // Show loading spinner only for admin info, not settings
+    if (_adminLoading) {
+      return const SectionCard(
+        title: 'إدارة المسؤولين',
+        description: 'عرض وإدارة حسابات المسؤولين وصلاحياتهم',
+        icon: Icons.admin_panel_settings_rounded,
+        primaryColor: Color(0xFF03121C),
+        child: Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator())),
+      );
+    }
+
+    // If current admin is null or not a super_admin, redirect to dates section
+    if (_currentAdmin == null || !_currentAdmin!.isSuperAdmin) {
+      // Redirect away from admins section for non-super_admin
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _activeSection == 'admins') {
+          setState(() => _activeSection = 'dates');
+        }
+      });
+      return const SizedBox.shrink();
+    }
+
+    return SectionCard(
+      title: 'إدارة المسؤولين',
+      description: 'عرض وإدارة حسابات المسؤولين وصلاحياتهم',
+      icon: Icons.admin_panel_settings_rounded,
+      primaryColor: _primary,
+      child: AdminManagementWidget(
+        primaryColor: _primary,
+        currentAdmin: _currentAdmin!,
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/error/error_handler.dart';
 import '../../core/utils/app_logger.dart';
 import 'admin_login_screen.dart';
@@ -21,7 +22,6 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkAdminStatus() async {
-    // Start the check immediately, with a minimum 1s for splash animation
     final checkFuture = _performCheck();
     await Future.any([checkFuture, Future.delayed(const Duration(seconds: 1))]);
     await checkFuture;
@@ -30,10 +30,22 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _performCheck() async {
     try {
       final supabase = Supabase.instance.client;
-      
+
       // Check if user is already logged in
       final session = supabase.auth.currentSession;
       if (session != null) {
+        // ⚡ تحقق من إصدار المصادقة — لو المسؤول الأعلى طرد الكل، نسجل خروج
+        final shouldLogout = await _checkAuthVersion();
+        if (shouldLogout) {
+          await supabase.auth.signOut();
+          if (!mounted) return;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
+          );
+          return;
+        }
+
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
@@ -48,13 +60,11 @@ class _SplashScreenState extends State<SplashScreen> {
       if (!mounted) return;
 
       if (hasAdmins == false || hasAdmins == null) {
-        // No admin found, navigate to Create Admin
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const CreateAdminScreen()),
         );
       } else {
-        // Admin exists, navigate to Login
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
@@ -85,6 +95,34 @@ class _SplashScreenState extends State<SplashScreen> {
         context,
         MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
       );
+    }
+  }
+
+  /// يقارن إصدار المصادقة المحفوظ محلياً مع الموجود في قاعدة البيانات
+  /// لو مختلفين → معناها المسؤول الأعلى طرد الكل → يرجع true
+  Future<bool> _checkAuthVersion() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final prefs = await SharedPreferences.getInstance();
+      final localVersion = prefs.getInt('auth_version') ?? 0;
+
+      final remoteVersion = await supabase.rpc('get_auth_version') as int?;
+
+      if (remoteVersion != null && remoteVersion != localVersion) {
+        AppLogger.info('إصدار المصادقة تغير ($localVersion → $remoteVersion) — جاري تسجيل الخروج', tag: 'auth');
+        await prefs.setInt('auth_version', remoteVersion);
+        return true;
+      }
+
+      // تحديث الرقم المحلي لو كان صفر (أول تشغيل)
+      if (localVersion == 0 && remoteVersion != null) {
+        await prefs.setInt('auth_version', remoteVersion);
+      }
+
+      return false;
+    } catch (e) {
+      AppLogger.error('فشل التحقق من إصدار المصادقة', tag: 'auth', error: e);
+      return false;
     }
   }
 

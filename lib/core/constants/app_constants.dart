@@ -5,6 +5,8 @@ class AppConstants {
       EnvConfig.get('SUPABASE_URL');
   static String get supabaseAnonKey =>
       EnvConfig.get('SUPABASE_ANON_KEY');
+  static String get supabaseServiceRoleKey =>
+      EnvConfig.get('SUPABASE_SERVICE_ROLE_KEY');
   static String get cloudinaryCloudName =>
       EnvConfig.get('CLOUDINARY_CLOUD_NAME');
   static String get cloudinaryUploadPreset =>

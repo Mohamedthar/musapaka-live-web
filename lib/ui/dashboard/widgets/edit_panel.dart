@@ -5,6 +5,7 @@ import '../../../core/utils/validators.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../data/models/student.dart';
 import '../../../data/models/competition_level.dart';
+import 'slot_picker.dart';
 
 class StudentEditPanel extends StatelessWidget {
   final Student student;
@@ -40,6 +41,11 @@ class StudentEditPanel extends StatelessWidget {
   final bool isNameDuplicate;
   final bool isIdChecking;
   final bool isIdDuplicate;
+  final DateTime? examDate;       // موعد الاختبار الحالي
+  final int? examHour;            // ساعة الاختبار الحالية
+  final SlotInfo? selectedSlot;   // الموعد الجديد المختار
+  final Function(SlotInfo?)? onSlotChanged;
+  final VoidCallback? onOpenSlotPicker;
   final VoidCallback onSave;
   final VoidCallback onClose;
   final double? width;
@@ -79,6 +85,11 @@ class StudentEditPanel extends StatelessWidget {
     required this.isNameDuplicate,
     required this.isIdChecking,
     required this.isIdDuplicate,
+    this.examDate,
+    this.examHour,
+    this.selectedSlot,
+    this.onSlotChanged,
+    this.onOpenSlotPicker,
     required this.onSave,
     required this.onClose,
     this.width,
@@ -397,6 +408,15 @@ class StudentEditPanel extends StatelessWidget {
                         ]),
                       ]),
 
+                      // ── Section 5: موعد الاختبار ──────────────────────
+                      if (onOpenSlotPicker != null) ...[
+                        const SizedBox(height: 20),
+                        _sectionHeader('موعد الاختبار', Icons.schedule_rounded),
+                        _fieldGroup([
+                          _buildSlotRow(),
+                        ]),
+                      ],
+
                       const SizedBox(height: 28),
 
                       SizedBox(
@@ -621,6 +641,181 @@ class StudentEditPanel extends StatelessWidget {
           .toList(),
       onChanged: onLevelChanged,
     );
+  }
+
+  // ── Slot Picker Row ──────────────────────────────────────
+  Widget _buildSlotRow() {
+    final effectiveSlot = selectedSlot;
+    final hasCurrentSlot = examDate != null && examHour != null;
+    final hasNewSlot = effectiveSlot != null;
+
+    if (hasNewSlot) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: primaryColor.withValues(alpha: 0.12)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 42, height: 42,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [primaryColor.withValues(alpha: 0.1), primaryColor.withValues(alpha: 0.04)],
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.check_circle_rounded, color: Color(0xFF03121C), size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('تم تحديد موعد جديد',
+                          style: TextStyle(fontFamily: 'Cairo', fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF9CA3AF))),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${effectiveSlot.hourLabel} — ${_formatSlotDate(effectiveSlot.date)}',
+                        style: const TextStyle(fontFamily: 'Cairo', fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF03121C)),
+                      ),
+                    ],
+                  ),
+                ),
+                InkWell(
+                  onTap: () => onSlotChanged?.call(null),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    width: 32, height: 32,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Icon(Icons.close_rounded, size: 16, color: Colors.grey.shade500),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: onOpenSlotPicker,
+            icon: const Icon(Icons.swap_horiz_rounded, size: 15),
+            label: const Text('تغيير الموعد', style: TextStyle(fontFamily: 'Cairo', fontSize: 11.5, fontWeight: FontWeight.w700)),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: primaryColor,
+              side: BorderSide(color: primaryColor.withValues(alpha: 0.15)),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (hasCurrentSlot) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF9FAFB),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 42, height: 42,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                  ),
+                  child: Icon(Icons.schedule_rounded, size: 22, color: Colors.grey.shade400),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('الموعد الحالي',
+                          style: TextStyle(fontFamily: 'Cairo', fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF9CA3AF))),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${_hourLabel(examHour!)} — ${_formatSlotDate(examDate!)}',
+                        style: const TextStyle(fontFamily: 'Cairo', fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF03121C)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: onOpenSlotPicker,
+            icon: const Icon(Icons.edit_calendar_rounded, size: 15),
+            label: const Text('تغيير الموعد', style: TextStyle(fontFamily: 'Cairo', fontSize: 11.5, fontWeight: FontWeight.w700)),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: primaryColor,
+              side: BorderSide(color: primaryColor.withValues(alpha: 0.15)),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        OutlinedButton.icon(
+          onPressed: onOpenSlotPicker,
+          icon: Icon(Icons.schedule_rounded, size: 18, color: primaryColor.withValues(alpha: 0.7)),
+          label: const Text('اختيار موعد محدد للاختبار',
+              style: TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w700)),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: primaryColor,
+            side: BorderSide(color: primaryColor.withValues(alpha: 0.15)),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'اتركه فارغاً ليتم تعيين أقرب موعد تلقائياً',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey.shade400),
+        ),
+      ],
+    );
+  }
+
+  String _formatSlotDate(DateTime d) {
+    const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+    const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+    return '${days[d.weekday % 7]} ${d.day} ${months[d.month - 1]}';
+  }
+
+  String _hourLabel(int hour) {
+    if (hour == 0) return '12 منتصف الليل';
+    if (hour < 12) return '$hour صباحاً';
+    if (hour == 12) return '12 ظهراً';
+    return '${hour - 12} مساءً';
   }
 }
 
